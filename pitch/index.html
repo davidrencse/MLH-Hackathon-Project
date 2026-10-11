@@ -169,7 +169,7 @@ h2{font-size:120px;max-width:1500px}
     <iframe id="liveframe" title="GhostGrid live" allow="fullscreen"></iframe>
     <div class="live"><i></i>LIVE</div>
     <div class="fallback">
-      <div class="label rv" style="margin-bottom:30px">03 / Demo — http://127.0.0.1:5173/</div>
+      <div class="label rv" style="margin-bottom:30px">03 / Demo — http://localhost:5173/</div>
       <h2><span class="ln"><span>Switch to</span></span><span class="ln"><span data-d="120" class="acc">live demo.</span></span></h2>
       <button class="fbtn rv" id="retry" data-d="400">Retry connection ↻</button>
     </div>
@@ -221,7 +221,7 @@ h2{font-size:120px;max-width:1500px}
 <div id="nav"><button id="prevBtn" aria-label="Previous slide">←</button><button id="nextBtn" aria-label="Next slide">→</button></div>
 <script>
 (function(){
-const LIVE_URL='http://127.0.0.1:5173/';
+const LIVE_URL='http://localhost:5173/';
 const stage=document.getElementById('stage'),slides=[...document.querySelectorAll('.slide')],N=slides.length;
 let cur=-1,timers=[],raf=0;
 function fit(){stage.style.transform='scale('+Math.min(innerWidth/1920,innerHeight/1080)+')'}
