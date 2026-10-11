@@ -24,6 +24,8 @@ const ORIGIN: [number, number, number] = [0, 0, 0]
 
 // Points that bound the city: platform slab, corner towers with antennas, router spire.
 // The set is symmetric under 90° turns, so one fit works for every Q / E view.
+// Default view is this much closer than "fit whole city" so more detail is visible. 1 = old view.
+const CITY_SCALE = 1.6
 const FIT_POINTS: [number, number, number][] = [[0, 9.5, 0]]
 for (const sx of [-1, 1])
   for (const sz of [-1, 1]) FIT_POINTS.push([sx * 12.3, 0, sz * 12.3], [sx * 12.3, -1.2, sz * 12.3], [sx * 5.5, 6.7, sz * 5.5])
@@ -105,8 +107,8 @@ export function CameraRig() {
   useLayoutEffect(() => {
     if (!size.width || !size.height) return
     const prev = fitRef.current
-    const z = fitted.current ? camera.zoom * (fit.zoom / prev.zoom) : fit.zoom
-    camera.zoom = Math.min(fit.zoom * 2.2, Math.max(fit.zoom * 0.45, z))
+    const z = fitted.current ? camera.zoom * (fit.zoom / prev.zoom) : fit.zoom * CITY_SCALE
+    camera.zoom = Math.min(fit.zoom * 14, Math.max(fit.zoom * 0.45, z))
     camera.setViewOffset(size.width, size.height, -fit.ox, fit.oy, size.width, size.height)
     camera.updateProjectionMatrix()
     if (!fitted.current) camera.lookAt(0, 0, 0)
@@ -164,7 +166,7 @@ export function CameraRig() {
     const c = controls.current
     if (!c) return
     const az = c.getAzimuthalAngle()
-    startTween(az + shortestDelta(az, HOME_AZ), HOME_POLAR, fitRef.current.zoom)
+    startTween(az + shortestDelta(az, HOME_AZ), HOME_POLAR, fitRef.current.zoom * CITY_SCALE)
   }, [startTween])
 
   // Keyboard: Q / E turn, R reset. Ignored while typing or with modifier keys (Cmd+R must still reload).
