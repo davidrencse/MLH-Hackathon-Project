@@ -293,7 +293,8 @@ export function CameraRig() {
       minPolarAngle={45 * DEG}
       maxPolarAngle={70 * DEG}
       minZoom={fit.zoom * 0.45}
-      maxZoom={fit.zoom * 2.2}
+      maxZoom={fit.zoom * 14}
+      zoomToCursor
       target={ORIGIN}
       onStart={onStart}
       onEnd={onEnd}

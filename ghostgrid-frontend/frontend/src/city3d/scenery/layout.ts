@@ -116,9 +116,9 @@ function heightLimit(x: number, z: number) {
   const depth = x + z
   if (depth > 6) return 1.5
   if (depth > 2) return 2.2
-  if (depth > -3) return 3.2
-  if (depth > -8) return 4.6
-  return 5.8
+  if (depth > -3) return 3.6
+  if (depth > -8) return 7.5
+  return 12 // cyberpunk: back rows tower into megablocks
 }
 
 // Footprints the packer tries, largest first, so wide gaps get wide buildings.

@@ -243,6 +243,8 @@ function NeonBoxes({ parts, signRange }: { parts: Part[]; signRange: [number, nu
   return <instancedMesh ref={ref} args={[UNIT_BOX, mat, parts.length]} raycast={() => null} />
 }
 
+import { CyberSkyline } from './CyberSkyline'
+
 export function Scenery() {
   const buildings = useMemo(layoutScenery, [])
   const { lit, glow, signRange } = useMemo(() => buildProps(buildings), [buildings])
@@ -285,6 +287,7 @@ export function Scenery() {
       <mesh geometry={r.shadows} material={r.shadowMat} position={[0, 0.02, 0]} renderOrder={1} raycast={() => null} />
       <Boxes parts={lit} material={r.litMat} />
       <NeonBoxes parts={glow} signRange={signRange} />
+      <CyberSkyline buildings={buildings} />
     </group>
   )
 }

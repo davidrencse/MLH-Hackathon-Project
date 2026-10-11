@@ -9,6 +9,8 @@ import { Atmosphere } from './Atmosphere'
 import { CameraRig } from './CameraRig'
 import { CityBuildings } from './CityBuildings'
 import { Drones } from './Drones'
+import { Zeppelins } from './Zeppelins'
+import { Citizens } from './Citizens'
 import { Effects } from './Effects'
 import { Ground } from './Ground'
 import { Scenery } from './scenery/Scenery'
@@ -40,7 +42,7 @@ function AlertLight() {
       return
     }
     const [x, , z] = lotCenter(target.lot)
-    light.position.set(x, BUILDING_HEIGHT[target.type] + 1.2, z)
+    light.position.set(x, BUILDING_HEIGHT[target.type] * 1.8 + 1.2, z)
     light.color.set(target.status === 'error' ? PALETTE.red : PALETTE.yellow)
     light.intensity = Math.floor(clock.elapsedTime / 0.3) % 2 ? 45 : 8
   })
@@ -88,6 +90,8 @@ export function CityCanvas() {
         <Scenery />
         <CityBuildings />
         <Drones />
+        <Zeppelins />
+        <Citizens />
         <CameraRig />
         <LabelProjector />
         <Effects />

@@ -91,7 +91,7 @@ export const BUILDING_HEIGHT: Record<BuildingType, number> = {
 // Where drones take off / land for a building (just above its roof).
 export function dockPoint(b: Pick<Building, 'lot' | 'type'>): [number, number, number] {
   const [x, , z] = lotCenter(b.lot)
-  return [x, BUILDING_HEIGHT[b.type] + 0.6, z]
+  return [x, BUILDING_HEIGHT[b.type] * 1.8 + 0.6, z]
 }
 
 // Camera: orthographic, 2:1 dimetric ("pixel isometric") — elevation 30°, azimuth 45°.

@@ -76,7 +76,10 @@ export function resetBootstrap() {
 
 async function ensureProject(): Promise<string> {
   if (PROJECT_ID) return PROJECT_ID
-  const list = await ggGet<ListResponse<{ id: string }>>('/api/v1/projects?limit=1')
+  const list = await ggGet<ListResponse<{ id: string }>>('/api/v1/projects?limit=50')
+  // Prefer the project bound to a real workspace (real Codex/Claude workers need one).
+  const real = (list.items as Array<{ id: string; workspace?: string }> | undefined)?.find((p) => p.workspace)
+  if (real) return real.id
   if (list.items?.length) return list.items[0].id
   const created = await ggPost<{ id: string }>('/api/v1/projects', { name: 'Ghost Grid City' })
   return created.id

@@ -30,6 +30,7 @@ export function planLaunch(
 ): LaunchPlan {
   if (runtime === "chatgpt-browser" || runtime === "claude-browser") {
     const url = runtime === "chatgpt-browser" ? "https://chatgpt.com/" : "https://claude.ai/new";
+    if (process.platform === "darwin") return { executable: "/usr/bin/open", args: [url] };
     for (const name of ["google-chrome", "chromium", "chromium-browser", "firefox"]) {
       const executable = find(name);
       if (executable) return { executable, args: ["--new-window", url] };
@@ -43,6 +44,12 @@ export function planLaunch(
   if (!statSync(cwd).isDirectory()) return unavailable("Choose a project folder, not a file.");
   const cli = find(runtime);
   if (!cli) return unavailable(`Install and sign in to the ${runtime} CLI on the Ghost Grid machine.`);
+  if (process.platform === "darwin") {
+    // macOS: open a new Terminal.app window in the workspace and start the CLI there.
+    const q = (v: string) => "'" + v.replace(/'/g, "'\\''") + "'";
+    const cmd = `cd ${q(cwd)} && ${q(cli)}`.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return { executable: "/usr/bin/osascript", args: ["-e", `tell application "Terminal" to do script "${cmd}"`, "-e", 'tell application "Terminal" to activate'], cwd };
+  }
   for (const name of ["kitty", "konsole", "gnome-terminal", "xterm"]) {
     const executable = find(name);
     if (!executable) continue;
@@ -58,9 +65,10 @@ export function planLaunch(
 export function createOfficeLauncher(allowedWorkspaces: string[]): OfficeLauncher {
   return {
     available() {
-      const terminal = ["kitty", "konsole", "gnome-terminal", "xterm"].find((name) => findExecutable(name)) ?? null;
-      const desktop = Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
-      const browser = ["google-chrome", "chromium", "chromium-browser", "firefox", "xdg-open"].some((name) => findExecutable(name));
+      const mac = process.platform === "darwin";
+      const terminal = mac ? "Terminal.app" : ["kitty", "konsole", "gnome-terminal", "xterm"].find((name) => findExecutable(name)) ?? null;
+      const desktop = mac || Boolean(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
+      const browser = mac || ["google-chrome", "chromium", "chromium-browser", "firefox", "xdg-open"].some((name) => findExecutable(name));
       return { terminal, runtimes: desktop ? [
         ...(terminal && findExecutable("codex") ? ["codex" as const] : []),
         ...(terminal && findExecutable("claude") ? ["claude" as const] : []),
@@ -68,7 +76,7 @@ export function createOfficeLauncher(allowedWorkspaces: string[]): OfficeLaunche
       ] : [] };
     },
     async launch(runtime, workspace) {
-      if (!process.env.DISPLAY && !process.env.WAYLAND_DISPLAY)
+      if (process.platform !== "darwin" && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY)
         return unavailable("The Ghost Grid machine needs a desktop session to open windows.");
       const plan = planLaunch(runtime, workspace, allowedWorkspaces);
       return new Promise((resolve, reject) => {

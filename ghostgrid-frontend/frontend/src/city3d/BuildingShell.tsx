@@ -13,6 +13,11 @@ import { BuildingCtx } from './BuildingCtx'
 import { removeLabelAnchor, setLabelAnchor } from './Labels'
 import { neonMat, PALETTE, signTexture, STATUS_EMISSIVE, UNIT_BOX } from './materials'
 import { BUILDING_HEIGHT, lotCenter, lotFootprint } from './world'
+import { Megastructure } from './Megastructure'
+import { useDozer } from './dozer'
+
+// Megastructure upgrade: vertical scale for every building. Set to 1 (and drop <Megastructure/>) to undo.
+export const MEGA = 1.8
 
 const BEACON_MATS = Object.fromEntries(Object.entries(STATUS_EMISSIVE).map(([k, c]) => [k, neonMat(c, 3)]))
 const DARK_MAT = new THREE.MeshBasicMaterial({ color: '#1a1040' })
@@ -51,13 +56,14 @@ export function BuildingShell({ building, children }: { building: Building; chil
   const beacon = useRef<THREE.Mesh>(null)
   const [x, , z] = lotCenter(building.lot)
   const footprint = lotFootprint(building.lot)
-  const height = BUILDING_HEIGHT[building.type]
+  const baseHeight = BUILDING_HEIGHT[building.type]
+  const height = baseHeight * MEGA
 
   const ctx = useMemo(
-    () => ({ building, footprint, height, statusRef, offlineRef, selectedRef, hoveredRef }),
+    () => ({ building, footprint, height: baseHeight, statusRef, offlineRef, selectedRef, hoveredRef }),
     // footprint is derived from lot; building object identity changes when it updates
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [building, height],
+    [building, baseHeight],
   )
 
   // name plate anchor (rendered as DOM by Labels.tsx)
@@ -83,6 +89,11 @@ export function BuildingShell({ building, children }: { building: Building; chil
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
     if (building.type === 'router') return
+    if (useDozer.getState().on) {
+      useGrid.getState().removeBuilding(building.id)
+      document.body.style.cursor = ''
+      return
+    }
     if (useGrid.getState().buildMode) return
     // Clicking the Library opens the hosted Library of Babel web app instead of a panel.
     if (building.type === 'library') {
@@ -99,7 +110,7 @@ export function BuildingShell({ building, children }: { building: Building; chil
     e.stopPropagation()
     if (building.type === 'router') return
     setHovered(true)
-    document.body.style.cursor = 'pointer'
+    document.body.style.cursor = useDozer.getState().on ? 'crosshair' : 'pointer'
   }
   const onOut = () => {
     setHovered(false)
@@ -114,7 +125,10 @@ export function BuildingShell({ building, children }: { building: Building; chil
   return (
     <group position={[x, 0, z]}>
       <group ref={inner} onClick={onClick} onPointerOver={onOver} onPointerOut={onOut}>
-        <BuildingCtx.Provider value={ctx}>{children}</BuildingCtx.Provider>
+        <group scale={[1, MEGA, 1]}>
+          <BuildingCtx.Provider value={ctx}>{children}</BuildingCtx.Provider>
+        </group>
+        <Megastructure w={footprint.w} d={footprint.d} h={height} seed={building.lot} />
       </group>
 
       {/* fake shadow: footprint + a streak away from the light, length ∝ height */}
