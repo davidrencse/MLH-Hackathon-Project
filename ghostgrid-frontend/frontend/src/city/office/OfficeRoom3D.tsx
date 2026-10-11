@@ -1,6 +1,7 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { Html, OrbitControls } from '@react-three/drei'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { pickLine } from './slang'
 import { useReducedMotion } from 'framer-motion'
 import * as THREE from 'three'
 import type { OfficeWorker } from '@/api/backend'
@@ -29,7 +30,31 @@ function Camera({ width, depth }: { width: number; depth: number }) {
   return null
 }
 
-function Person({ color, host = false, typing = false }: { color: string; host?: boolean; typing?: boolean }) {
+function SpeechBubble({ seed }: { seed: number }) {
+  const [tick, setTick] = useState(0)
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    let alive = true
+    let t: ReturnType<typeof setTimeout>
+    const loop = (first: boolean) => {
+      t = setTimeout(() => {
+        if (!alive) return
+        setTick((n) => n + 1); setShown(true)
+        t = setTimeout(() => { if (alive) { setShown(false); loop(false) } }, 3200)
+      }, (first ? 600 + (seed % 7) * 900 : 2500 + ((seed * 13) % 5) * 1200))
+    }
+    loop(true)
+    return () => { alive = false; clearTimeout(t) }
+  }, [seed])
+  if (!shown) return null
+  return <Html position={[0, 1.55, 0]} center distanceFactor={8} style={{ pointerEvents: 'none' }}>
+    <div style={{ background: '#fffbe8', color: '#111', border: '2px solid #111', boxShadow: '3px 3px 0 #111', padding: '4px 8px', font: "10px/1.3 'Press Start 2P', monospace", whiteSpace: 'nowrap', transform: 'translateY(-50%)' }}>
+      {pickLine(seed, tick)}
+    </div>
+  </Html>
+}
+
+function Person({ color, host = false, typing = false, seed }: { color: string; host?: boolean; typing?: boolean; seed?: number }) {
   const hands = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const reduce = useReducedMotion()
@@ -40,6 +65,7 @@ function Person({ color, host = false, typing = false }: { color: string; host?:
     if (head.current) head.current.rotation.z = Math.sin(Math.floor(tick / 4) * 0.6) * 0.06
   })
   return <group position={[0, host ? 0 : 0.1, 0]}>
+    {seed !== undefined && <SpeechBubble seed={seed} />}
     <Block color="#3f3655" position={[-0.14, 0.22, 0]} size={[0.22, 0.4, 0.24]} />
     <Block color="#3f3655" position={[0.14, 0.22, 0]} size={[0.22, 0.4, 0.24]} />
     <Block color="#211b31" position={[-0.14, 0.08, 0.06]} size={[0.26, 0.12, 0.36]} />
@@ -124,7 +150,7 @@ function Desk({ worker, x, z, selected, accent, onSelect }: {
     <Block color="#706389" position={[0, 0.4, 0.8]} size={[0.64, 0.16, 0.64]} />
     <Block color="#706389" position={[0, 0.71, 1.04]} size={[0.64, 0.58, 0.16]} />
     <Block color="#3e344f" position={[0, 0.2, 0.8]} size={[0.12, 0.4, 0.12]} />
-    {worker && <group position={[0, 0.18, 0.66]} rotation-y={-Math.PI / 4}><Person color={accent} typing /></group>}
+    {worker && <group position={[0, 0.18, 0.66]} rotation-y={-Math.PI / 4}><Person color={accent} typing seed={[...worker.id].reduce((a, c) => a + c.charCodeAt(0), 0)} /></group>}
   </group>
 }
 
@@ -165,7 +191,7 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect }: { workers:
       </group>)}
       <Plant x={width / 2 - 0.8} z={-depth / 2 + 0.8} />
       <Plant x={-width / 2 + 0.6} z={depth / 2 - 0.6} />
-      <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host /></group>
+      <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host seed={3} /></group>
       {Array.from({ length: count }, (_, i) => <Desk key={workers[i]?.id ?? `empty_${i}`} worker={workers[i]}
         x={(i % columns - (columns - 1) / 2) * 3.3} z={Math.floor(i / columns) * 3.2 - depth / 2 + 2.3}
         selected={selected === workers[i]?.id} accent={accent} onSelect={onSelect} />)}
