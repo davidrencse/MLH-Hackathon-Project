@@ -8,7 +8,7 @@ export function OrgPanel({ nameOf }: { nameOf: (id?: string) => string }) {
   const [draft, setDraft] = useState('')
   if (!picked) return null
   const current = assign[picked.id] ?? ''
-  const box = { position: 'absolute' as const, right: 12, top: 12, zIndex: 30, width: 260, background: '#fffbe8', color: '#111', border: '3px solid #111', boxShadow: '5px 5px 0 #111', padding: 12, font: "10px/1.6 'Press Start 2P', monospace" }
+  const box = { position: 'absolute' as const, right: 12, top: 12, zIndex: 50, width: 260, background: '#fffbe8', color: '#111', border: '3px solid #111', boxShadow: '5px 5px 0 #111', padding: 12, font: "10px/1.6 'Press Start 2P', monospace" }
   return (
     <div style={box} onPointerDown={(e) => e.stopPropagation()}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -49,8 +49,8 @@ function SpeechBubble({ seed }: { seed: number }) {
     return () => { alive = false; clearTimeout(t) }
   }, [seed])
   if (!shown) return null
-  return <Html position={[0, 1.55, 0]} center distanceFactor={8} style={{ pointerEvents: 'none' }}>
-    <div style={{ background: '#fffbe8', color: '#111', border: '2px solid #111', boxShadow: '3px 3px 0 #111', padding: '4px 8px', font: "10px/1.3 'Press Start 2P', monospace", whiteSpace: 'nowrap', transform: 'translateY(-50%)' }}>
+  return <Html position={[0, 1.9, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+    <div style={{ background: '#fffbe8', color: '#111', border: '2px solid #111', boxShadow: '3px 3px 0 #111', padding: '4px 8px', font: "10px/1.3 'Press Start 2P', monospace", whiteSpace: 'nowrap', transform: 'translateY(-60%)', fontSize: 8 }}>
       {pickLine(seed, tick)}
     </div>
   </Html>
@@ -59,7 +59,7 @@ function SpeechBubble({ seed }: { seed: number }) {
 const TAG: Record<string, string> = { Manager: '#ff004d', 'Team Lead': '#ffa300', Engineer: '#29adff' }
 function RoleTag({ emp }: { emp: Employee }) {
   const project = useOrg((s) => s.assign[emp.id])
-  return <Html position={[0, -0.25, 0]} center distanceFactor={8} style={{ pointerEvents: 'none' }}>
+  return <Html position={[0, 1.5, 0]} center zIndexRange={[9, 0]} style={{ pointerEvents: 'none' }}>
     <div style={{ font: "8px/1.3 'Press Start 2P', monospace", textAlign: 'center', whiteSpace: 'nowrap' }}>
       <span style={{ background: TAG[emp.role], color: '#fff', padding: '1px 4px' }}>{emp.role === 'Manager' ? 'MGR' : emp.role === 'Team Lead' ? 'LEAD' : 'ENG'}</span>
       {project && <div style={{ background: '#111', color: '#ffec27', padding: '1px 4px', marginTop: 2 }}>{project}</div>}
@@ -181,7 +181,7 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect }: { workers:
   const nameOf = (id?: string) => id === mgr.id ? mgr.name : id?.startsWith('lead:') ? (emps[Number(id.split(':').pop())]?.name ?? 'Team Lead') : (emps.find((e) => e.id === id)?.name ?? '—')
   return <div className="native-room-canvas" aria-label="3D isometric office; select a worker using their desk or the buttons below" style={{ position: 'relative' }}>
     <OrgPanel nameOf={nameOf} />
-    <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={Math.min(2, window.devicePixelRatio || 1)} shadows gl={{ antialias: true }}>
+    <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={Math.min(1.5, window.devicePixelRatio || 1)} shadows gl={{ antialias: true }}>
       <Camera width={width} depth={depth} />
       <OrbitControls target={[0, 0.7, 0]} enablePan={false} enableDamping={false}
         minPolarAngle={0.65} maxPolarAngle={1.1} minAzimuthAngle={0.25} maxAzimuthAngle={1.35}
