@@ -9,6 +9,7 @@ import { CATALOG } from '@/constants'
 import { useGrid } from '@/store/grid'
 import './native-office.css'
 import { DESK_COMMANDS } from './deskCommands'
+import { OrgChart } from './OrgChart'
 const OfficeRoom3D = lazy(() => import('./OfficeRoom3D').then((module) => ({ default: module.OfficeRoom3D })))
 
 const RUNTIME_NAMES: Record<OfficeRuntime, string> = {
@@ -142,6 +143,7 @@ export function OfficePage() {
           <footer className="native-room-footer"><span>COFFEE IS ON THE HOUSE</span><span>ONE WORKER · ONE WINDOW</span></footer>
         </section>
         <aside className="native-hiring">
+          <OrgChart buildingId={buildingId} buildingName={building.name} realWorkers={workers} />
           <h2>Add a worker</h2><p>Pick their tools. We’ll open a fresh terminal or browser window for them.</p>
           <form onSubmit={(event) => void addWorker(event)}>
             <label htmlFor="worker-name">Worker name</label><input id="worker-name" maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder={`Worker ${workers.length + 1}`} />
