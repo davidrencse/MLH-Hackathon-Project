@@ -10,6 +10,7 @@ import { useGrid } from '@/store/grid'
 import './native-office.css'
 import { DESK_COMMANDS } from './deskCommands'
 import { OrgChart } from './OrgChart'
+import { ProjectBoard } from './ProjectBoard'
 const OfficeRoom3D = lazy(() => import('./OfficeRoom3D').then((module) => ({ default: module.OfficeRoom3D })))
 
 const RUNTIME_NAMES: Record<OfficeRuntime, string> = {
@@ -128,6 +129,7 @@ export function OfficePage() {
           <p>A little room for big ideas. Give every worker their own window.</p></div>
         <span className="native-office-count">{workers.length} {workers.length === 1 ? 'worker' : 'workers'}</span>
       </header>
+      <ProjectBoard buildingId={buildingId} />
       <div className="native-office-layout">
         <section className="native-room" aria-label={`${building.name} isometric office`}>
           <div className="native-room-toolbar"><span>{loading ? 'Opening office…' : workers.length ? 'Select a desk · drag to look around · scroll to zoom' : 'Add your first worker · drag to explore the room'}</span>

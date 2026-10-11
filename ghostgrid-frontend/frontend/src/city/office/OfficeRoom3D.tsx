@@ -1,12 +1,13 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { pickLine } from './slang'
 import { employeeFor, managerOf, useOrg, type Employee } from './org'
 import { OrgPanel } from './OrgPanel'
 import { useBuildingOffices, type Office } from './OrgChart'
 import { useReducedMotion } from 'framer-motion'
 import * as THREE from 'three'
+import { create } from 'zustand'
 import type { OfficeWorker } from '@/api/backend'
 import { DESK_COMMANDS } from './deskCommands'
 
@@ -33,25 +34,34 @@ function Camera({ width, depth }: { width: number; depth: number }) {
   return null
 }
 
-function SpeechBubble({ seed }: { seed: number }) {
-  const [tick, setTick] = useState(0)
-  const [shown, setShown] = useState(false)
+// One speaker in the whole room at a time: a new bubble every 5s, visible ~3.5s.
+const SPEAKERS = new Set<number>()
+const useChatter = create<{ speaker: number | null; tick: number }>(() => ({ speaker: null, tick: 0 }))
+function ChatterClock() {
   useEffect(() => {
-    let alive = true
-    let t: ReturnType<typeof setTimeout>
-    const loop = (first: boolean) => {
-      t = setTimeout(() => {
-        if (!alive) return
-        setTick((n) => n + 1); setShown(true)
-        t = setTimeout(() => { if (alive) { setShown(false); loop(false) } }, 3200)
-      }, (first ? 600 + (seed % 7) * 900 : 2500 + ((seed * 13) % 5) * 1200))
+    let hide: ReturnType<typeof setTimeout>
+    const next = () => {
+      const all = [...SPEAKERS]
+      if (!all.length) return
+      const speaker = all[Math.floor(Math.random() * all.length)]
+      useChatter.setState((s) => ({ speaker, tick: s.tick + 1 }))
+      clearTimeout(hide)
+      hide = setTimeout(() => useChatter.setState({ speaker: null }), 3500)
     }
-    loop(true)
-    return () => { alive = false; clearTimeout(t) }
-  }, [seed])
-  if (!shown) return null
+    const first = setTimeout(next, 1200)
+    const id = setInterval(next, 5000)
+    return () => { clearTimeout(first); clearInterval(id); clearTimeout(hide) }
+  }, [])
+  return null
+}
+
+function SpeechBubble({ seed }: { seed: number }) {
+  useEffect(() => { SPEAKERS.add(seed); return () => { SPEAKERS.delete(seed) } }, [seed])
+  const speaking = useChatter((s) => s.speaker === seed)
+  const tick = useChatter((s) => s.tick)
+  if (!speaking) return null
   return <Html position={[0, 1.9, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-    <div style={{ background: '#fffbe8', color: '#111', border: '2px solid #111', boxShadow: '3px 3px 0 #111', padding: '4px 8px', font: "10px/1.3 'Press Start 2P', monospace", whiteSpace: 'nowrap', transform: 'translateY(-60%)', fontSize: 8 }}>
+    <div style={{ background: '#fffbe8', color: '#111', border: '2px solid #111', boxShadow: '3px 3px 0 #111', padding: '4px 8px', font: "8px/1.3 'Press Start 2P', monospace", whiteSpace: 'nowrap', transform: 'translateY(-60%)' }}>
       {pickLine(seed, tick)}
     </div>
   </Html>
@@ -170,8 +180,8 @@ function Desk({ worker, x, z, selected, accent, onSelect, emp }: {
   </group>
 }
 
-const POD_W = 6.2
-const POD_D = 5
+const POD_W = 6.4
+const POD_D = 5.4
 const RUGS = ['#3b2f5c', '#2f4a5c', '#5c2f45', '#2f5c46', '#5c4a2f', '#46305c']
 const ROLE_ORDER = { Manager: 0, 'Team Lead': 1, Engineer: 2 } as const
 
@@ -182,19 +192,35 @@ function OfficePod({ office, index, x, z, accent }: { office: Office; index: num
   const team = people.filter((p) => p.role !== 'Manager').slice(0, 6)
   const rug = RUGS[index % RUGS.length]
   return <group position={[x, 0, z]}>
-    <Block color={rug} position={[0, 0.06, 0]} size={[POD_W - 0.4, 0.04, POD_D - 0.4]} />
-    <Block color={accent} position={[0, 0.07, -POD_D / 2 + 0.25]} size={[POD_W - 0.4, 0.05, 0.08]} />
-    <Html position={[0, 2.6, -POD_D / 2 + 0.3]} center zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
+    {/* carpet */}
+    <Block color={rug} position={[0, 0.06, 0]} size={[POD_W - 0.3, 0.04, POD_D - 0.3]} />
+    {/* back + side walls (solid lower half, glass upper) */}
+    {([[0, -POD_D / 2 + 0.1, POD_W - 0.2, 0.14], [-POD_W / 2 + 0.1, 0, 0.14, POD_D - 0.2], [POD_W / 2 - 0.1, 0, 0.14, POD_D - 0.2]] as const).map(([wx, wz, ww, wd], k) => <group key={k}>
+      <Block color="#d9cfc4" position={[wx, 0.55, wz]} size={[ww, 1.1, wd]} />
+      <mesh geometry={BOX} position={[wx, 1.55, wz]} scale={[ww, 0.9, wd * 0.6]}><meshLambertMaterial color="#9fd8ff" transparent opacity={0.28} /></mesh>
+      <Block color={accent} position={[wx, 2.03, wz]} size={[ww + 0.02, 0.07, wd + 0.02]} />
+    </group>)}
+    {/* front wall with a door gap */}
+    {[-1, 1].map((side) => <group key={side} position={[side * (POD_W / 4 + 0.35), 0, POD_D / 2 - 0.1]}>
+      <Block color="#d9cfc4" position={[0, 0.55, 0]} size={[POD_W / 2 - 0.9, 1.1, 0.14]} />
+      <mesh geometry={BOX} position={[0, 1.55, 0]} scale={[POD_W / 2 - 0.9, 0.9, 0.08]}><meshLambertMaterial color="#9fd8ff" transparent opacity={0.28} /></mesh>
+      <Block color={accent} position={[0, 2.03, 0]} size={[POD_W / 2 - 0.88, 0.07, 0.16]} />
+    </group>)}
+    {/* door frame + name plate */}
+    <Block color="#5a4636" position={[0, 2.05, POD_D / 2 - 0.1]} size={[1.5, 0.12, 0.18]} />
+    <Html position={[0, 2.45, POD_D / 2 - 0.1]} center zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
       <div style={{ font: "9px 'Press Start 2P', monospace", background: '#111', color: '#ffec27', border: `2px solid ${accent}`, padding: '3px 6px', whiteSpace: 'nowrap' }}>🏢 {office.name} · {office.people.length}</div>
     </Html>
-    {mgr && <group position={[0, 0, POD_D / 2 - 1.1]}>
+    {/* ceiling light */}
+    <pointLight position={[0, 2.6, 0]} intensity={4} distance={5} color="#ffe9c4" />
+    {mgr && <group position={[POD_W / 2 - 1.3, 0, POD_D / 2 - 1.3]}>
       <Block color="#7a5a48" position={[0, 0.75, -0.55]} size={[1.6, 0.1, 0.7]} />
       <Block color="#2b2140" position={[0, 1.05, -0.8]} size={[0.6, 0.4, 0.05]} />
       <Person color="#e2a197" host seed={index * 31 + 3} emp={{ id: mgr.id, name: mgr.name, role: 'Manager' }} />
     </group>}
     {team.map((p, i) => {
       const col = i % 3, row = Math.floor(i / 3)
-      const px = (col - 1) * 1.9, pz = -POD_D / 2 + 1.0 + row * 1.6
+      const px = (col - 1) * 1.7 - 0.2, pz = -POD_D / 2 + 1.1 + row * 1.5
       return <group key={p.id} position={[px, 0, pz]}>
         <Block color="#b88a6a" position={[0, 0.72, -0.35]} size={[1.2, 0.08, 0.55]} />
         <Block color={accent} position={[0, 1.0, -0.55]} size={[0.5, 0.34, 0.04]} />
@@ -224,6 +250,7 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect, buildingId =
     <OrgPanel nameOf={nameOf} />
     <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={Math.min(1.5, window.devicePixelRatio || 1)} shadows gl={{ antialias: true }}>
       <Camera width={width} depth={depth} />
+      <ChatterClock />
       <OrbitControls target={[0, 0.7, 0]} enablePan={false} enableDamping={false}
         minPolarAngle={0.65} maxPolarAngle={1.1} minAzimuthAngle={0.25} maxAzimuthAngle={1.35}
         minZoom={12} maxZoom={160} />
