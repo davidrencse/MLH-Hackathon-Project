@@ -2,6 +2,36 @@
 
 A pixel city interface for AI agents, backed by a Fastify API with persisted sessions, tasks, and usage accounting.
 
+## What's new (AI Engineer NYC demo build)
+
+**The city**
+- Cyberpunk megastructures: taller towers with neon corner pylons, floor rings, rooftop spires and holo billboards.
+- Cyber skyline: background blocks tower into neon megablocks.
+- 3 pixel-art zeppelins with searchlights circling the city.
+- 8-bit citizens walk the streets. Zoom in, pick one up, throw them, and they say "ouch".
+- 🚜 Bulldozer tool (top right): click any building to demolish it (Esc to exit).
+- Expandable city: 8 locked plots surround the island. Click "＋ OPEN PLOT" and a new district grows out of the ground. "↺ RESET PLOTS" re-locks them.
+- Opens bigger and renders at native resolution (`CITY_SCALE` in `CameraRig.tsx`, `PIXEL_SIZE` in `world.ts`).
+
+**Offices (click the Codex or Claude building)**
+- Org chart: each building holds offices, each with a Manager, Team Leads and Engineers. ＋ NEW OFFICE, ＋ HIRE, promote, fire.
+- Walled 3D offices with glass partitions, name plates and lights.
+- Drag employees in 3D from one office into another to transfer them.
+- Staffing board: drag employee cards onto project columns (or the Bench); project labels follow them in 3D.
+- Employees chat in SF AI slang ("we're so back", "feel the AGI"), one bubble every 5s.
+- "Add worker" opens a real Codex or Claude CLI session in Terminal.app on macOS.
+
+**Real agents**
+- Codex and Claude buildings run tasks on the real Codex / Claude CLIs (other buildings use the demo runtime).
+- Start the backend with `GHOSTGRID_ALLOWED_WORKSPACES=/path/to/this/repo` so coding workers have an allowed workspace. Writing agents need a clean git tree.
+
+**Dashboard**
+- Demo traffic: 30 days of synthetic requests, tokens, cost, latency and a 240-row request log layered on real data (`FAKE_TRAFFIC` in `src/api/fakeTraffic.ts`).
+
+**Pitch deck**
+- `pitch/index.html` is the 8-bit deck (13 stages, live city + dashboard slides). `pitch/classic.html` is the original style.
+- Serve it with `python3 -m http.server 8088 --directory pitch` and open http://localhost:8088.
+
 ## Run locally
 
 Requires Node.js 22.13+ and npm. From the repository root:
