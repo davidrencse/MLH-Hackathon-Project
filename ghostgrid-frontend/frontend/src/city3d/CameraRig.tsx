@@ -108,7 +108,7 @@ export function CameraRig() {
     if (!size.width || !size.height) return
     const prev = fitRef.current
     const z = fitted.current ? camera.zoom * (fit.zoom / prev.zoom) : fit.zoom * CITY_SCALE
-    camera.zoom = Math.min(fit.zoom * 14, Math.max(fit.zoom * 0.45, z))
+    camera.zoom = Math.min(fit.zoom * 14, Math.max(fit.zoom * 0.18, z))
     camera.setViewOffset(size.width, size.height, -fit.ox, fit.oy, size.width, size.height)
     camera.updateProjectionMatrix()
     if (!fitted.current) camera.lookAt(0, 0, 0)
@@ -294,7 +294,7 @@ export function CameraRig() {
       rotateSpeed={0.5}
       minPolarAngle={45 * DEG}
       maxPolarAngle={70 * DEG}
-      minZoom={fit.zoom * 0.45}
+      minZoom={fit.zoom * 0.18}
       maxZoom={fit.zoom * 14}
       zoomToCursor
       target={ORIGIN}

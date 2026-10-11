@@ -98,8 +98,8 @@ export function dockPoint(b: Pick<Building, 'lot' | 'type'>): [number, number, n
 export const CAMERA = {
   position: [20, 16.33, 20] as [number, number, number],
   zoom: 34, // world-units → CSS px; CameraRig adapts it to the viewport
-  near: -100,
-  far: 200,
+  near: -300,
+  far: 400,
 }
 
 // Each rendered pixel covers PIXEL_SIZE × PIXEL_SIZE CSS pixels (pixel-art look + cheap rendering).

@@ -14,6 +14,7 @@ import { Citizens } from './Citizens'
 import { Effects } from './Effects'
 import { Ground } from './Ground'
 import { Scenery } from './scenery/Scenery'
+import { OuterDistricts } from './OuterDistricts'
 import { BuildingLabels, LabelProjector } from './Labels'
 import { PALETTE } from './materials'
 import { BUILDING_HEIGHT, CAMERA, lotCenter, PIXEL_SIZE } from './world'
@@ -88,6 +89,7 @@ export function CityCanvas() {
         <Atmosphere />
         <Ground />
         <Scenery />
+        <OuterDistricts />
         <CityBuildings />
         <Drones />
         <Zeppelins />
