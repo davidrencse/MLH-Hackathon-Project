@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ghost Grid — AI Engineer NYC 2026</title>
+<title>GHOSTGRID — 8-bit edition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0B0B0C;--fg:#F2F0EA;--acc:#FF5A1F;--mid:#8A8A8A;--line:#2A2A2B;--ease:cubic-bezier(.2,.8,.2,1)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -117,14 +117,161 @@ h2{font-size:120px;max-width:1500px}
 .close .big{font-size:220px;font-weight:600;letter-spacing:-.05em;line-height:.88;margin-left:-10px}
 .close .repo{font-family:'JetBrains Mono',monospace;font-size:28px;text-align:right;line-height:1.6}
 .close .repo .label{display:block}
+/* Dashboard */
+.dlist{margin-top:36px;width:1100px;font-family:"JetBrains Mono",monospace;font-size:28px}
+.drow{display:grid;grid-template-columns:120px 1fr auto;padding:14px 0;position:relative;align-items:baseline}
+.drow .rule{position:absolute;left:0;right:0;bottom:0}
+.drow .ix{color:var(--mid);font-size:20px}.drow .rt{color:var(--mid);font-size:22px}
+.dsub{font-size:44px;color:var(--mid);font-weight:500;letter-spacing:-.02em;margin-top:20px}
+#s5b{padding:0}
+.tabs{position:absolute;left:0;right:0;top:0;height:84px;display:flex;align-items:center;gap:0;padding:0 32px 0 150px;border-bottom:1px solid var(--line);z-index:10;background:var(--bg)}
+.tabs button{background:none;border:0;color:var(--mid);font:500 22px 'Inter Tight',sans-serif;letter-spacing:-.01em;padding:0 26px;height:84px;cursor:pointer;position:relative;transition:color .2s}
+.tabs button:hover{color:var(--fg)}
+.tabs button.on{color:var(--fg)}
+.tabs button.on::after{content:'';position:absolute;left:26px;right:26px;bottom:-1px;height:2px;background:var(--acc)}
+.tabs .route{margin-left:auto;font:400 18px 'JetBrains Mono',monospace;color:var(--mid)}
+#s5b .live{top:22px}
+#s5b iframe{position:absolute;left:0;right:0;bottom:0;top:84px;width:100%;height:calc(100% - 84px);border:0;background:var(--bg);display:none}
+#s5b.ok iframe{display:block}
+#s5b.ok .fallback{display:none}
+#s5b .fallback{top:84px}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:80px}
+.c3{position:relative;padding-top:30px}
+.c3 .rule{position:absolute;top:0;left:0;right:0}
+.c3 .n{font-size:150px;font-weight:600;letter-spacing:-.05em;line-height:.9;margin-top:22px}
+.c3 .nl{margin-top:10px}
+.c3 .h{font-size:52px;font-weight:600;letter-spacing:-.03em;margin-top:44px}
+.c3 .d{font-size:26px;color:var(--mid);margin-top:12px;line-height:1.35}
+
+/* ===== 8-BIT OVERRIDES ===== */
+:root{--bg:#0f0f23;--fg:#f8f8f8;--mid:#a0a0c0;--line:#3a3a5c;--red:#ff004d;--green:#00e436;--blue:#29adff;--yellow:#ffec27;--acc:var(--red);--acc2:var(--blue)}
+html,body,#stage{background:var(--bg);font-family:VT323,monospace;image-rendering:pixelated}
+*{border-radius:0!important}
+.mono,.label,.term,.dialog code,.provs,.drow,.close .repo,.result,.win .tb,.win pre,.tabs .route,.live,#hud{font-family:VT323,monospace!important}
+h1,h2,.cover,.stat .n,.an .h,.col .h,.c3 .h,.c3 .n,.close .big,.count-line b,.fbtn,.tabs button,.dialog button,#nav button,.bangbox .x,.dialog .who{font-family:'Press Start 2P',monospace!important;letter-spacing:0!important;font-weight:400!important}
+#stars{position:absolute;left:0;top:0;width:4px;height:4px;z-index:0;pointer-events:none}
+.slide{z-index:1}
+.slide.active{transition:none}
+h2{font-size:60px;line-height:1.35;max-width:1600px}
+.ln{clip-path:inset(0 0 -.2em 0)}
+.ln>span{transition:transform .5s steps(6)}
+.rv{transition:opacity .4s steps(4),transform .4s steps(4)}
+.rule{height:4px;background:var(--line);transition:transform .6s steps(8)}
+.label{font-size:30px;letter-spacing:.04em;color:var(--mid)}
+.acc{color:var(--acc)}
+.acc2{color:var(--acc2)}
+/* stepped pixel border */
+.px,.dialog,.win,.bangbox,.live,.fbtn,.tabs button.on{box-shadow:0 -4px 0 0 var(--bc,#f8f8f8),0 4px 0 0 var(--bc,#f8f8f8),-4px 0 0 0 var(--bc,#f8f8f8),4px 0 0 0 var(--bc,#f8f8f8);border:0!important}
+/* game buttons */
+.gbtn,.fbtn,.dialog button,#nav button{border:0!important;cursor:pointer;box-shadow:inset -4px -4px 0 rgba(0,0,0,.35),4px 4px 0 #000!important;transition:none!important}
+.gbtn:active,.fbtn:active,.dialog button:active,#nav button:active{transform:translate(4px,4px)!important;box-shadow:inset 4px 4px 0 rgba(0,0,0,.35)!important}
+#nav button{width:52px;height:52px;background:var(--blue);color:#0f0f23;font-size:16px}
+#nav button:hover{background:var(--yellow);color:#0f0f23}
+#hud{font-size:28px;color:var(--mid)}
+#counter b{color:var(--yellow)}
+#flash{position:absolute;inset:0;background:#f8f8f8;opacity:0;pointer-events:none;z-index:90}
+#flash.go{animation:flash .24s steps(3)}
+@keyframes flash{0%{opacity:.9}50%{opacity:.4}100%{opacity:0}}
+/* cover */
+#s1{--acc:var(--red);--acc2:var(--blue)}
+.cover{font-size:132px;line-height:1.2;margin-left:0;color:var(--fg);text-shadow:8px 8px 0 var(--red),16px 16px 0 var(--blue)}
+.cover .acc{text-shadow:none}
+.cover-sub{font-size:60px;color:var(--fg);margin-top:40px}
+.meta{font-size:30px}
+.meta span::before{width:12px;height:12px}
+.meta span:first-child::before{background:var(--red)}
+.hint{position:absolute;right:160px;top:160px;font-family:'Press Start 2P',monospace;font-size:22px;color:var(--yellow);animation:blink 1s steps(1) infinite}
+#zep{position:absolute;top:250px;left:-240px;width:192px;height:96px;animation:zep 26s steps(130) infinite}
+@keyframes zep{to{transform:translateX(2400px)}}
+/* problem */
+#s2{--acc:var(--red);--acc2:var(--yellow)}
+.term{font-size:64px;line-height:1.15}
+.term .p{color:var(--green)}
+.caret{background:var(--yellow)}
+.win{background:#1d1d3a;--bc:#5f5f8a;transition:opacity .3s steps(3),transform .4s steps(4)}
+.win .tb{font-size:20px;color:var(--fg);background:#2b2b55;border-bottom:0}
+.win pre{font-size:20px;color:#9a9ac0;line-height:1.1}
+.stat{width:250px}
+.stat .n{font-size:56px;line-height:1.2}
+.stat .l{font-size:26px}
+.hp{height:20px;margin-top:12px;width:200px;background:#1d1d3a;box-shadow:0 -4px 0 #f8f8f8,0 4px 0 #f8f8f8,-4px 0 0 #f8f8f8,4px 0 0 #f8f8f8;position:relative}
+.hp i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--hpc,var(--green));background-image:repeating-linear-gradient(90deg,transparent 0 16px,rgba(0,0,0,.35) 16px 20px)}
+/* idea */
+#s3{--acc:var(--green);--acc2:var(--yellow)}
+#s3 svg path,#s3 svg line{shape-rendering:crispEdges}
+#s3 .bld{stroke-width:6}
+#dpath{stroke-width:4!important;stroke-dasharray:12 12}
+#drone{fill:var(--yellow)}
+/* live */
+#s4,#s5b{--acc:var(--red);--acc2:var(--green)}
+.live{background:#0f0f23;--bc:var(--red);font-size:28px;color:var(--fg);top:36px;left:36px}
+.live i{width:12px;height:12px;background:var(--red)}
+.fbtn{background:var(--green);color:#0f0f23;font-size:20px;padding:22px 28px;box-shadow:inset -4px -4px 0 rgba(0,0,0,.35),4px 4px 0 #000!important}
+/* how */
+#s5{--acc:var(--blue);--acc2:var(--yellow)}
+.an .bar{height:4px}
+.an .bar::after{background:var(--blue);transition:transform .5s steps(6)}
+.an:last-child.lit .bar::after{background:var(--yellow)}
+.an .t{font-size:26px}
+.an .h{font-size:28px;line-height:1.3}
+.an .d{font-size:30px;line-height:1.1}
+.provs{font-size:30px;line-height:1.05}
+.provs span{transition:all .3s steps(3)}
+.count-line{font-size:34px}
+.count-line b{font-size:48px;color:var(--yellow)}
+/* dashboard */
+#s5a{--acc:var(--yellow);--acc2:var(--blue)}
+.dsub{font-size:48px;color:var(--fg)}
+.dlist{font-size:40px}
+.drow .ix{font-size:30px;color:var(--yellow)}.drow .rt{font-size:30px;color:var(--blue)}
+.tabs{border-bottom:4px solid var(--line);padding-left:190px}
+.tabs button{font-size:16px;color:var(--mid);padding:0 22px;height:52px;margin:0 6px}
+.tabs button.on{color:#0f0f23;background:var(--green);--bc:#f8f8f8}
+.tabs button.on::after{display:none}
+.tabs .route{font-size:26px;color:var(--green)}
+#s5b .live{top:20px}
+#s5c{--acc:var(--blue);--acc2:var(--green)}
+.c3 .n{font-size:72px;line-height:1.2}
+.c3 .nl{font-size:26px}
+.c3 .h{font-size:28px;margin-top:36px}
+.c3 .d{font-size:32px;line-height:1.1}
+.c3 .hp{--hpc:var(--blue)}
+/* safety */
+#s6{--acc:var(--yellow);--acc2:var(--red)}
+.dialog{background:#1d1d3a;--bc:var(--yellow)}
+.dialog .hd{border-bottom:4px solid var(--line);font-size:28px}
+.dialog .who{font-size:24px;line-height:1.4}
+.dialog code{font-size:36px;color:var(--red);background:#0f0f23;border:0}
+.dialog button{font-size:18px;padding:18px 26px}
+.dialog .ok{background:var(--green);color:#0f0f23}
+.dialog .no{background:var(--red);color:#f8f8f8}
+.result{font-size:30px}
+.bangbox{--bc:var(--yellow);background:#1d1d3a}
+.bangbox .x{color:var(--yellow);font-size:150px;transition:all .5s steps(5) .9s;animation:blink 1s steps(1) infinite 1.5s}
+.bangbox .lbl{top:-48px}
+/* next */
+#s7{--acc:var(--green);--acc2:var(--yellow)}
+.col .h{font-size:26px;line-height:1.3;margin-top:18px}
+.col .d{font-size:32px;line-height:1.1}
+.close .big{font-size:96px;line-height:1.2;color:var(--fg);text-shadow:6px 6px 0 var(--green),12px 12px 0 var(--blue)}
+.close .big .acc{text-shadow:none;color:var(--yellow)}
+.close .repo{font-size:38px;color:var(--yellow)}
 </style>
 </head>
 <body>
 <div id="viewport"><div id="stage">
+  <div id="stars"></div>
 
   <!-- 1 COVER -->
   <section class="slide" id="s1">
-    <h1 class="cover"><span class="ln"><span>Ghost Grid<span class="acc">.</span></span></span></h1>
+    <div class="hint">PRESS &rarr; TO CONTINUE</div>
+    <svg id="zep" viewBox="0 0 48 24" shape-rendering="crispEdges" aria-hidden="true">
+      <rect x="8" y="4" width="28" height="2" fill="#f8f8f8"/><rect x="4" y="6" width="36" height="2" fill="#f8f8f8"/><rect x="2" y="8" width="40" height="6" fill="#f8f8f8"/>
+      <rect x="4" y="14" width="36" height="2" fill="#f8f8f8"/><rect x="8" y="16" width="28" height="2" fill="#f8f8f8"/>
+      <rect x="10" y="10" width="22" height="2" fill="#ff004d"/><rect x="40" y="6" width="4" height="4" fill="#29adff"/><rect x="40" y="12" width="4" height="4" fill="#29adff"/><rect x="44" y="8" width="2" height="6" fill="#29adff"/>
+      <rect x="16" y="18" width="10" height="4" fill="#29adff"/><rect x="18" y="19" width="2" height="2" fill="#ffec27"/><rect x="22" y="19" width="2" height="2" fill="#ffec27"/>
+    </svg>
+    <h1 class="cover"><span class="ln"><span>GHOSTGRID</span></span></h1>
     <div class="cover-sub"><span class="ln"><span data-d="150">Your AI agents, as a city.</span></span></div>
     <div class="meta-wrap"><div class="rule" data-d="350"></div>
       <div class="meta label rv" data-d="550"><span>AI Engineer NYC</span><span>2026</span><span>github.com/Stephen2077/ghostgrid</span></div></div>
@@ -166,10 +313,10 @@ h2{font-size:120px;max-width:1500px}
 
   <!-- 4 LIVE -->
   <section class="slide" id="s4">
-    <iframe id="liveframe" title="Ghost Grid live" allow="fullscreen"></iframe>
+    <iframe id="liveframe" title="GhostGrid live" allow="fullscreen"></iframe>
     <div class="live"><i></i>LIVE</div>
     <div class="fallback">
-      <div class="label rv" style="margin-bottom:30px">03 / Demo — live city</div>
+      <div class="label rv" style="margin-bottom:30px">03 / Demo — http://localhost:5173/</div>
       <h2><span class="ln"><span>Switch to</span></span><span class="ln"><span data-d="120" class="acc">live demo.</span></span></h2>
       <button class="fbtn rv" id="retry" data-d="400">Retry connection ↻</button>
     </div>
@@ -189,9 +336,48 @@ h2{font-size:120px;max-width:1500px}
     <div class="count-line rv" data-d="1200"><b class="cnt" data-to="4">0</b>providers + custom, added from the console's API Keys page</div>
   </section>
 
+  <!-- 6 DASHBOARD SECTION -->
+  <section class="slide" id="s5a">
+    <div class="head"><div class="top label rv"><span>05 / Dashboard</span><span>Control room</span></div><div class="rule"></div></div>
+    <h2><span class="ln"><span>The city has a</span></span><span class="ln"><span data-d="120" class="acc">control room.</span></span></h2>
+    <div class="dsub"><span class="ln"><span data-d="300">Every building is also a row in a real dashboard.</span></span></div>
+    <div class="dlist">
+      <div class="drow rv" data-d="600"><span class="ix">01</span><span>Overview</span><span class="rt">/dashboard</span><div class="rule" data-d="600"></div></div>
+      <div class="drow rv" data-d="750"><span class="ix">02</span><span>Agents</span><span class="rt">/dashboard/agents</span><div class="rule" data-d="750"></div></div>
+      <div class="drow rv" data-d="900"><span class="ix">03</span><span>Activity</span><span class="rt">/dashboard/activity</span><div class="rule" data-d="900"></div></div>
+      <div class="drow rv" data-d="1050"><span class="ix">04</span><span>Keys</span><span class="rt">/dashboard/keys</span><div class="rule" data-d="1050"></div></div>
+    </div>
+  </section>
+
+  <!-- 7 DASHBOARD LIVE -->
+  <section class="slide" id="s5b">
+    <div class="tabs" id="dtabs">
+      <button class="on" data-r="/dashboard">Overview</button><button data-r="/dashboard/agents">Agents</button><button data-r="/dashboard/activity">Activity</button><button data-r="/dashboard/keys">Keys</button>
+      <span class="route" id="droute">localhost:5173/dashboard</span>
+    </div>
+    <iframe id="dashframe" title="GhostGrid dashboard live"></iframe>
+    <div class="live"><i></i>LIVE</div>
+    <div class="fallback">
+      <div class="label rv" style="margin-bottom:30px">05 / Dashboard — http://localhost:5173/dashboard</div>
+      <h2><span class="ln"><span>Switch to the</span></span><span class="ln"><span data-d="120" class="acc">dashboard.</span></span></h2>
+      <button class="fbtn rv" id="dretry" data-d="400">Retry connection ↻</button>
+    </div>
+  </section>
+
+  <!-- 8 DASHBOARD DETAIL -->
+  <section class="slide" id="s5c">
+    <div class="head"><div class="top label rv"><span>05 / Dashboard</span><span>What's inside</span></div><div class="rule"></div></div>
+    <h2><span class="ln"><span>Everything, on the <span class="acc">record.</span></span></span></h2>
+    <div class="cards3">
+      <div class="c3 rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">/dashboard/agents</div><div class="n cnt" data-to="3">0</div><div class="nl label">signals per building</div><div class="h">Agents</div><div class="d">Status, sessions and model for every building.</div></div>
+      <div class="c3 rv" data-d="450"><div class="rule" data-d="450"></div><div class="label">/dashboard/activity</div><div class="n cnt" data-to="4">0</div><div class="nl label">fields per request</div><div class="h">Activity</div><div class="d">Every request logged: agent, model, tokens, latency.</div></div>
+      <div class="c3 rv" data-d="600"><div class="rule" data-d="600"></div><div class="label">/dashboard/keys</div><div class="n cnt" data-to="5">0</div><div class="nl label">provider types</div><div class="h">Keys</div><div class="d">Bring any API key. Stored locally. Test connection.</div></div>
+    </div>
+  </section>
+
   <!-- 6 SAFETY -->
   <section class="slide" id="s6">
-    <div class="head"><div class="top label rv"><span>05 / Safety</span><span>Human in the loop</span></div><div class="rule"></div></div>
+    <div class="head"><div class="top label rv"><span>06 / Safety</span><span>Human in the loop</span></div><div class="rule"></div></div>
     <h2><span class="ln"><span>Agents ask</span></span><span class="ln"><span data-d="120">before they act.</span></span></h2>
     <div class="dialog rv" id="dlg" data-d="500">
       <div class="hd label"><span>needs_approval</span><span>Security checkpoint</span></div>
@@ -201,27 +387,27 @@ h2{font-size:120px;max-width:1500px}
     <div class="bangbox rv" data-d="700"><span class="label lbl">State</span><div class="x">!</div></div>
   </section>
 
+  <!-- 7 NEXT -->
   <section class="slide" id="n1">
-    <div class="head"><div class="top label rv"><span>06 / The city</span><span>Built today</span></div><div class="rule"></div></div>
+    <div class="head"><div class="top label rv"><span>07 / The city</span><span>Built today</span></div><div class="rule"></div></div>
     <h2><span class="ln"><span>A city that</span></span><span class="ln"><span data-d="120" class="acc">grows with you.</span></span></h2>
     <div class="cols" style="margin-top:60px"><div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">World</div><div class="h">Megastructures + skyline</div><div class="d">Taller neon towers, 8 unlockable districts, zeppelins overhead.</div></div><div class="col rv" data-d="420"><div class="rule" data-d="420"></div><div class="label">Play</div><div class="h">Citizens + bulldozer</div><div class="d">Pick up and throw citizens. Bulldoze any building.</div></div><div class="col rv" data-d="540"><div class="rule" data-d="540"></div><div class="label">Scale</div><div class="h">Open a plot</div><div class="d">Each locked plot opens and grows a new district.</div></div></div>
   </section>
 
   <section class="slide" id="n2">
-    <div class="head"><div class="top label rv"><span>07 / Offices</span><span>Org chart</span></div><div class="rule"></div></div>
+    <div class="head"><div class="top label rv"><span>08 / Offices</span><span>Org chart</span></div><div class="rule"></div></div>
     <h2><span class="ln"><span>Every building</span></span><span class="ln"><span data-d="120" class="acc">is a company.</span></span></h2>
     <div class="cols" style="margin-top:60px"><div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">Hierarchy</div><div class="h">Manager → Leads → Engineers</div><div class="d">Walled offices per team, staffed in 3D.</div></div><div class="col rv" data-d="420"><div class="rule" data-d="420"></div><div class="label">Drag</div><div class="h">Move people between offices</div><div class="d">Drag an employee into another office to transfer them.</div></div><div class="col rv" data-d="540"><div class="rule" data-d="540"></div><div class="label">Assign</div><div class="h">Staffing board</div><div class="d">Drag cards onto projects. Labels follow them in 3D.</div></div></div>
   </section>
 
   <section class="slide" id="n3">
-    <div class="head"><div class="top label rv"><span>08 / Real agents</span><span>Not a mock</span></div><div class="rule"></div></div>
+    <div class="head"><div class="top label rv"><span>09 / Real agents</span><span>Not a mock</span></div><div class="rule"></div></div>
     <h2><span class="ln"><span>Real CLIs.</span></span><span class="ln"><span data-d="120" class="acc">Real work.</span></span></h2>
     <div class="cols" style="margin-top:60px"><div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">Runtime</div><div class="h">Codex + Claude CLI</div><div class="d">City tasks run on the real CLIs on our laptop. Smoke test: "GHOSTGRID OK".</div></div><div class="col rv" data-d="420"><div class="rule" data-d="420"></div><div class="label">Office</div><div class="h">Open a worker</div><div class="d">Adding a desk opens a live Codex/Claude session in Terminal.</div></div><div class="col rv" data-d="540"><div class="rule" data-d="540"></div><div class="label">Console</div><div class="h">API platform dashboard</div><div class="d">Usage, cost, latency and request logs per agent.</div></div></div>
   </section>
 
-  <!-- 7 NEXT -->
   <section class="slide" id="s7">
-    <div class="head"><div class="top label rv"><span>09 / Next</span><span>Roadmap</span></div><div class="rule"></div></div>
+    <div class="head"><div class="top label rv"><span>10 / Next</span><span>Roadmap</span></div><div class="rule"></div></div>
     <h2><span class="ln"><span>The city keeps growing.</span></span></h2>
     <div class="cols" style="margin-top:70px">
       <div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">District</div><div class="h">Market district</div><div class="d">Trading bots get their own blocks.</div></div>
@@ -229,17 +415,18 @@ h2{font-size:120px;max-width:1500px}
       <div class="col rv" data-d="540"><div class="rule" data-d="540"></div><div class="label">Social</div><div class="h">Multiplayer</div><div class="d">Teams run one city together.</div></div>
     </div>
     <div class="close">
-      <div class="big"><span class="ln"><span data-d="700">Ghost Grid<span class="acc">.</span></span></span></div>
+      <div class="big"><span class="ln"><span data-d="700">GHOSTGRID<span class="acc">!</span></span></span></div>
       <div class="repo rv" data-d="900"><span class="label">Open source</span>github.com/Stephen2077/ghostgrid</div>
     </div>
   </section>
 
-  <div id="hud"><span>Ghost Grid — AI Engineer NYC 2026</span><span id="counter"><b>01</b> / 10</span></div>
+  <div id="flash"></div>
+  <div id="hud"><span>GhostGrid — AI Engineer NYC 2026</span><span id="counter">STAGE <b>01</b>/13</span></div>
 </div></div>
 <div id="nav"><button id="prevBtn" aria-label="Previous slide">←</button><button id="nextBtn" aria-label="Next slide">→</button></div>
 <script>
 (function(){
-const LIVE_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:5173/':location.origin+'/demo/';
+const LIVE_URL='http://localhost:5173/';
 const stage=document.getElementById('stage'),slides=[...document.querySelectorAll('.slide')],N=slides.length;
 let cur=-1,timers=[],raf=0;
 function fit(){stage.style.transform='scale('+Math.min(innerWidth/1920,innerHeight/1080)+')'}
@@ -251,7 +438,7 @@ const T=(f,ms)=>timers.push(setTimeout(f,ms));
 function clearT(){timers.forEach(clearTimeout);timers=[];cancelAnimationFrame(raf)}
 const ease=p=>1-Math.pow(1-p,3);
 function countUp(el,dur=900){const to=+el.dataset.to,t0=performance.now();
-  (function step(t){const p=Math.min(1,(t-t0)/dur);el.textContent=Math.round(to*ease(p));if(p<1)requestAnimationFrame(step)})(t0)}
+  if(el._hp)el._hp.style.width=0;(function step(t){const p=Math.min(1,(t-t0)/dur),q=Math.floor(p*8)/8,v=Math.round(to*q);el.textContent=v;if(el._hp)el._hp.style.width=(v/+el.dataset.max*100)+'%';if(p<1)requestAnimationFrame(step)})(t0)}
 function draw(el,dur,delay){const L=el.getTotalLength();el.style.setProperty('--len',L);el.style.transition='none';el.style.strokeDashoffset=L;
   el.getBoundingClientRect();el.style.transition='stroke-dashoffset '+dur+'ms cubic-bezier(.2,.8,.2,1) '+delay+'ms';el.style.strokeDashoffset=0}
 const enter={
@@ -272,14 +459,17 @@ const enter={
       (function fly(t){const p=Math.min(1,(t-t0)/2600),e=p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2,pt=path.getPointAtLength(e*L);
         drone.setAttribute('transform','translate('+pt.x+','+pt.y+')');if(p<1)raf=requestAnimationFrame(fly)})(t0)},3400)},
   4(){probe()},
+  '5a'(){},
+  '5b'(){dprobe()},
+  '5c'(s){s.querySelectorAll('.cnt').forEach(e=>{e.textContent=0;T(()=>countUp(e,800),700)})},
   5(s){const an=s.querySelectorAll('.an'),pv=s.querySelectorAll('.provs span');an.forEach(a=>a.classList.remove('lit'));pv.forEach(p=>p.classList.remove('on'));
     an.forEach((a,k)=>T(()=>a.classList.add('lit'),700+k*450));pv.forEach((p,k)=>T(()=>p.classList.add('on'),2200+k*100));
     s.querySelectorAll('.cnt').forEach(e=>{e.textContent=0;T(()=>countUp(e,700),1300)})},
   6(s){const r=s.querySelector('#res');r.textContent='awaiting decision';r.style.color='';}
 };
 function go(n){n=Math.max(0,Math.min(N-1,n));if(n===cur)return;clearT();
-  slides.forEach((s,i)=>s.classList.toggle('active',i===n));cur=n;if(enter[n+1])enter[n+1](slides[n]);
-  document.getElementById('counter').innerHTML='<b>'+String(n+1).padStart(2,'0')+'</b> / '+String(N).padStart(2,'0');
+  slides.forEach((s,i)=>s.classList.toggle('active',i===n));cur=n;const f=enter[slides[n].id.slice(1)];if(f)f(slides[n]);
+  document.getElementById('counter').innerHTML='STAGE <b>'+String(n+1).padStart(2,'0')+'</b>/'+String(N).padStart(2,'0');const fl=document.getElementById('flash');fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');
   history.replaceState(null,'','#'+(n+1))}
 const next=()=>go(cur+1),prev=()=>go(cur-1);
 window.deck={go,next,prev,get current(){return cur+1}};
@@ -290,6 +480,16 @@ function probe(){const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),2
   .catch(()=>{clearTimeout(to);s4.classList.remove('ok')})}
 document.getElementById('retry').addEventListener('click',e=>{e.stopPropagation();frame.removeAttribute('src');probe()});
 probe();
+// dashboard live
+const DBASE='http://localhost:5173',s5b=document.getElementById('s5b'),dframe=document.getElementById('dashframe');let droute='/dashboard';
+function dprobe(){const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),2500);
+  fetch(DBASE+'/',{mode:'no-cors',cache:'no-store',signal:ctl.signal}).then(()=>{clearTimeout(to);if(!dframe.src)dframe.src=DBASE+droute;s5b.classList.add('ok')})
+  .catch(()=>{clearTimeout(to);s5b.classList.remove('ok')})}
+document.querySelectorAll('#dtabs button').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();
+  document.querySelectorAll('#dtabs button').forEach(x=>x.classList.toggle('on',x===b));droute=b.dataset.r;
+  document.getElementById('droute').textContent='localhost:5173'+droute;
+  if(s5b.classList.contains('ok'))dframe.src=DBASE+droute;else dprobe();b.blur()}));
+document.getElementById('dretry').addEventListener('click',e=>{e.stopPropagation();dframe.removeAttribute('src');dprobe()});
 // nav buttons (parent doc; call deck fns directly)
 document.getElementById('nextBtn').addEventListener('click',e=>{e.stopPropagation();next();e.currentTarget.blur()});
 document.getElementById('prevBtn').addEventListener('click',e=>{e.stopPropagation();prev();e.currentTarget.blur()});
@@ -300,7 +500,12 @@ addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes
   else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();prev()}
   else if(e.key==='Home')go(0);else if(e.key==='End')go(N-1);
   else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}});
-document.addEventListener('click',e=>{if(e.target.closest('button,a,iframe,.dialog,#nav'))return;e.clientX<innerWidth*.2?prev():next()});
+document.addEventListener('click',e=>{if(e.target.closest('button,a,iframe,.dialog,#nav,.tabs'))return;e.clientX<innerWidth*.2?prev():next()});
+
+// stars
+(function(){const sh=[];let x=7;for(let i=0;i<110;i++){x=(x*9301+49297)%233280;const a=x%1920;x=(x*9301+49297)%233280;const b=x%1080;const c=i%9===0?'#ffec27':i%5===0?'#29adff':'rgba(248,248,248,'+(i%3?'.35':'.7')+')';sh.push(a+'px '+b+'px 0 '+(i%7===0?'2px':'0')+' '+c)}document.getElementById('stars').style.boxShadow=sh.join(',')})();
+// HP bars under counters
+slides.forEach(sl=>{const cs=[...sl.querySelectorAll('.cnt')];const mx=Math.max(...cs.map(c=>+c.dataset.to),1);cs.forEach(c=>{c.dataset.max=Math.max(mx,5);if(c.parentElement.classList.contains('count-line'))return;const h=document.createElement('div');h.className='hp';h.innerHTML='<i></i>';c.after(h);c._hp=h.firstChild})});
 const h=parseInt(location.hash.slice(1));go(isNaN(h)?0:h-1);
 addEventListener('hashchange',()=>{const v=parseInt(location.hash.slice(1));if(!isNaN(v))go(v-1)});
 })();
