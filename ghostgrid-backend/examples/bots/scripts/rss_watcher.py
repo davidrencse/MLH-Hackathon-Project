@@ -73,7 +73,7 @@ def main():
 
     while _running:
         try:
-            req = urllib.request.Request(args.feed, headers={"User-Agent": "GhostGrid-RSS-Bot/1.0"})
+            req = urllib.request.Request(args.feed, headers={"User-Agent": "Ghostgrid-RSS-Bot/1.0"})
             _fetching = True
             try:
                 with urllib.request.urlopen(req, timeout=15) as resp:

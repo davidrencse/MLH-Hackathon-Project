@@ -23,7 +23,7 @@ for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { running = false
 const emit = (type, data) =>
   process.stdout.write(JSON.stringify({ ts: new Date().toISOString(), bot: BOT, type, data }) + '\n');
 
-const headers = { 'User-Agent': 'GhostGrid-Commit-Bot/1.0', Accept: 'application/vnd.github+json' };
+const headers = { 'User-Agent': 'Ghostgrid-Commit-Bot/1.0', Accept: 'application/vnd.github+json' };
 if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
 const seen = new Set();

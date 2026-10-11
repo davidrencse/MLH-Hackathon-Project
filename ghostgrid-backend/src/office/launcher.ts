@@ -36,13 +36,13 @@ export function planLaunch(
     }
     const opener = find("xdg-open");
     if (opener) return { executable: opener, args: [url] };
-    return unavailable("Install a browser or xdg-open on the Slop Angeles machine.");
+    return unavailable("Install a browser or xdg-open on the Ghostgrid machine.");
   }
   if (!workspace) return unavailable("Choose a workspace before opening a coding terminal.");
   const cwd = validateWorkspace(workspace, allowedWorkspaces);
   if (!statSync(cwd).isDirectory()) return unavailable("Choose a project folder, not a file.");
   const cli = find(runtime);
-  if (!cli) return unavailable(`Install and sign in to the ${runtime} CLI on the Slop Angeles machine.`);
+  if (!cli) return unavailable(`Install and sign in to the ${runtime} CLI on the Ghostgrid machine.`);
   for (const name of ["kitty", "konsole", "gnome-terminal", "xterm"]) {
     const executable = find(name);
     if (!executable) continue;
@@ -69,7 +69,7 @@ export function createOfficeLauncher(allowedWorkspaces: string[]): OfficeLaunche
     },
     async launch(runtime, workspace) {
       if (!process.env.DISPLAY && !process.env.WAYLAND_DISPLAY)
-        return unavailable("The Slop Angeles machine needs a desktop session to open windows.");
+        return unavailable("The Ghostgrid machine needs a desktop session to open windows.");
       const plan = planLaunch(runtime, workspace, allowedWorkspaces);
       return new Promise((resolve, reject) => {
         const child = spawn(plan.executable, plan.args, { cwd: plan.cwd, detached: true, stdio: "ignore", shell: false });

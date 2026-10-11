@@ -1,4 +1,4 @@
-# Slop Angeles · DESIGN
+# Ghostgrid · DESIGN
 
 Cyberpunk pixel city that visualizes AI agent work. Always night. Readable first, neon second.
 

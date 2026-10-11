@@ -1,4 +1,4 @@
-# GhostGrid — Custom Bot Catalog (demo seed)
+# Ghostgrid — Custom Bot Catalog (demo seed)
 
 Six ready-to-run **custom bots** so the city has varied buildings to populate before the
 real Bot Runner (`/api/v1/bots`, owned by Codex) is wired. Each is a different *kind* of

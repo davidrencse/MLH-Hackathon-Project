@@ -8,7 +8,7 @@ so nothing here touches the network or real money. Inspired in spirit by Freqtra
 Emits NDJSON events on stdout, one JSON object per line:
   {"ts": iso8601, "bot": "paper-trader", "type": "bot.log|bot.signal|bot.metric", "data": {...}}
 
-The GhostGrid Bot Runner captures stdout lines as events/metrics. Exits cleanly on
+The Ghostgrid Bot Runner captures stdout lines as events/metrics. Exits cleanly on
 SIGINT/SIGTERM. Stdlib only (python3).
 """
 import argparse, json, random, signal, sys, time

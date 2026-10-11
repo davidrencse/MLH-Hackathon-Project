@@ -1,4 +1,4 @@
-// API Keys: provider keys (localStorage, per-building assignment) and Slop Angeles platform keys (mock API).
+// API Keys: provider keys (localStorage, per-building assignment) and Ghostgrid platform keys (mock API).
 import { Ghost, KeyRound } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { resolveBuildingKey, useKeys } from '@/store/keys'
@@ -23,7 +23,7 @@ export function ApiKeysPage() {
           </TabsTrigger>
           <TabsTrigger value="platform" className="px-4">
             <Ghost size={16} strokeWidth={2.5} />
-            Slop Angeles Keys
+            Ghostgrid Keys
           </TabsTrigger>
         </TabsList>
         <TabsContent value="provider">

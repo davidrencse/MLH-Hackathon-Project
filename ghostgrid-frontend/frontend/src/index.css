@@ -64,7 +64,7 @@
 }
 
 :root {
-    /* Slop Angeles tokens (see DESIGN.md) */
+    /* Ghostgrid tokens (see DESIGN.md) */
     --gg-void: #0b0820;
     --gg-night: #1a1040;
     --gg-dusk: #2a1a5e;
@@ -78,7 +78,7 @@
     --gg-red: #ff3355;
     --gg-grey: #5a5677;
 
-    /* shadcn tokens mapped to the Slop Angeles palette. Always dark. */
+    /* shadcn tokens mapped to the Ghostgrid palette. Always dark. */
     --background: #0b0820;
     --foreground: #e8e6ff;
     --card: #1a1040;

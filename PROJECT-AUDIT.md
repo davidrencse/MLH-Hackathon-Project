@@ -1,8 +1,8 @@
-# GhostGrid project audit — 2026-10-11
+# Ghostgrid project audit — 2026-10-11
 
 ## Assessment
 
-GhostGrid combines a substantial local agent orchestration backend with a visually elaborate city frontend. The backend implements durable tasks, provider adapters, sessions, workflows, artifacts and events. The frontend has real REST/SSE integration and a new native worker office, but much of its original game state machine still simulates work. A reachable backend does not establish that displayed activity came from a real model or that the selected browser key/model controlled execution.
+Ghostgrid combines a substantial local agent orchestration backend with a visually elaborate city frontend. The backend implements durable tasks, provider adapters, sessions, workflows, artifacts and events. The frontend has real REST/SSE integration and a new native worker office, but much of its original game state machine still simulates work. A reachable backend does not establish that displayed activity came from a real model or that the selected browser key/model controlled execution.
 
 The main engineering priority is making displayed state and actions agree with actual execution. More visual features will not resolve this gap.
 

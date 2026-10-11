@@ -1,4 +1,4 @@
-// Runtime configuration for the real Slop Angeles backend.
+// Runtime configuration for the real Ghostgrid backend.
 //
 // Live mode is opt-in-by-availability: the app probes `GET /health` once. If the
 // backend answers, every api.* call goes to it; if it does not, the mock backend

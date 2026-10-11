@@ -18,7 +18,7 @@ const config: ProviderConfig = {
   timeoutMs: 2500,
 };
 const input: ExecutionInput = {
-  prompt: "Hello from GhostGrid",
+  prompt: "Hello from Ghostgrid",
   messages: [],
   agent: { id: "a", permissions: ["read"] },
   signal: new AbortController().signal,

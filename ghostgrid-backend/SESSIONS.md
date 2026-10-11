@@ -1,10 +1,10 @@
 # Saved Codex and Claude conversations
 
-Each Slop Angeles session belongs to one agent and project. Separate sessions keep
+Each Ghostgrid session belongs to one agent and project. Separate sessions keep
 separate conversations. SQLite saves messages, the provider's native session ID,
 session notes, lifecycle events and the isolated coding workspace.
 
-Send follow-up requests to the same Slop Angeles session to continue the conversation:
+Send follow-up requests to the same Ghostgrid session to continue the conversation:
 
 ```http
 POST /api/v1/sessions
@@ -42,7 +42,7 @@ restart does not erase completed conversation messages or the provider ID.
 See the [official Codex SDK documentation](https://learn.chatgpt.com/docs/codex-sdk)
 for native thread continuation; local SDK declarations establish the Claude API used here.
 
-If a native session is explicitly missing, Slop Angeles makes one fresh-session attempt
+If a native session is explicitly missing, Ghostgrid makes one fresh-session attempt
 with saved text history and notes, in the same workspace. Recovery retains the last
 20 messages within a 32,000-character serialized JSON history budget (including
 escaped characters) and saves the replacement native

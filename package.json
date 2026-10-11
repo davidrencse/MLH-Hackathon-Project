@@ -1,5 +1,5 @@
 {
-  "name": "slop-angeles-host",
+  "name": "ghostgrid-host",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22.13" },

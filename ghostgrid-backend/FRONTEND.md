@@ -1,4 +1,4 @@
-# Slop Angeles Backend — Frontend Integration Contract
+# Ghostgrid Backend — Frontend Integration Contract
 
 This is the stable surface the cyberpunk-city frontend talks to. The frontend never
 needs to know how Codex, Claude Code, DeepSeek, or a custom bot runs internally — it

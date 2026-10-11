@@ -1,7 +1,7 @@
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
-// Slop Angeles is always night: no next-themes provider, theme is forced to dark.
+// Ghostgrid is always night: no next-themes provider, theme is forced to dark.
 // Sonner injects unlayered CSS, so overrides use Tailwind's important (!) modifier.
 const Toaster = ({ ...props }: ToasterProps) => {
   return (

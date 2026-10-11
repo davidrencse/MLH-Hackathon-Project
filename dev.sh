@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launch the GhostGrid backend and frontend together.
+# Launch the Ghostgrid backend and frontend together.
 #
 #   ./dev.sh          # both services
 #   ./dev.sh backend  # backend only
@@ -68,6 +68,6 @@ if [[ ${#pids[@]} -eq 0 ]]; then
 fi
 
 echo
-echo "GhostGrid is starting. Frontend: $FRONTEND_URL"
+echo "Ghostgrid is starting. Frontend: $FRONTEND_URL"
 echo "Press Ctrl+C to stop."
 wait

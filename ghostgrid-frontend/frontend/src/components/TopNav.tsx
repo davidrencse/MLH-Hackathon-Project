@@ -145,11 +145,11 @@ function tabClass({ isActive }: { isActive: boolean }) {
 
 function Logo() {
   return (
-    <Link to="/" aria-label="Slop Angeles home" className={`gg-nav-logo flex items-center gap-3 ${focusRing}`}>
+    <Link to="/" aria-label="Ghostgrid home" className={`gg-nav-logo flex items-center gap-3 ${focusRing}`}>
       <span className="gg-nav-ghost" aria-hidden>
         <span style={{ boxShadow: GHOST_SHADOW }} />
       </span>
-      <span className="gg-nav-word font-pixel text-[16px] leading-none text-gg-cyan max-[1250px]:hidden">SLOP ANGELES</span>
+      <span className="gg-nav-word font-pixel text-[16px] leading-none text-gg-cyan max-[1250px]:hidden">GHOSTGRID</span>
     </Link>
   )
 }

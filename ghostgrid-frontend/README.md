@@ -1,4 +1,4 @@
-# Slop Angeles
+# Ghostgrid
 
 **Build your city. Command your agents.**
 

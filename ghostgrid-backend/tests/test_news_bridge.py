@@ -101,8 +101,8 @@ class NewsBridgeTest(unittest.TestCase):
                 topic = first['topics'][0]
                 subtopic = topic['subtopics'][0]
                 article = upstream.create_article({'url': 'https://example.org/test-reading',
-                    'topic': topic['id'], 'subtopic': subtopic['id'], 'title': 'GhostGrid library fixture'})
-                self.assertEqual(routes['/api/library/search'].endpoint(q='GhostGrid', limit=2)['total'], 1)
+                    'topic': topic['id'], 'subtopic': subtopic['id'], 'title': 'Ghostgrid library fixture'})
+                self.assertEqual(routes['/api/library/search'].endpoint(q='Ghostgrid', limit=2)['total'], 1)
                 self.assertEqual(routes['/api/library/page'].endpoint(limit=2)['total'], 1)
                 self.assertEqual(routes['/api/articles/{aid}/notes'].endpoint(article['id'])['notes'], '')
                 self.assertEqual(routes['/api/notebook'].endpoint()['entries'], [])

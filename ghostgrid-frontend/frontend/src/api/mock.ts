@@ -249,7 +249,7 @@ export async function getUsage(days: 7 | 30): Promise<UsageSummary> {
   }
 }
 
-// ---------- Console: Slop Angeles platform keys ----------
+// ---------- Console: Ghostgrid platform keys ----------
 
 let platformKeys: PlatformKey[] = [
   { id: 'pk_1', name: 'demo-laptop', masked: 'gg-…7f3a', createdAt: Date.now() - 6 * 86_400_000, lastUsed: Date.now() - 3_600_000, revoked: false },

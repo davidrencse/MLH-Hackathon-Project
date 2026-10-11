@@ -16,7 +16,7 @@ class EffectsBoundary extends Component<{ children: ReactNode }, { failed: boole
   }
 
   componentDidCatch(error: unknown) {
-    console.warn('[Slop Angeles] post-processing disabled, rendering without it:', error)
+    console.warn('[Ghostgrid] post-processing disabled, rendering without it:', error)
   }
 
   render() {

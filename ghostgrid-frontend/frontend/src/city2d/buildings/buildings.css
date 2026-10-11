@@ -1,4 +1,4 @@
-/* Slop Angeles city buildings. All lengths are LOGICAL px (the stage is integer-scaled by CityPage).
+/* Ghostgrid city buildings. All lengths are LOGICAL px (the stage is integer-scaled by CityPage).
    Every class / keyframe / custom property is prefixed gg-bld-. State lives on the .gg-bld button:
    .gg-bld--idle | --working | --error | --needs_approval, plus --offline and --selected. */
 

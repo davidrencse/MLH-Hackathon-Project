@@ -1,4 +1,4 @@
-# Slop Angeles — MLH Hackathon Project
+# Ghostgrid — MLH Hackathon Project
 
 A pixel city interface for AI agents, backed by a Fastify API with persisted sessions, tasks, and usage accounting.
 
