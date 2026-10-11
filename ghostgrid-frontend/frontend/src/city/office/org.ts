@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 
 export type Role = 'Manager' | 'Team Lead' | 'Engineer'
-export interface Employee { id: string; name: string; role: Role; reportsTo?: string }
+export interface Employee { id: string; name: string; role: Role; reportsTo?: string; officeId?: string }
 const KEY = 'gg-org'
 const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { projects: string[]; assign: Record<string, string> } | null
 

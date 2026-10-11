@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { pickLine } from './slang'
 import { employeeFor, managerOf, useOrg, type Employee } from './org'
 import { OrgPanel } from './OrgPanel'
-import { useBuildingOffices, type Office } from './OrgChart'
+import { useBuildingOffices, useOffices, type Office } from './OrgChart'
 import { useReducedMotion } from 'framer-motion'
 import * as THREE from 'three'
 import { create } from 'zustand'
@@ -67,6 +67,57 @@ function SpeechBubble({ seed }: { seed: number }) {
   </Html>
 }
 
+// ---- drag employees between offices in 3D ----
+interface Drag { emp: Employee; color: string; start: [number, number]; pos: [number, number]; moved: boolean }
+const useDrag = create<{ drag: Drag | null }>(() => ({ drag: null }))
+
+function DragGhost() {
+  const drag = useDrag((s) => s.drag)
+  if (!drag || !drag.moved) return null
+  return <group position={[drag.pos[0], 0.9, drag.pos[1]]}>
+    <Person color={drag.color} />
+    <Html position={[0, 2.1, 0]} center zIndexRange={[12, 0]} style={{ pointerEvents: 'none' }}>
+      <div style={{ font: "8px 'Press Start 2P', monospace", background: '#ffec27', color: '#111', border: '2px solid #111', padding: '2px 5px', whiteSpace: 'nowrap' }}>✋ {drag.emp.name}</div>
+    </Html>
+  </group>
+}
+
+function DragFloor({ width, depth, pods, buildingId }: { width: number; depth: number; pods: { id: string; x: number; z: number }[]; buildingId: string }) {
+  const end = () => {
+    const d = useDrag.getState().drag
+    useDrag.setState({ drag: null })
+    document.body.style.cursor = ''
+    if (!d) return
+    if (!d.moved) { useOrg.getState().pick(d.emp); return }
+    const target = pods.find((p) => Math.abs(d.pos[0] - p.x) < POD_W / 2 && Math.abs(d.pos[1] - p.z) < POD_D / 2)
+    if (!target || target.id === d.emp.officeId) return
+    useOffices.getState().update(buildingId, (os) => {
+      const person = os.find((o) => o.id === d.emp.officeId)?.people.find((p) => p.id === d.emp.id)
+      if (!person) return os
+      return os.map((o) => {
+        if (o.id === d.emp.officeId) return { ...o, people: o.people.filter((p) => p.id !== person.id) }
+        if (o.id === target.id) {
+          const role = person.role === 'Manager' && o.people.some((p) => p.role === 'Manager') ? 'Team Lead' : person.role
+          return { ...o, people: [...o.people, { ...person, role }] }
+        }
+        return o
+      })
+    })
+  }
+  useEffect(() => { window.addEventListener('pointerup', end); return () => window.removeEventListener('pointerup', end) })
+  return <mesh rotation-x={-Math.PI / 2} position={[0, 0.9, 0]}
+    onPointerMove={(e) => {
+      const d = useDrag.getState().drag
+      if (!d) return
+      const pos: [number, number] = [e.point.x, e.point.z]
+      const moved = d.moved || Math.hypot(pos[0] - d.start[0], pos[1] - d.start[1]) > 0.35
+      useDrag.setState({ drag: { ...d, pos, moved } })
+    }}>
+    <planeGeometry args={[width * 3, depth * 3]} />
+    <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+  </mesh>
+}
+
 const TAG: Record<string, string> = { Manager: '#ff004d', 'Team Lead': '#ffa300', Engineer: '#29adff' }
 function RoleTag({ emp }: { emp: Employee }) {
   const project = useOrg((s) => s.assign[emp.id])
@@ -88,8 +139,11 @@ function Person({ color, host = false, typing = false, seed, emp }: { color: str
     if (hands.current) hands.current.rotation.x = tick % 2 ? 0.12 : -0.08
     if (head.current) head.current.rotation.z = Math.sin(Math.floor(tick / 4) * 0.6) * 0.06
   })
-  return <group position={[0, host ? 0 : 0.1, 0]} onClick={emp ? (e) => { e.stopPropagation(); useOrg.getState().pick(emp) } : undefined}
-    onPointerOver={emp ? () => (document.body.style.cursor = 'pointer') : undefined} onPointerOut={emp ? () => (document.body.style.cursor = '') : undefined}>
+  const draggingMe = useDrag((s) => s.drag?.moved && s.drag.emp.id === emp?.id)
+  return <group visible={!draggingMe} position={[0, host ? 0 : 0.1, 0]}
+    onPointerDown={emp?.officeId ? (e) => { e.stopPropagation(); document.body.style.cursor = 'grabbing'; useDrag.setState({ drag: { emp, color, start: [e.point.x, e.point.z], pos: [e.point.x, e.point.z], moved: false } }) } : undefined}
+    onClick={emp && !emp.officeId ? (e) => { e.stopPropagation(); useOrg.getState().pick(emp) } : undefined}
+    onPointerOver={emp ? () => (document.body.style.cursor = emp.officeId ? 'grab' : 'pointer') : undefined} onPointerOut={emp ? () => (document.body.style.cursor = '') : undefined}>
     {seed !== undefined && <SpeechBubble seed={seed} />}
     {emp && <RoleTag emp={emp} />}
     <Block color="#3f3655" position={[-0.14, 0.22, 0]} size={[0.22, 0.4, 0.24]} />
@@ -216,7 +270,7 @@ function OfficePod({ office, index, x, z, accent }: { office: Office; index: num
     {mgr && <group position={[POD_W / 2 - 1.3, 0, POD_D / 2 - 1.3]}>
       <Block color="#7a5a48" position={[0, 0.75, -0.55]} size={[1.6, 0.1, 0.7]} />
       <Block color="#2b2140" position={[0, 1.05, -0.8]} size={[0.6, 0.4, 0.05]} />
-      <Person color="#e2a197" host seed={index * 31 + 3} emp={{ id: mgr.id, name: mgr.name, role: 'Manager' }} />
+      <Person color="#e2a197" host seed={index * 31 + 3} emp={{ id: mgr.id, name: mgr.name, role: 'Manager', officeId: office.id }} />
     </group>}
     {team.map((p, i) => {
       const col = i % 3, row = Math.floor(i / 3)
@@ -225,10 +279,15 @@ function OfficePod({ office, index, x, z, accent }: { office: Office; index: num
         <Block color="#b88a6a" position={[0, 0.72, -0.35]} size={[1.2, 0.08, 0.55]} />
         <Block color={accent} position={[0, 1.0, -0.55]} size={[0.5, 0.34, 0.04]} />
         <group scale={0.8} position={[0, 0, 0.15]}><Person color={p.role === 'Team Lead' ? '#ffa300' : accent} typing seed={index * 31 + i + 7}
-          emp={{ id: p.id, name: p.name, role: p.role, reportsTo: p.role === 'Team Lead' ? mgr?.id : people.find((q) => q.role === 'Team Lead')?.id ?? mgr?.id }} /></group>
+          emp={{ id: p.id, name: p.name, role: p.role, officeId: office.id, reportsTo: p.role === 'Team Lead' ? mgr?.id : people.find((q) => q.role === 'Team Lead')?.id ?? mgr?.id }} /></group>
       </group>
     })}
   </group>
+}
+
+function DragAwareOrbit(props: React.ComponentProps<typeof OrbitControls>) {
+  const dragging = useDrag((s) => !!s.drag)
+  return <OrbitControls {...props} enabled={!dragging} />
 }
 
 export function OfficeRoom3D({ workers, accent, selected, onSelect, buildingId = 'office' }: { workers: OfficeWorker[]; accent: string; selected: string | null; onSelect: (id: string) => void; buildingId?: string }) {
@@ -251,7 +310,7 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect, buildingId =
     <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={Math.min(1.5, window.devicePixelRatio || 1)} shadows gl={{ antialias: true }}>
       <Camera width={width} depth={depth} />
       <ChatterClock />
-      <OrbitControls target={[0, 0.7, 0]} enablePan={false} enableDamping={false}
+      <DragAwareOrbit target={[0, 0.7, 0]} enablePan={false} enableDamping={false}
         minPolarAngle={0.65} maxPolarAngle={1.1} minAzimuthAngle={0.25} maxAzimuthAngle={1.35}
         minZoom={12} maxZoom={160} />
       <color attach="background" args={['#161026']} />
@@ -280,6 +339,8 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect, buildingId =
       <Plant x={width / 2 - 0.8} z={-depth / 2 + 0.8} />
       <Plant x={-width / 2 + 0.6} z={depth / 2 - 0.6} />
       <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host seed={3} /></group>
+      <DragFloor width={width} depth={depth} buildingId={buildingId} pods={offices.map((o, i) => ({ id: o.id, x: ((i % podCols) - (podCols - 1) / 2) * POD_W, z: -depth / 2 + deskD + Math.floor(i / podCols) * POD_D + POD_D / 2 }))} />
+      <DragGhost />
       {offices.map((o, i) => <OfficePod key={o.id} office={o} index={i} accent={accent}
         x={((i % podCols) - (podCols - 1) / 2) * POD_W} z={-depth / 2 + deskD + Math.floor(i / podCols) * POD_D + POD_D / 2} />)}
       {Array.from({ length: count }, (_, i) => <Desk key={workers[i]?.id ?? `empty_${i}`} worker={workers[i]}
