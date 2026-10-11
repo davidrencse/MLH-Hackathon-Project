@@ -327,6 +327,8 @@ export async function getLogs(buildingId: BuildingId, limit = 5): Promise<LogEnt
   }))
 }
 
+import { FAKE_TRAFFIC, fakeDay, fakeRequests } from './fakeTraffic'
+
 export async function listRequests(filter?: {
   agentId?: BuildingId | 'all'
   status?: 'all' | '2xx' | '4xx' | '5xx'
@@ -354,6 +356,8 @@ export async function listRequests(filter?: {
       } satisfies RequestLog
     })
     .reverse() // newest first, matching the mock
+  if (FAKE_TRAFFIC) rows.push(...fakeRequests())
+  rows.sort((a, b) => b.ts - a.ts)
   return rows.filter((req) => {
     if (filter?.agentId && filter.agentId !== 'all' && req.agentId !== filter.agentId) return false
     if (filter?.status && filter.status !== 'all' && `${Math.floor(req.status / 100)}xx` !== filter.status) return false
@@ -389,6 +393,7 @@ export async function getUsage(days: 7 | 30): Promise<UsageSummary> {
   const points = Array.from({ length: days }, (_, i) => {
     const date = dayKey(Date.now() - (days - 1 - i) * 86_400_000)
     const b = buckets.get(date) ?? { requests: 0, tokens: 0, errors: 0, costUsd: 0 }
+    if (FAKE_TRAFFIC) { const f = fakeDay(days - 1 - i); b.requests += f.requests; b.tokens += f.tokens; b.errors += f.errors; b.costUsd += f.costUsd }
     return { date, requests: b.requests, tokens: b.tokens, errors: b.errors, costUsd: Math.round(b.costUsd * 100) / 100 }
   })
   const requests = points.reduce((a, p) => a + p.requests, 0)
@@ -399,7 +404,7 @@ export async function getUsage(days: 7 | 30): Promise<UsageSummary> {
     totals: {
       requests,
       errorRate: requests ? errors / requests : 0,
-      avgLatencyMs: 0,
+      avgLatencyMs: FAKE_TRAFFIC ? Math.round(Array.from({ length: days }, (_, i) => fakeDay(i).avgLatencyMs).reduce((a, x) => a + x, 0) / days) : 0,
       costUsd: Math.round(points.reduce((a, p) => a + p.costUsd, 0) * 100) / 100,
     },
   }
