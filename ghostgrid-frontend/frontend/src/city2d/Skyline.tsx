@@ -350,14 +350,14 @@ function scanlines(x: number, w: number, h: number) {
   return d
 }
 
-// GHOSTGRID marquee with an AGENTS ONLINE ticker.
+// GHOST GRID marquee with an AGENTS ONLINE ticker.
 const MAIN_W = 53
 const MAIN_H = 17
 const TICKER = 'AGENTS ONLINE 3/3 > ROUTER > CODEX > SECURITY > '
 const TICK_W = TICKER.length * 4
 const MAIN_ART = {
   frame: frame(MAIN_W, MAIN_H),
-  title: text3('GHOSTGRID', 3, 2),
+  title: text3('GHOST GRID', 3, 2),
   ticker: text3(TICKER, 2, 10) + text3(TICKER, 2 + TICK_W, 10),
   scan: scanlines(1, MAIN_W - 2, MAIN_H),
   legs: rect(5, MAIN_H, 1, 6) + rect(MAIN_W - 6, MAIN_H, 1, 6) + rect(5, MAIN_H + 3, MAIN_W - 10, 1),

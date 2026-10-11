@@ -1,4 +1,4 @@
-// Shared contracts for Ghostgrid. City, console, store and api all import from here.
+// Shared contracts for Ghost Grid. City, console, store and api all import from here.
 
 // Default buildings use these ids: 'router' | 'codex' | 'claude' | 'deepseek' | 'security'.
 // Player-built buildings get generated ids ("b_xxx"), so the id type is string.
@@ -168,7 +168,7 @@ export interface ProviderKey {
   createdAt: number
 }
 
-// Ghostgrid platform keys (issued by "our" API, mock). Full secret shown once on create.
+// Ghost Grid platform keys (issued by "our" API, mock). Full secret shown once on create.
 export interface PlatformKey {
   id: string
   name: string

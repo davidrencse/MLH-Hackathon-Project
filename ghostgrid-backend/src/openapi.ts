@@ -358,7 +358,7 @@ export function createOpenApi(apiToken?: string): OpenApiDocument {
   return {
     openapi: "3.1.0",
     info: {
-      title: "Ghostgrid Backend",
+      title: "Ghost Grid Backend",
       version: "0.1.0",
       description:
         "Persistent local agent orchestration. Usage reflects reported operational metrics; no game currency.",

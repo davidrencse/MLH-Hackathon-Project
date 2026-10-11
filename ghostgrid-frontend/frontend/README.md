@@ -1,10 +1,10 @@
-# Ghostgrid
+# Ghost Grid
 
 **Build your city. Command your agents.**
 
 A cyberpunk pixel city that visualizes AI agents at work. Every building is an agent. Type a command, watch a drone fly from the Router Spire to Codex Tower, approve a risky action at the Security Checkpoint, and get the result back. A second page (`/console`) is an API-platform style console: agents, request logs, usage, API keys, playground.
 
-The app connects to the adjacent Ghostgrid backend through the Vite `/gg` proxy.
+The app connects to the adjacent Ghost Grid backend through the Vite `/gg` proxy.
 Some city flows retain demo data; Codex and Claude offices launch real native windows.
 
 ## 3D worker offices

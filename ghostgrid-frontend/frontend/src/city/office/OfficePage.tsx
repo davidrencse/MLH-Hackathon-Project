@@ -56,7 +56,7 @@ export function OfficePage() {
     void (async () => {
       try {
         const status = await backendStatus()
-        if (!status.live) throw new Error('Start the Ghostgrid backend to open real workers. Run ./dev.sh from the hackathon folder.')
+        if (!status.live) throw new Error('Start the Ghost Grid backend to open real workers. Run ./dev.sh from the hackathon folder.')
         const [{ projectId: id }, available] = await Promise.all([bootstrap(), backend.officeOptions()])
         const saved = await backend.officeWorkers(id, buildingId)
         if (!active) return
@@ -148,13 +148,13 @@ export function OfficePage() {
             <fieldset><legend>Where they work</legend>
               {(Object.keys(RUNTIME_NAMES) as OfficeRuntime[]).map((id) => <label key={id} className="native-runtime" data-selected={runtime === id}><input type="radio" name="office-runtime" value={id} checked={runtime === id} onChange={() => setRuntime(id)} /><Monitor size={16} /><span>{RUNTIME_NAMES[id]}</span></label>)}
             </fieldset>
-            {terminal && <><label htmlFor="worker-workspace">Project folder</label><input id="worker-workspace" list="office-workspaces" value={workspace} onChange={(event) => setWorkspace(event.target.value)} placeholder="/path/to/your/project" required /><datalist id="office-workspaces">{options?.workspaces.map((path) => <option key={path} value={path} />)}</datalist><p className="native-form-hint">Use a folder allowed by your Ghostgrid backend.</p></>}
-            {!loading && options && !supported && <p className="native-setup-message">{terminal ? `Install ${runtime} and a terminal app on the Ghostgrid machine, then start the backend in a desktop session.` : 'Start the backend in a desktop session with a browser installed.'}</p>}
+            {terminal && <><label htmlFor="worker-workspace">Project folder</label><input id="worker-workspace" list="office-workspaces" value={workspace} onChange={(event) => setWorkspace(event.target.value)} placeholder="/path/to/your/project" required /><datalist id="office-workspaces">{options?.workspaces.map((path) => <option key={path} value={path} />)}</datalist><p className="native-form-hint">Use a folder allowed by your Ghost Grid backend.</p></>}
+            {!loading && options && !supported && <p className="native-setup-message">{terminal ? `Install ${runtime} and a terminal app on the Ghost Grid machine, then start the backend in a desktop session.` : 'Start the backend in a desktop session with a browser installed.'}</p>}
             {terminal && options && options.workspaces.length === 0 && <p className="native-setup-message">Set GHOSTGRID_ALLOWED_WORKSPACES in the backend .env and restart it to enable coding workers.</p>}
             <button className="native-add-worker" type="submit" disabled={loading || adding || !supported || (terminal && !workspace.trim())}><Plus size={16} />{adding ? 'Opening their window…' : 'Add worker & open window'}</button>
           </form>
           {error && <p role="alert" className="native-office-error">{error}</p>}
-          <p className="native-form-hint">Windows open on the machine running Ghostgrid. Sign in inside the app. Desks stay saved; removing a desk leaves its window open. “Open another window” starts fresh; continue existing chats in their original window.</p>
+          <p className="native-form-hint">Windows open on the machine running Ghost Grid. Sign in inside the app. Desks stay saved; removing a desk leaves its window open. “Open another window” starts fresh; continue existing chats in their original window.</p>
           <nav aria-label="Other offices"><Link to={building.type === 'claude' ? '/office/codex' : '/office/claude'}>Visit the {building.type === 'claude' ? 'Codex' : 'Claude'} office →</Link></nav>
         </aside>
       </div>

@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { ggCreditsRelay } from './vite/creditsRelay.js'
 
-// The Ghostgrid backend (ghostgrid-backend, default http://127.0.0.1:3001) is proxied
+// The Ghost Grid backend (ghostgrid-backend, default http://127.0.0.1:3001) is proxied
 // under /gg so the browser talks to it same-origin. The backend rejects any request
 // carrying an unknown Origin header, so the proxy strips Origin — then the backend
 // needs no GHOSTGRID_ALLOWED_ORIGINS for local development.

@@ -68,7 +68,7 @@ def create_bridge(source: str, data_dir: str):
             upstream.store.stop()
             snapshot.cleanup()
 
-    bridge = FastAPI(title='Ghostgrid Library of Babel read-only bridge', lifespan=lifespan,
+    bridge = FastAPI(title='Ghost Grid Library of Babel read-only bridge', lifespan=lifespan,
                      docs_url=None, redoc_url=None)
     for route in upstream.app.routes:
         if isinstance(route, APIRoute) and route.path in READ_ROUTES and 'GET' in route.methods:

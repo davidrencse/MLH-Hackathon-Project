@@ -1,4 +1,4 @@
-// "Ghostgrid Keys" tab: platform keys issued by our (mock) API. Full secret is shown once on create.
+// "Ghost Grid Keys" tab: platform keys issued by our (mock) API. Full secret is shown once on create.
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Check, Copy, Plus, TriangleAlert } from 'lucide-react'
@@ -48,14 +48,14 @@ export function PlatformKeysTab() {
   return (
     <div className="grid gap-6">
       <p className="text-lg leading-tight text-gg-mute">
-        Use these keys to call the Ghostgrid API from your own scripts. Send them as{' '}
+        Use these keys to call the Ghost Grid API from your own scripts. Send them as{' '}
         <code className="font-mono bg-gg-night px-1.5 text-gg-cyan">Authorization: Bearer gg-…</code>
       </p>
 
       <section className="grid gap-3">
         <div className="flex items-center justify-between gap-4">
           <h2 className="font-pixel flex items-center gap-3 text-[10px] leading-none text-gg-ink">
-            Ghostgrid keys
+            Ghost Grid keys
             <span className="border-2 border-gg-haze px-1.5 py-1 text-[8px] text-gg-mute">{active} active</span>
           </h2>
           <Button onClick={() => setCreateOpen(true)}>
@@ -89,7 +89,7 @@ export function PlatformKeysTab() {
               ) : keys.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-gg-mute">
-                    No Ghostgrid keys yet. Create one to call the API.
+                    No Ghost Grid keys yet. Create one to call the API.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -222,7 +222,7 @@ function CreateForm({ onCreated }: { onCreated: (k: PlatformKey, secret: string)
   return (
     <form onSubmit={submit} noValidate className="grid gap-4">
       <DialogHeader className="pr-8">
-        <DialogTitle>Create Ghostgrid key</DialogTitle>
+        <DialogTitle>Create Ghost Grid key</DialogTitle>
         <DialogDescription>Give it a name you will recognize later, like the machine or app that uses it.</DialogDescription>
       </DialogHeader>
       <Field label="Name" htmlFor="gg-keys-pk-name" error={submitted ? error : null}>
@@ -289,7 +289,7 @@ function SecretView({ secret }: { secret: string }) {
     <div className="grid gap-4">
       <DialogHeader className="pr-8">
         <DialogTitle className="text-gg-green">Key created</DialogTitle>
-        <DialogDescription>This is your new Ghostgrid secret key.</DialogDescription>
+        <DialogDescription>This is your new Ghost Grid secret key.</DialogDescription>
       </DialogHeader>
 
       <div className="flex items-stretch gap-2">

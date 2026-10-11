@@ -1,4 +1,4 @@
-// Typed wrapper over the Ghostgrid backend REST + SSE surface (`/api/v1`).
+// Typed wrapper over the Ghost Grid backend REST + SSE surface (`/api/v1`).
 // Shapes mirror ghostgrid-backend/FRONTEND.md and `GET /api/v1/openapi.json`.
 // Nothing in here knows about city buildings — see live.ts for that mapping.
 import { apiUrl, authHeaders } from './config'

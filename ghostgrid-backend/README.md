@@ -1,4 +1,4 @@
-# Ghostgrid backend
+# Ghost Grid backend
 
 Local TypeScript/Fastify backend for providers, projects, agents, persistent sessions,
 queued tasks, dependency workflows, artifacts, usage and resumable SSE events.

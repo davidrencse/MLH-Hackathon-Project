@@ -30,7 +30,7 @@ export interface LibraryStatus {
 }
 
 async function requireLive(): Promise<string> {
-  if (!(await isLive())) throw new Error('The Ghostgrid backend is not reachable; the library needs it')
+  if (!(await isLive())) throw new Error('The Ghost Grid backend is not reachable; the library needs it')
   return (await bootstrap()).projectId
 }
 

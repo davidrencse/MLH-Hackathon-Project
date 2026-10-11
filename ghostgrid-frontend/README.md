@@ -1,4 +1,4 @@
-# Ghostgrid
+# Ghost Grid
 
 **Build your city. Command your agents.**
 

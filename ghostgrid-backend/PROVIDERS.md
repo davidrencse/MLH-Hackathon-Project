@@ -45,7 +45,7 @@ Any OpenAI-compatible chat API can be registered through configuration without c
 
 “Any API” does not mean arbitrary incompatible response protocols can be inferred automatically. APIs using Anthropic Messages, Gemini-native or proprietary request/response formats need an adapter or OpenAI-compatible gateway. Capabilities and errors report actual support; configuration does not turn inference into an autonomous coding agent.
 
-Claude gateway URLs are forwarded through the SDK-supported `ANTHROPIC_BASE_URL`; only HTTPS or loopback HTTP is accepted. Claude SDK `total_cost_usd` is an estimated cumulative session total and can include previous resumed turns. Ghostgrid does not record it as a billed task cost or sum it across tasks. Actual Claude billed cost remains unknown; configured token pricing may provide separately labelled estimates.
+Claude gateway URLs are forwarded through the SDK-supported `ANTHROPIC_BASE_URL`; only HTTPS or loopback HTTP is accepted. Claude SDK `total_cost_usd` is an estimated cumulative session total and can include previous resumed turns. Ghost Grid does not record it as a billed task cost or sum it across tasks. Actual Claude billed cost remains unknown; configured token pricing may provide separately labelled estimates.
 
 ## Connectivity checks without inference
 

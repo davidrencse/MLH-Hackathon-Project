@@ -1,9 +1,9 @@
 # Library of Babel integration
 
-Ghostgrid connects a project’s library building to the read-only backend of
+Ghost Grid connects a project’s library building to the read-only backend of
 [davidrencse/news](https://github.com/davidrencse/news). Agents can receive selected
 saved notes and paper metadata as shared project context. The library is a separate
-Python service; Ghostgrid remains the TypeScript orchestration backend.
+Python service; Ghost Grid remains the TypeScript orchestration backend.
 
 The included bridge exposes catalog browsing, search, saved papers, notebook data,
 and article notes. It skips the upstream application’s background crawlers and
@@ -11,7 +11,7 @@ curation lifecycle, disables its PDF executor, and exposes only selected GET rou
 No library frontend is served. The bridge copies only library metadata, paper
 metadata and saved notes into a temporary snapshot before importing upstream code.
 This prevents upstream startup migrations and its database writer from modifying
-your collection. PDFs are not copied. Ghostgrid stores connection metadata and
+your collection. PDFs are not copied. Ghost Grid stores connection metadata and
 explicitly imported context snapshots.
 
 ## Run the local bridge
@@ -41,11 +41,11 @@ may differ because PDF files are not included in the snapshot. Check `http://127
 The bridge imports trusted upstream Python code and requires its dependencies.
 Keep the checkout pinned: a different upstream revision may change the expected
 routes or storage format. Do not expose the bridge directly to remote clients.
-Ghostgrid can also connect to an HTTPS deployment of the compatible read API.
+Ghost Grid can also connect to an HTTPS deployment of the compatible read API.
 
 ## Connect a project
 
-Run Ghostgrid in another terminal with `pnpm start`. Substitute an existing project
+Run Ghost Grid in another terminal with `pnpm start`. Substitute an existing project
 UUID for `PROJECT_ID`:
 
 ```sh
@@ -58,8 +58,8 @@ The building ID must be unique within the project and cannot belong to an agent.
 The library is a context source, not an inference provider. If your remote library
 requires bearer authentication, set its credential in the backend environment and
 configure `apiKeyEnv` with that environment variable’s name. Credential values are
-never stored in SQLite. When Ghostgrid API authentication is enabled, include its
-`Authorization: Bearer ...` header on all Ghostgrid requests.
+never stored in SQLite. When Ghost Grid API authentication is enabled, include its
+`Authorization: Bearer ...` header on all Ghost Grid requests.
 
 Connection, disconnection, and selected imports emit `library.connected`,
 `library.disconnected`, and `context.created` events after their state commits.

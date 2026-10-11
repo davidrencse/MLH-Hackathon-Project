@@ -1,7 +1,7 @@
 // Single entry point for all backend calls. UI and stores call `api.*`, never mock.ts
 // or live.ts directly.
 //
-// Each call runs against the real Ghostgrid backend when it is reachable (see
+// Each call runs against the real Ghost Grid backend when it is reachable (see
 // config.ts) and falls back to the mock backend otherwise, so the demo still works
 // with no server running. Calls the backend cannot serve at all stay on the mock:
 //   · platform keys  — the backend authenticates with one static GHOSTGRID_API_TOKEN

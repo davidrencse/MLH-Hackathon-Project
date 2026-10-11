@@ -1,5 +1,5 @@
 {
-  "$comment": "Demo custom-bot catalog for Ghostgrid. The frontend reads this to populate the city with varied buildings before the Bot Runner (/api/v1/bots, owned by Codex) is wired. Every script here is self-contained, stdlib-only, paper/simulation-first, and emits NDJSON events on stdout. 'inspiredBy' points at the real open-source project each demo mimics in spirit — no third-party code is bundled or executed.",
+  "$comment": "Demo custom-bot catalog for Ghost Grid. The frontend reads this to populate the city with varied buildings before the Bot Runner (/api/v1/bots, owned by Codex) is wired. Every script here is self-contained, stdlib-only, paper/simulation-first, and emits NDJSON events on stdout. 'inspiredBy' points at the real open-source project each demo mimics in spirit — no third-party code is bundled or executed.",
   "version": 1,
   "bots": [
     {

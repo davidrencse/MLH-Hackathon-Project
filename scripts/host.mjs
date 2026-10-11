@@ -75,6 +75,6 @@ const server = createServer(async (req, res) => {
     if (req.method === 'HEAD') res.end(); else createReadStream(path).on('error', () => res.destroy()).pipe(res);
   } catch { if (!res.headersSent) error(res, 400, 'Invalid request.'); else res.destroy(); }
 });
-server.listen(Number(process.env.PORT ?? 10000), '0.0.0.0', () => console.log('Ghostgrid web service ready.'));
+server.listen(Number(process.env.PORT ?? 10000), '0.0.0.0', () => console.log('Ghost Grid web service ready.'));
 async function close() { server.closeAllConnections(); await new Promise(r => server.close(r)); await app.close(); process.exit(0); }
 process.once('SIGTERM', close); process.once('SIGINT', close);

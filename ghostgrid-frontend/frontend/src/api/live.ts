@@ -1,5 +1,5 @@
 // Live backend adapter. Mirrors the signatures the UI/stores already call through client.ts,
-// but talks to the real Ghostgrid backend (REST + SSE) described in ghostgrid-backend/FRONTEND.md.
+// but talks to the real Ghost Grid backend (REST + SSE) described in ghostgrid-backend/FRONTEND.md.
 //
 // client.ts decides per-call whether to use this (backend reachable, see config.isLive) or the
 // mock. Each function here degrades by throwing — client.ts catches and falls back to the mock,
@@ -78,7 +78,7 @@ async function ensureProject(): Promise<string> {
   if (PROJECT_ID) return PROJECT_ID
   const list = await ggGet<ListResponse<{ id: string }>>('/api/v1/projects?limit=1')
   if (list.items?.length) return list.items[0].id
-  const created = await ggPost<{ id: string }>('/api/v1/projects', { name: 'Ghostgrid City' })
+  const created = await ggPost<{ id: string }>('/api/v1/projects', { name: 'Ghost Grid City' })
   return created.id
 }
 

@@ -49,7 +49,7 @@ function StatsHeader() {
             CITY <span className="text-gg-pink">STATS</span>
           </p>
           <p className="font-pixel mt-3 text-[8px] leading-none text-gg-mute">
-            CITY: <span className="text-gg-cyan">GHOSTGRID</span> · DAY 1
+            CITY: <span className="text-gg-cyan">GHOST GRID</span> · DAY 1
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">

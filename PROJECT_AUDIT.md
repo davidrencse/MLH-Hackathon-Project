@@ -1,4 +1,4 @@
-# Ghostgrid project audit and working map
+# Ghost Grid project audit and working map
 
 Reviewed 2026-10-11. Scope: the frontend, backend, example bots, launch script,
 integration boundaries, and available verification suites. Existing uncommitted

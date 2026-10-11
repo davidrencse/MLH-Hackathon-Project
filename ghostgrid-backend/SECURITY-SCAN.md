@@ -1,4 +1,4 @@
-# Ghostgrid Backend — Security Scan
+# Ghost Grid Backend — Security Scan
 
 Date: 2026-10-11 · Scope: `ghostgrid-backend` (src + `examples/bots`, dependencies, config).
 Method: dependency audit, static dangerous-pattern sweep (shell/exec, eval, SSRF, SQL,

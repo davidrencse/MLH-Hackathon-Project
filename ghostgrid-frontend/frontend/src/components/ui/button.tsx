@@ -2,7 +2,7 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
-// Ghostgrid pixel buttons: hard shadow that collapses on press (no blur, radius 0).
+// Ghost Grid pixel buttons: hard shadow that collapses on press (no blur, radius 0).
 const press =
   "active:not-aria-[haspopup]:translate-x-0.5 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none"
 

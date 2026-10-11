@@ -13,7 +13,7 @@ import {
  * Browser-hosted chat sessions: ChatGPT, Claude.ai and DeepSeek driven through their own
  * web interfaces instead of an API. The operator signs in themselves in a Chrome started
  * with `--remote-debugging-port`; this adapter attaches to that loopback DevTools endpoint,
- * opens one tab per Ghostgrid session, types the prompt with real input events and reads
+ * opens one tab per Ghost Grid session, types the prompt with real input events and reads
  * the rendered assistant turn.
  *
  * Inference only: no tool calls, no code execution, no workspace access. These interfaces

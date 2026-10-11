@@ -1,5 +1,5 @@
 /* Office interior styles. Every class and keyframe is prefixed "gg-of-". Pixel art only:
-   2px borders, radius 0, hard shadows, steps() animation. Colors come from the Ghostgrid tokens. */
+   2px borders, radius 0, hard shadows, steps() animation. Colors come from the Ghost Grid tokens. */
 
 .gg-of-shell {
   box-shadow:

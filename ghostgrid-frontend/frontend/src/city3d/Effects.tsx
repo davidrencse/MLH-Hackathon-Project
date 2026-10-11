@@ -16,7 +16,7 @@ class EffectsBoundary extends Component<{ children: ReactNode }, { failed: boole
   }
 
   componentDidCatch(error: unknown) {
-    console.warn('[Ghostgrid] post-processing disabled, rendering without it:', error)
+    console.warn('[Ghost Grid] post-processing disabled, rendering without it:', error)
   }
 
   render() {
