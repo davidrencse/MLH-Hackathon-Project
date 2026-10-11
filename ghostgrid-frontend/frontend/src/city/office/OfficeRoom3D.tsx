@@ -2,6 +2,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { pickLine } from './slang'
+import { employeeFor, managerOf, useOrg, type Employee } from './org'
+import { OrgPanel } from './OrgPanel'
 import { useReducedMotion } from 'framer-motion'
 import * as THREE from 'three'
 import type { OfficeWorker } from '@/api/backend'
@@ -54,7 +56,18 @@ function SpeechBubble({ seed }: { seed: number }) {
   </Html>
 }
 
-function Person({ color, host = false, typing = false, seed }: { color: string; host?: boolean; typing?: boolean; seed?: number }) {
+const TAG: Record<string, string> = { Manager: '#ff004d', 'Team Lead': '#ffa300', Engineer: '#29adff' }
+function RoleTag({ emp }: { emp: Employee }) {
+  const project = useOrg((s) => s.assign[emp.id])
+  return <Html position={[0, -0.25, 0]} center distanceFactor={8} style={{ pointerEvents: 'none' }}>
+    <div style={{ font: "8px/1.3 'Press Start 2P', monospace", textAlign: 'center', whiteSpace: 'nowrap' }}>
+      <span style={{ background: TAG[emp.role], color: '#fff', padding: '1px 4px' }}>{emp.role === 'Manager' ? 'MGR' : emp.role === 'Team Lead' ? 'LEAD' : 'ENG'}</span>
+      {project && <div style={{ background: '#111', color: '#ffec27', padding: '1px 4px', marginTop: 2 }}>{project}</div>}
+    </div>
+  </Html>
+}
+
+function Person({ color, host = false, typing = false, seed, emp }: { color: string; host?: boolean; typing?: boolean; seed?: number; emp?: Employee }) {
   const hands = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const reduce = useReducedMotion()
@@ -64,8 +77,10 @@ function Person({ color, host = false, typing = false, seed }: { color: string; 
     if (hands.current) hands.current.rotation.x = tick % 2 ? 0.12 : -0.08
     if (head.current) head.current.rotation.z = Math.sin(Math.floor(tick / 4) * 0.6) * 0.06
   })
-  return <group position={[0, host ? 0 : 0.1, 0]}>
+  return <group position={[0, host ? 0 : 0.1, 0]} onClick={emp ? (e) => { e.stopPropagation(); useOrg.getState().pick(emp) } : undefined}
+    onPointerOver={emp ? () => (document.body.style.cursor = 'pointer') : undefined} onPointerOut={emp ? () => (document.body.style.cursor = '') : undefined}>
     {seed !== undefined && <SpeechBubble seed={seed} />}
+    {emp && <RoleTag emp={emp} />}
     <Block color="#3f3655" position={[-0.14, 0.22, 0]} size={[0.22, 0.4, 0.24]} />
     <Block color="#3f3655" position={[0.14, 0.22, 0]} size={[0.22, 0.4, 0.24]} />
     <Block color="#211b31" position={[-0.14, 0.08, 0.06]} size={[0.26, 0.12, 0.36]} />
@@ -132,8 +147,8 @@ function Plant({ x, z }: { x: number; z: number }) {
   </group>
 }
 
-function Desk({ worker, x, z, selected, accent, onSelect }: {
-  worker?: OfficeWorker; x: number; z: number; selected: boolean; accent: string; onSelect: (id: string) => void
+function Desk({ worker, x, z, selected, accent, onSelect, emp }: {
+  worker?: OfficeWorker; x: number; z: number; selected: boolean; accent: string; onSelect: (id: string) => void; emp?: Employee
 }) {
   const screen = worker ? worker.runtime.includes('browser') ? '#9bc6d0' : accent : '#433a59'
   return <group position={[x, 0, z]} onClick={(event) => { if (worker) { event.stopPropagation(); onSelect(worker.id) } }}>
@@ -150,7 +165,7 @@ function Desk({ worker, x, z, selected, accent, onSelect }: {
     <Block color="#706389" position={[0, 0.4, 0.8]} size={[0.64, 0.16, 0.64]} />
     <Block color="#706389" position={[0, 0.71, 1.04]} size={[0.64, 0.58, 0.16]} />
     <Block color="#3e344f" position={[0, 0.2, 0.8]} size={[0.12, 0.4, 0.12]} />
-    {worker && <group position={[0, 0.18, 0.66]} rotation-y={-Math.PI / 4}><Person color={accent} typing seed={[...worker.id].reduce((a, c) => a + c.charCodeAt(0), 0)} /></group>}
+    {worker && <group position={[0, 0.18, 0.66]} rotation-y={-Math.PI / 4}><Person color={accent} typing emp={emp} seed={[...worker.id].reduce((a, c) => a + c.charCodeAt(0), 0)} /></group>}
   </group>
 }
 
@@ -160,8 +175,13 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect }: { workers:
   const rows = Math.ceil(count / columns)
   const width = columns * 3.3 + 2
   const depth = rows * 3.2 + 3.2
-  return <div className="native-room-canvas" aria-label="3D isometric office; select a worker using their desk or the buttons below">
-    <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={0.5} shadows gl={{ antialias: false }}>
+  const room = workers[0]?.buildingId ?? decodeURIComponent(location.pathname.split('/').pop() ?? 'office')
+  const mgr = managerOf(room)
+  const emps = workers.map((w, i) => employeeFor(room, w, i, columns))
+  const nameOf = (id?: string) => id === mgr.id ? mgr.name : id?.startsWith('lead:') ? (emps[Number(id.split(':').pop())]?.name ?? 'Team Lead') : (emps.find((e) => e.id === id)?.name ?? '—')
+  return <div className="native-room-canvas" aria-label="3D isometric office; select a worker using their desk or the buttons below" style={{ position: 'relative' }}>
+    <OrgPanel nameOf={nameOf} />
+    <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={Math.min(2, window.devicePixelRatio || 1)} shadows gl={{ antialias: true }}>
       <Camera width={width} depth={depth} />
       <OrbitControls target={[0, 0.7, 0]} enablePan={false} enableDamping={false}
         minPolarAngle={0.65} maxPolarAngle={1.1} minAzimuthAngle={0.25} maxAzimuthAngle={1.35}
@@ -191,10 +211,10 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect }: { workers:
       </group>)}
       <Plant x={width / 2 - 0.8} z={-depth / 2 + 0.8} />
       <Plant x={-width / 2 + 0.6} z={depth / 2 - 0.6} />
-      <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host seed={3} /></group>
+      <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host seed={3} emp={mgr} /></group>
       {Array.from({ length: count }, (_, i) => <Desk key={workers[i]?.id ?? `empty_${i}`} worker={workers[i]}
         x={(i % columns - (columns - 1) / 2) * 3.3} z={Math.floor(i / columns) * 3.2 - depth / 2 + 2.3}
-        selected={selected === workers[i]?.id} accent={accent} onSelect={onSelect} />)}
+        selected={selected === workers[i]?.id} accent={accent} onSelect={onSelect} emp={emps[i]} />)}
     </Canvas>
   </div>
 }
