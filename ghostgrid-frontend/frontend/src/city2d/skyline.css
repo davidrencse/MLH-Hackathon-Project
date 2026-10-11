@@ -1,0 +1,219 @@
+/* Skyline: distant scenery. Every class and keyframe is prefixed gg-sky-.
+   Motion uses transform / opacity only, mostly stepped to stay on the pixel grid. */
+
+.gg-sky-root {
+  --gg-sky-s: var(--stage-scale, 3);
+}
+
+.gg-sky-abs {
+  position: absolute;
+  display: block;
+}
+
+/* ---------- stars ---------- */
+.gg-sky-tw-a { animation: gg-sky-twinkle 2.8s steps(1, end) infinite; }
+.gg-sky-tw-b { animation: gg-sky-twinkle 4.2s steps(1, end) -1.7s infinite; }
+.gg-sky-tw-c { animation: gg-sky-twinkle 6.4s steps(1, end) -3.1s infinite; }
+@keyframes gg-sky-twinkle {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 0.25; }
+  50% { opacity: 0.8; }
+  75% { opacity: 0.1; }
+}
+
+/* ---------- distant windows + beacons ---------- */
+.gg-sky-win-a { animation: gg-sky-win 3.7s steps(1, end) infinite; }
+.gg-sky-win-b { animation: gg-sky-win 5.3s steps(1, end) -2.2s infinite; }
+@keyframes gg-sky-win {
+  0%, 100% { opacity: 1; }
+  58% { opacity: 0.15; }
+  70% { opacity: 1; }
+  84% { opacity: 0.3; }
+  88% { opacity: 1; }
+}
+
+.gg-sky-beacon-a { animation: gg-sky-beacon 1.6s steps(1, end) infinite; }
+.gg-sky-beacon-b { animation: gg-sky-beacon 1.6s steps(1, end) -0.8s infinite; }
+@keyframes gg-sky-beacon {
+  0% { opacity: 1; }
+  50%, 100% { opacity: 0.1; }
+}
+
+/* ---------- billboards (holographic flicker) ---------- */
+.gg-sky-board { opacity: 0.85; }
+.gg-sky-holo-a { animation: gg-sky-holo 7.3s steps(1, end) infinite; }
+.gg-sky-holo-b { animation: gg-sky-holo 9.1s steps(1, end) -4s infinite; }
+.gg-sky-holo-c { animation: gg-sky-holo 5.7s steps(1, end) -2.5s infinite; }
+@keyframes gg-sky-holo {
+  0%, 100% { opacity: 0.85; }
+  41% { opacity: 0.35; }
+  42% { opacity: 0.85; }
+  44% { opacity: 0.2; }
+  45% { opacity: 0.85; }
+  88% { opacity: 0.55; }
+  89% { opacity: 0.85; }
+}
+
+.gg-sky-title { animation: gg-sky-title 4.1s steps(1, end) infinite; }
+@keyframes gg-sky-title {
+  0%, 100% { opacity: 1; }
+  62% { opacity: 0.45; }
+  63% { opacity: 1; }
+}
+
+.gg-sky-ticker {
+  animation-name: gg-sky-ticker;
+  animation-iteration-count: infinite;
+}
+@keyframes gg-sky-ticker {
+  to { transform: translateX(calc(var(--gg-sky-tick) * -1px)); }
+}
+
+.gg-sky-sweep {
+  animation-name: gg-sky-sweep;
+  animation-duration: 2.6s;
+  animation-iteration-count: infinite;
+}
+@keyframes gg-sky-sweep {
+  to { transform: translateY(calc(var(--gg-sky-sweep) * 1px)); }
+}
+
+.gg-sky-candle {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: gg-sky-candle 2.4s steps(1, end) infinite;
+}
+@keyframes gg-sky-candle {
+  0%, 100% { transform: scaleY(0.34); }
+  25% { transform: scaleY(0.67); }
+  50% { transform: scaleY(1); }
+  75% { transform: scaleY(0.67); }
+}
+
+.gg-sky-broken { animation: gg-sky-broken 3.1s steps(1, end) infinite; }
+@keyframes gg-sky-broken {
+  0%, 100% { opacity: 1; }
+  70% { opacity: 0.15; }
+  73% { opacity: 1; }
+  76% { opacity: 0.15; }
+  90% { opacity: 1; }
+}
+
+/* ---------- flying cars ---------- */
+.gg-sky-car-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.gg-sky-car-run {
+  position: absolute;
+  inset: 0;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.gg-sky-car-r { animation-name: gg-sky-car-r; }
+.gg-sky-car-l { animation-name: gg-sky-car-l; }
+@keyframes gg-sky-car-r {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(100% + var(--gg-sky-s) * 26px)); }
+}
+@keyframes gg-sky-car-l {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gg-sky-s) * 26px)); }
+}
+.gg-sky-car {
+  position: absolute;
+  top: 0;
+  display: block;
+}
+.gg-sky-bob { animation: gg-sky-bob 1.3s steps(1, end) infinite; }
+@keyframes gg-sky-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(1px); }
+}
+
+/* ---------- street ---------- */
+.gg-sky-street {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #120b30;
+  overflow: hidden;
+}
+.gg-sky-curb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: var(--gg-cyan);
+  opacity: 0.55;
+  box-shadow: 0 0 calc(var(--gg-sky-s) * 3px) color-mix(in srgb, var(--gg-cyan) 45%, transparent);
+}
+.gg-sky-walk {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background-color: var(--gg-night);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(var(--gg-sky-s) * 15px),
+    color-mix(in srgb, var(--gg-void) 70%, transparent) calc(var(--gg-sky-s) * 15px) calc(var(--gg-sky-s) * 16px)
+  );
+}
+.gg-sky-gutter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--gg-void);
+}
+.gg-sky-lane {
+  position: absolute;
+  left: calc(var(--gg-sky-s) * -12px);
+  right: calc(var(--gg-sky-s) * -12px);
+  animation-duration: 4s;
+  animation-timing-function: steps(12);
+  animation-iteration-count: infinite;
+}
+.gg-sky-lane-l {
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--gg-pink) 42%, transparent) 0 calc(var(--gg-sky-s) * 6px),
+    transparent calc(var(--gg-sky-s) * 6px) calc(var(--gg-sky-s) * 12px)
+  );
+  animation-name: gg-sky-lane-l;
+}
+.gg-sky-lane-r {
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--gg-cyan) 36%, transparent) 0 calc(var(--gg-sky-s) * 6px),
+    transparent calc(var(--gg-sky-s) * 6px) calc(var(--gg-sky-s) * 12px)
+  );
+  animation-name: gg-sky-lane-r;
+  animation-duration: 5.2s;
+}
+@keyframes gg-sky-lane-l {
+  to { transform: translateX(calc(var(--gg-sky-s) * -12px)); }
+}
+@keyframes gg-sky-lane-r {
+  to { transform: translateX(calc(var(--gg-sky-s) * 12px)); }
+}
+
+.gg-sky-shim-a { animation: gg-sky-shim 1.8s steps(1, end) infinite; }
+.gg-sky-shim-b { animation: gg-sky-shim 2.6s steps(1, end) -1s infinite; }
+@keyframes gg-sky-shim {
+  0%, 100% { opacity: 1; }
+  33% { opacity: 0.35; }
+  66% { opacity: 0.75; }
+}
+
+/* ---------- reduced motion: stop every loop, keep the scene ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .gg-sky-root,
+  .gg-sky-root * {
+    animation: none !important;
+  }
+  .gg-sky-car-track {
+    display: none;
+  }
+}

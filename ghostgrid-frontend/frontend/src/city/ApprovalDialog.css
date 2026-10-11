@@ -1,0 +1,123 @@
+/* ApprovalDialog — every class and keyframe is prefixed gg-apv- */
+
+.gg-apv-overlay {
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.22) 2px 4px),
+    rgba(11, 8, 32, 0.72);
+}
+
+/* one hard-edged CRT sweep line crawling down the screen */
+.gg-apv-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: rgba(0, 240, 255, 0.06);
+  animation: gg-apv-sweep 5s steps(60) infinite;
+  pointer-events: none;
+}
+@keyframes gg-apv-sweep {
+  from { transform: translateY(-8px); }
+  to { transform: translateY(100vh); }
+}
+
+/* panel: 4px accent border, stepped pixel halo, hard drop shadow (no blur) */
+.gg-apv-panel {
+  --apv-ring: color-mix(in srgb, var(--apv-accent) 24%, transparent);
+  --apv-ring2: color-mix(in srgb, var(--apv-accent) 10%, transparent);
+  border: 4px solid var(--apv-accent);
+  background: var(--gg-night);
+  box-shadow:
+    0 0 0 4px var(--apv-ring),
+    0 0 0 8px var(--apv-ring2),
+    12px 12px 0 4px rgba(0, 0, 0, 0.55);
+  animation: gg-apv-halo 0.8s steps(2, jump-none) infinite;
+}
+.gg-apv-panel[data-choice] {
+  animation: none;
+}
+@keyframes gg-apv-halo {
+  from {
+    box-shadow:
+      0 0 0 4px var(--apv-ring),
+      0 0 0 8px var(--apv-ring2),
+      12px 12px 0 4px rgba(0, 0, 0, 0.55);
+  }
+  to {
+    box-shadow:
+      0 0 0 4px var(--apv-ring2),
+      0 0 0 8px transparent,
+      12px 12px 0 4px rgba(0, 0, 0, 0.55);
+  }
+}
+
+.gg-apv-head {
+  background: var(--apv-accent);
+  color: var(--gg-void);
+}
+
+/* "!" warning sign bob — DESIGN: 0.8s steps(2) */
+.gg-apv-bob {
+  animation: gg-apv-bob 0.8s steps(2, jump-none) infinite;
+}
+@keyframes gg-apv-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-2px); }
+}
+
+/* caution tape under the header, marching */
+.gg-apv-hazard {
+  height: 8px;
+  background-image: linear-gradient(
+    45deg,
+    var(--apv-accent) 25%,
+    var(--gg-void) 25%,
+    var(--gg-void) 50%,
+    var(--apv-accent) 50%,
+    var(--apv-accent) 75%,
+    var(--gg-void) 75%
+  );
+  background-size: 16px 16px;
+  animation: gg-apv-march 1s steps(4) infinite;
+}
+@keyframes gg-apv-march {
+  from { background-position: 0 0; }
+  to { background-position: 16px 0; }
+}
+
+/* terminal block cursor */
+.gg-apv-cursor {
+  display: inline-block;
+  width: 10px;
+  height: 18px;
+  margin-left: 6px;
+  vertical-align: -2px;
+  background: var(--gg-green);
+  animation: gg-apv-blink 1s steps(2, jump-none) infinite;
+}
+@keyframes gg-apv-blink {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.gg-apv-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--gg-yellow);
+  animation: gg-apv-blink 0.8s steps(2, jump-none) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-apv-sweep {
+    display: none;
+  }
+  .gg-apv-panel,
+  .gg-apv-bob,
+  .gg-apv-hazard,
+  .gg-apv-cursor,
+  .gg-apv-dot {
+    animation: none;
+  }
+}

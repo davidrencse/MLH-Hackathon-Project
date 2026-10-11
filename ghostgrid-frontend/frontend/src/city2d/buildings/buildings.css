@@ -1,0 +1,615 @@
+/* Slop Angeles city buildings. All lengths are LOGICAL px (the stage is integer-scaled by CityPage).
+   Every class / keyframe / custom property is prefixed gg-bld-. State lives on the .gg-bld button:
+   .gg-bld--idle | --working | --error | --needs_approval, plus --offline and --selected. */
+
+/* ---------- state tokens ---------- */
+.gg-bld {
+  --gg-bld-rgb: 0, 240, 255; /* state accent as an rgb triplet */
+  --gg-bld-glow: 0.35; /* neon glow alpha (<= .6) */
+  --gg-bld-aura: 0.16; /* building silhouette glow alpha */
+  --gg-bld-lit: rgba(0, 240, 255, 0.4);
+  --gg-bld-lit-alt: rgba(255, 43, 214, 0.5);
+  --gg-bld-unlit: rgba(11, 8, 32, 0.92);
+  --gg-bld-glyph: rgba(57, 255, 20, 0.95);
+}
+.gg-bld--working {
+  --gg-bld-rgb: 57, 255, 20;
+  --gg-bld-glow: 0.6;
+  --gg-bld-aura: 0.42;
+  --gg-bld-lit: rgba(57, 255, 20, 0.14);
+  --gg-bld-lit-alt: rgba(57, 255, 20, 0.22);
+}
+.gg-bld--error {
+  --gg-bld-rgb: 255, 51, 85;
+  --gg-bld-glow: 0.55;
+  --gg-bld-aura: 0.45;
+  --gg-bld-lit: rgba(255, 51, 85, 0.6);
+  --gg-bld-lit-alt: rgba(255, 51, 85, 0.38);
+}
+.gg-bld--needs_approval {
+  --gg-bld-rgb: 255, 212, 0;
+  --gg-bld-glow: 0.5;
+  --gg-bld-aura: 0.4;
+  --gg-bld-lit: rgba(255, 212, 0, 0.6);
+  --gg-bld-lit-alt: rgba(255, 212, 0, 0.38);
+}
+.gg-bld--offline {
+  --gg-bld-rgb: 90, 86, 119;
+  --gg-bld-glow: 0;
+  --gg-bld-aura: 0;
+}
+
+/* ---------- button shell ---------- */
+.gg-bld {
+  position: absolute;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  outline: 1px solid transparent;
+  outline-offset: 1px;
+  -webkit-tap-highlight-color: transparent;
+}
+.gg-bld:hover,
+.gg-bld--selected {
+  outline-color: var(--gg-pink);
+}
+.gg-bld:focus-visible {
+  outline-color: var(--gg-cyan);
+}
+.gg-bld--selected:focus-visible {
+  outline-color: var(--gg-pink);
+}
+
+.gg-bld-b {
+  position: absolute;
+  display: block;
+}
+
+.gg-bld-body {
+  position: absolute;
+  inset: 0;
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(var(--gg-bld-rgb), var(--gg-bld-aura)));
+}
+.gg-bld--idle .gg-bld-body {
+  filter: drop-shadow(0 0 2px rgba(var(--gg-bld-rgb), var(--gg-bld-aura)));
+}
+.gg-bld--offline .gg-bld-body {
+  filter: grayscale(1) brightness(0.55);
+}
+.gg-bld--error .gg-bld-body {
+  animation: gg-bld-shake 0.3s steps(3) infinite;
+}
+
+/* 1px light edge: the side that faces the Router Spire's neon */
+.gg-bld-edge-l {
+  box-shadow:
+    inset 1px 0 0 0 rgba(0, 240, 255, 0.3),
+    inset -1px 0 0 0 var(--gg-void);
+}
+.gg-bld-edge-r {
+  box-shadow:
+    inset -1px 0 0 0 rgba(0, 240, 255, 0.3),
+    inset 1px 0 0 0 var(--gg-void);
+}
+
+/* ---------- neon trims ---------- */
+.gg-bld-neon-c {
+  background: var(--gg-cyan);
+  box-shadow: 0 0 2px 0 rgba(0, 240, 255, var(--gg-bld-glow));
+}
+.gg-bld-neon-p {
+  background: var(--gg-pink);
+  box-shadow: 0 0 2px 0 rgba(255, 43, 214, var(--gg-bld-glow));
+}
+.gg-bld-neon-y {
+  background: var(--gg-yellow);
+}
+/* data pulses running up the spire's strips while working */
+.gg-bld--working .gg-bld-flow {
+  background-image: linear-gradient(to bottom, var(--gg-ink) 0 3px, transparent 3px);
+  background-size: 1px 16px;
+  animation: gg-bld-flow 1.2s steps(8) infinite;
+}
+
+/* router "eye" */
+.gg-bld-eye {
+  overflow: hidden;
+  background: rgba(var(--gg-bld-rgb), 0.85);
+  box-shadow: 0 0 2px 0 rgba(var(--gg-bld-rgb), var(--gg-bld-glow));
+}
+.gg-bld-eye::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  width: 3px;
+  height: 1px;
+  background: var(--gg-ink);
+}
+.gg-bld--working .gg-bld-eye::after,
+.gg-bld--needs_approval .gg-bld-eye::after {
+  display: block;
+  animation: gg-bld-scan 1.2s steps(9) infinite alternate;
+}
+
+/* ---------- signs ---------- */
+.gg-bld-txt {
+  position: relative;
+  display: block;
+  flex: none;
+}
+.gg-bld-txt > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  font-size: 16px;
+  line-height: 16px;
+  white-space: nowrap;
+  transform-origin: 0 0;
+}
+
+.gg-bld-vsign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 0;
+  box-sizing: border-box;
+  background: var(--gg-void);
+  border: 1px solid var(--gg-pink);
+  box-shadow:
+    0 0 2px 0 rgba(255, 43, 214, var(--gg-bld-glow)),
+    1px 1px 0 0 rgba(0, 0, 0, 0.5);
+}
+.gg-bld-vsign-ch {
+  color: var(--gg-pink);
+  text-shadow: 0 0 6px rgba(255, 43, 214, var(--gg-bld-glow));
+}
+/* one tired neon letter */
+.gg-bld-vsign-ch--flk {
+  animation: gg-bld-flicker 2.4s steps(4) infinite;
+  animation-delay: -0.7s;
+}
+.gg-bld--offline .gg-bld-vsign-ch--flk {
+  animation: none;
+}
+
+.gg-bld-hsign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: var(--gg-void);
+  border: 1px solid var(--gg-cyan);
+  box-shadow: 0 0 2px 0 rgba(0, 240, 255, var(--gg-bld-glow));
+}
+.gg-bld-hsign-txt {
+  color: var(--gg-cyan);
+  text-shadow: 0 0 6px rgba(0, 240, 255, var(--gg-bld-glow));
+}
+.gg-bld-hsign--pink {
+  border-color: var(--gg-pink);
+  box-shadow: 0 0 2px 0 rgba(255, 43, 214, var(--gg-bld-glow));
+}
+.gg-bld-hsign--pink .gg-bld-hsign-txt {
+  color: var(--gg-pink);
+  text-shadow: 0 0 6px rgba(255, 43, 214, var(--gg-bld-glow));
+}
+.gg-bld--error .gg-bld-hsign,
+.gg-bld--error .gg-bld-vsign {
+  animation: gg-bld-dim 0.6s steps(2, jump-none) infinite;
+}
+
+/* ---------- windows ---------- */
+/* columns mask on the outer box, rows mask on the inner box: children are clipped to window cells */
+.gg-bld-win {
+  position: absolute;
+  display: block;
+  -webkit-mask-image: repeating-linear-gradient(
+    to right,
+    #000 0 var(--gg-bld-ww),
+    transparent var(--gg-bld-ww) var(--gg-bld-cw)
+  );
+  mask-image: repeating-linear-gradient(to right, #000 0 var(--gg-bld-ww), transparent var(--gg-bld-ww) var(--gg-bld-cw));
+}
+.gg-bld-win-rows {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  background: var(--gg-bld-unlit);
+  -webkit-mask-image: repeating-linear-gradient(
+    to bottom,
+    #000 0 var(--gg-bld-wh),
+    transparent var(--gg-bld-wh) var(--gg-bld-ch)
+  );
+  mask-image: repeating-linear-gradient(to bottom, #000 0 var(--gg-bld-wh), transparent var(--gg-bld-wh) var(--gg-bld-ch));
+}
+.gg-bld-w {
+  position: absolute;
+  display: block;
+  background: var(--gg-bld-lit);
+}
+.gg-bld-w--alt {
+  background: var(--gg-bld-lit-alt);
+}
+.gg-bld--idle .gg-bld-w--flk {
+  animation: gg-bld-flicker 2.4s steps(4) infinite;
+}
+.gg-bld--offline .gg-bld-w--flk {
+  animation: none;
+}
+.gg-bld--needs_approval .gg-bld-w {
+  animation: gg-bld-pulse 0.8s steps(2, jump-none) infinite;
+}
+.gg-bld--error .gg-bld-win {
+  animation: gg-bld-jitter 0.6s steps(1) infinite;
+}
+
+.gg-bld-glyphs {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+}
+.gg-bld-glyph-px {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 1px;
+  height: 1px;
+}
+.gg-bld--working .gg-bld-glyphs {
+  display: block;
+  animation: gg-bld-scroll 1.2s steps(8) infinite;
+}
+
+.gg-bld-tint {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.gg-bld--error .gg-bld-tint {
+  background: rgba(255, 51, 85, 0.28);
+}
+.gg-bld--needs_approval .gg-bld-tint {
+  background: rgba(255, 212, 0, 0.16);
+  animation: gg-bld-pulse 0.8s steps(2, jump-none) infinite;
+}
+
+/* small lit details that follow the window color */
+.gg-bld-slit {
+  background: var(--gg-bld-lit);
+}
+.gg-bld-door {
+  box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.55);
+}
+.gg-bld-lobby {
+  background: repeating-linear-gradient(to right, var(--gg-bld-lit) 0 5px, var(--gg-dusk) 5px 6px);
+}
+
+/* ---------- beacons & warning lights ---------- */
+.gg-bld-beacon {
+  background: var(--gg-red);
+  opacity: 0.6;
+  animation: gg-bld-blink-dim 2.4s steps(2, jump-none) infinite;
+}
+.gg-bld-signal {
+  background: var(--gg-haze);
+  animation: none;
+}
+.gg-bld--working .gg-bld-beacon {
+  background: var(--gg-green);
+  opacity: 1;
+  box-shadow: 0 0 3px 1px rgba(57, 255, 20, 0.6);
+  animation: none;
+}
+.gg-bld--error .gg-bld-beacon {
+  background: var(--gg-red);
+  opacity: 1;
+  box-shadow: 0 0 3px 1px rgba(255, 51, 85, 0.6);
+  animation: gg-bld-blink 0.6s steps(2, jump-none) infinite;
+}
+.gg-bld--needs_approval .gg-bld-beacon {
+  background: var(--gg-yellow);
+  opacity: 1;
+  box-shadow: 0 0 3px 1px rgba(255, 212, 0, 0.6);
+  animation: gg-bld-blink 0.8s steps(2, jump-none) infinite;
+}
+.gg-bld--offline .gg-bld-beacon {
+  opacity: 0.3;
+  animation: none;
+}
+
+.gg-bld-warn {
+  background: var(--gg-yellow);
+  opacity: 0.3;
+}
+.gg-bld--working .gg-bld-warn {
+  background: var(--gg-green);
+  opacity: 0.9;
+}
+.gg-bld--needs_approval .gg-bld-warn {
+  opacity: 1;
+  box-shadow: 0 0 3px 1px rgba(255, 212, 0, 0.6);
+  animation: gg-bld-blink 0.8s steps(2, jump-none) infinite;
+}
+.gg-bld--needs_approval .gg-bld-warn--b {
+  animation-delay: -0.4s;
+}
+.gg-bld--error .gg-bld-warn {
+  background: var(--gg-red);
+  opacity: 1;
+  box-shadow: 0 0 3px 1px rgba(255, 51, 85, 0.6);
+  animation: gg-bld-blink 0.6s steps(2, jump-none) infinite;
+}
+.gg-bld--error .gg-bld-warn--b {
+  animation-delay: -0.3s;
+}
+
+/* ---------- security gate ---------- */
+.gg-bld-masonry {
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 5px, rgba(61, 42, 122, 0.55) 5px 6px),
+    repeating-linear-gradient(to right, transparent 0 11px, rgba(11, 8, 32, 0.6) 11px 12px);
+}
+.gg-bld-hazard {
+  background: repeating-linear-gradient(90deg, var(--gg-yellow) 0 2px, var(--gg-void) 2px 4px);
+  opacity: 0.8;
+}
+.gg-bld-grate {
+  background: repeating-linear-gradient(to bottom, var(--gg-haze) 0 1px, var(--gg-void) 1px 3px);
+}
+.gg-bld-gatefloor {
+  background: rgba(var(--gg-bld-rgb), 0.5);
+}
+.gg-bld-arm {
+  background: repeating-linear-gradient(90deg, var(--gg-yellow) 0 3px, var(--gg-void) 3px 6px);
+  transform-origin: 0 1px;
+  transition: transform 0.3s steps(3);
+}
+.gg-bld-arm-tip {
+  background: var(--gg-red);
+}
+.gg-bld--working .gg-bld-arm {
+  transform: rotate(-90deg);
+}
+
+/* ---------- error glitch slices ---------- */
+.gg-bld-glitch {
+  display: none;
+  background: rgba(255, 51, 85, 0.6);
+  box-shadow: 1px 0 0 0 rgba(0, 240, 255, 0.5);
+}
+.gg-bld--error .gg-bld-glitch {
+  display: block;
+  animation: gg-bld-slice 0.6s steps(1) infinite;
+}
+.gg-bld--error .gg-bld-glitch--b {
+  animation-delay: -0.35s;
+}
+
+/* ---------- street ---------- */
+.gg-bld-reflect {
+  background: repeating-linear-gradient(to right, rgba(var(--gg-bld-rgb), 0.35) 0 3px, transparent 3px 5px);
+}
+.gg-bld-reflect--far {
+  opacity: 0.5;
+}
+
+.gg-bld-plate {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 10px;
+  padding: 0 2px;
+  box-sizing: border-box;
+  background: var(--gg-void);
+  border: 1px solid var(--gg-haze);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.5);
+}
+.gg-bld:hover .gg-bld-plate,
+.gg-bld--selected .gg-bld-plate {
+  border-color: var(--gg-pink);
+}
+.gg-bld-dot {
+  display: block;
+  flex: none;
+  width: 2px;
+  height: 2px;
+}
+.gg-bld-plate-txt {
+  color: var(--gg-ink);
+}
+.gg-bld--offline .gg-bld-plate-txt {
+  color: var(--gg-mute);
+}
+.gg-bld-leg {
+  background: var(--gg-haze);
+}
+
+/* ---------- overlays ---------- */
+.gg-bld-alert {
+  position: absolute;
+  display: block;
+  width: 11px;
+  height: 15px;
+  animation: gg-bld-bob 0.8s steps(2, jump-none) infinite;
+}
+.gg-bld-alert-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 11px;
+  height: 13px;
+  box-sizing: border-box;
+  background: var(--gg-void);
+  border: 1px solid var(--gg-yellow);
+  box-shadow:
+    0 0 3px 0 rgba(255, 212, 0, 0.6),
+    2px 2px 0 0 rgba(0, 0, 0, 0.5);
+}
+.gg-bld-alert-pole {
+  background: var(--gg-yellow);
+  opacity: 0.7;
+}
+
+.gg-bld-caret {
+  position: absolute;
+  display: block;
+  width: 5px;
+  height: 3px;
+  filter: drop-shadow(0 0 1px rgba(255, 43, 214, 0.6));
+  animation: gg-bld-bob 1s steps(2, jump-none) infinite;
+}
+.gg-bld-caret .gg-bld-b {
+  background: var(--gg-pink);
+}
+
+.gg-bld-nokey {
+  position: absolute;
+  display: block;
+  width: 30px;
+  height: 10px;
+  padding: 2px;
+  box-sizing: border-box;
+  background: var(--gg-void);
+  border: 1px solid var(--gg-grey);
+  color: var(--gg-mute);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- keyframes ---------- */
+@keyframes gg-bld-flicker {
+  0%,
+  40%,
+  60%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+@keyframes gg-bld-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+@keyframes gg-bld-dim {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+@keyframes gg-bld-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.15;
+  }
+}
+@keyframes gg-bld-blink-dim {
+  from {
+    opacity: 0.75;
+  }
+  to {
+    opacity: 0.2;
+  }
+}
+@keyframes gg-bld-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+@keyframes gg-bld-flow {
+  from {
+    background-position: 0 16px;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+@keyframes gg-bld-scan {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(9px);
+  }
+}
+/* steps(3) from -1 to +2 lands on -1, 0, +1 */
+@keyframes gg-bld-shake {
+  from {
+    transform: translateX(-1px);
+  }
+  to {
+    transform: translateX(2px);
+  }
+}
+@keyframes gg-bld-jitter {
+  0% {
+    transform: none;
+  }
+  55% {
+    transform: translateX(1px);
+  }
+  65% {
+    transform: none;
+  }
+  80% {
+    transform: translateX(-1px);
+  }
+  85% {
+    transform: none;
+  }
+}
+@keyframes gg-bld-slice {
+  0% {
+    opacity: 0;
+    transform: none;
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(1px);
+  }
+  75% {
+    opacity: 0;
+  }
+}
+@keyframes gg-bld-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-bld,
+  .gg-bld *,
+  .gg-bld *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

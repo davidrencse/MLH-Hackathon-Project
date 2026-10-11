@@ -1,0 +1,12 @@
+Oct 11 09:01:22 ghostgrid sshd[2211]: Accepted publickey for czr from 127.0.0.1 port 51514 ssh2
+Oct 11 09:03:10 ghostgrid sshd[2250]: Failed password for invalid user admin from 203.0.113.9 port 40122 ssh2
+Oct 11 09:03:12 ghostgrid sshd[2250]: Failed password for invalid user root from 203.0.113.9 port 40124 ssh2
+Oct 11 09:03:14 ghostgrid sshd[2250]: Failed password for invalid user oracle from 203.0.113.9 port 40126 ssh2
+Oct 11 09:04:01 ghostgrid sudo: czr : TTY=pts/0 ; PWD=/home/czr ; USER=root ; COMMAND=/usr/bin/pacman -Syu
+Oct 11 09:05:33 ghostgrid kernel: possible port scan detected from 198.51.100.23
+Oct 11 09:06:00 ghostgrid webapp[901]: 401 unauthorized request to /api/v1/admin from 198.51.100.23
+Oct 11 09:06:45 ghostgrid webapp[901]: WARNING deprecated endpoint /v0/login used
+Oct 11 09:07:10 ghostgrid auth[333]: authentication failure; logname= uid=0 euid=0 user=czr
+Oct 11 09:08:55 ghostgrid webapp[901]: detected sql injection attempt in query parameter q
+Oct 11 09:09:20 ghostgrid sshd[2401]: Accepted publickey for czr from 10.0.0.5 port 51600 ssh2
+Oct 11 09:10:02 ghostgrid kernel: root login on tty1

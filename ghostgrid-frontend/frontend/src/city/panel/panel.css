@@ -1,0 +1,142 @@
+/* SidePanel styles. Every class and keyframe is prefixed "gg-sp-". */
+
+.gg-sp-shell {
+  box-shadow:
+    6px 6px 0 0 rgba(0, 0, 0, 0.55),
+    inset 0 0 0 2px var(--gg-void);
+}
+
+/* Faint CRT scanlines over the panel body. Purely decorative. */
+.gg-sp-scan {
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(232, 230, 255, 0.025) 0,
+    rgba(232, 230, 255, 0.025) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+/* HUD corner brackets */
+.gg-sp-corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  border-color: var(--gg-sp-accent);
+  border-style: solid;
+  border-width: 0;
+}
+.gg-sp-corner-tl { top: -4px; left: -4px; border-top-width: 2px; border-left-width: 2px; }
+.gg-sp-corner-tr { top: -4px; right: -4px; border-top-width: 2px; border-right-width: 2px; }
+.gg-sp-corner-bl { bottom: -4px; left: -4px; border-bottom-width: 2px; border-left-width: 2px; }
+.gg-sp-corner-br { bottom: -4px; right: -4px; border-bottom-width: 2px; border-right-width: 2px; }
+
+.gg-sp-strip {
+  background: var(--gg-sp-accent);
+  box-shadow: 0 0 10px 0 var(--gg-sp-glow);
+}
+
+/* Pixel scrollbar for the content area */
+.gg-sp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gg-haze) var(--gg-void);
+}
+.gg-sp-scroll::-webkit-scrollbar { width: 8px; }
+.gg-sp-scroll::-webkit-scrollbar-track { background: var(--gg-void); }
+.gg-sp-scroll::-webkit-scrollbar-thumb { background: var(--gg-haze); border-radius: 0; }
+
+/* Buttons: hard pixel shadow, press moves the button into its shadow */
+.gg-sp-btn {
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.6);
+  transition: transform 80ms steps(2), box-shadow 80ms steps(2), background-color 80ms steps(2), color 80ms steps(2);
+}
+.gg-sp-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.6); }
+.gg-sp-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.6); }
+.gg-sp-btn:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 2px; }
+
+/* Native select, re-skinned */
+.gg-sp-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+.gg-sp-select:focus-visible { outline: none; border-color: var(--gg-cyan); box-shadow: 0 0 8px 0 rgba(0, 240, 255, 0.35); }
+.gg-sp-select option { background: var(--gg-night); color: var(--gg-ink); }
+
+/* Blinking terminal cursor */
+.gg-sp-cursor { animation: gg-sp-blink 1s steps(2) infinite; }
+@keyframes gg-sp-blink { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* LIVE dot next to the log header while the building works */
+.gg-sp-live { animation: gg-sp-blink 0.6s steps(2) infinite; }
+
+/* Thumbnail windows flicker */
+.gg-sp-win { animation: gg-sp-flicker 2.4s steps(4) infinite; }
+@keyframes gg-sp-flicker {
+  0% { opacity: 1; }
+  25% { opacity: 0.55; }
+  50% { opacity: 1; }
+  75% { opacity: 0.8; }
+}
+
+/* Data cube: bob + glow pulse */
+.gg-sp-cube {
+  filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.55));
+  animation: gg-sp-bob 0.8s steps(2) infinite, gg-sp-pulse 2.4s steps(4) infinite;
+}
+@keyframes gg-sp-bob {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px); }
+}
+@keyframes gg-sp-pulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.55)); }
+  50% { filter: drop-shadow(0 0 2px rgba(57, 255, 20, 0.3)); }
+}
+.gg-sp-spark { animation: gg-sp-spark 1.2s steps(3) infinite; }
+.gg-sp-spark-2 { animation-delay: 0.4s; }
+.gg-sp-spark-3 { animation-delay: 0.8s; }
+@keyframes gg-sp-spark {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* "SAVED" flash after a config change */
+.gg-sp-saved { animation: gg-sp-saved 1.2s steps(6) forwards; }
+@keyframes gg-sp-saved {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-sp-cursor,
+  .gg-sp-live,
+  .gg-sp-win,
+  .gg-sp-cube,
+  .gg-sp-spark,
+  .gg-sp-saved {
+    animation: none !important;
+  }
+  .gg-sp-btn,
+  .gg-sp-btn:hover,
+  .gg-sp-btn:active {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Text inputs (endpoint, schedule, notes, rename), re-skinned like the select */
+.gg-sp-input {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+.gg-sp-input:focus-visible { outline: none; border-color: var(--gg-cyan); box-shadow: 0 0 8px 0 rgba(0, 240, 255, 0.35); }
+
+/* Bot color swatches */
+.gg-sp-swatch { box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.6); }
+.gg-sp-swatch[aria-checked='true'] { outline: 2px solid var(--gg-ink); outline-offset: 2px; }
+.gg-sp-swatch:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 2px; }

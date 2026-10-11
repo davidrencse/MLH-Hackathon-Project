@@ -1,0 +1,290 @@
+/* ShaderSky — every class / keyframe is prefixed gg-atmo- */
+
+.gg-atmo-root {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: var(--gg-void);
+}
+
+.gg-atmo-root > div {
+  position: absolute;
+  inset: 0;
+}
+
+/* CSS sky: 8-bit banded gradient (void → night → dusk) + horizon glows */
+.gg-atmo-css {
+  background:
+    radial-gradient(80% 44% at 50% 86%, rgba(255, 43, 214, 0.2) 0%, rgba(255, 43, 214, 0.07) 55%, rgba(255, 43, 214, 0) 100%),
+    radial-gradient(36% 26% at 14% 88%, rgba(0, 240, 255, 0.12) 0%, rgba(0, 240, 255, 0) 100%),
+    radial-gradient(30% 22% at 88% 88%, rgba(0, 240, 255, 0.08) 0%, rgba(0, 240, 255, 0) 100%),
+    linear-gradient(
+      180deg,
+      rgba(26, 16, 64, 0) 0 30%,
+      rgba(26, 16, 64, 0.5) 30% 44%,
+      rgba(26, 16, 64, 1) 44% 56%,
+      rgba(42, 26, 94, 0.6) 56% 67%,
+      rgba(42, 26, 94, 0.8) 67% 78%,
+      rgba(42, 26, 94, 1) 78% 100%
+    );
+}
+
+/* Slow nebula drift for the CSS path (two big soft neon clouds high in the sky) */
+.gg-atmo-root .gg-atmo-css-nebula {
+  inset: -10%;
+  background:
+    radial-gradient(28% 18% at 72% 26%, rgba(255, 43, 214, 0.09) 0%, rgba(255, 43, 214, 0) 100%),
+    radial-gradient(32% 16% at 24% 18%, rgba(0, 240, 255, 0.06) 0%, rgba(0, 240, 255, 0) 100%),
+    radial-gradient(22% 12% at 48% 40%, rgba(255, 43, 214, 0.05) 0%, rgba(255, 43, 214, 0) 100%);
+  animation: gg-atmo-drift 48s steps(48) infinite alternate;
+}
+
+@keyframes gg-atmo-drift {
+  from {
+    transform: translate3d(-3%, 0, 0);
+  }
+  to {
+    transform: translate3d(3%, 1.5%, 0);
+  }
+}
+
+/* State tint over the sky. Cross-fades on status change. */
+.gg-atmo-tint {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.gg-atmo-tint[data-on='true'] {
+  opacity: 1;
+}
+
+.gg-atmo-tint--approval {
+  background:
+    radial-gradient(85% 48% at 50% 84%, rgba(255, 212, 0, 0.3) 0%, rgba(255, 212, 0, 0.1) 55%, rgba(255, 212, 0, 0) 100%),
+    linear-gradient(0deg, rgba(255, 212, 0, 0.09) 0%, rgba(255, 212, 0, 0) 60%);
+}
+
+.gg-atmo-tint--error {
+  background:
+    radial-gradient(90% 52% at 50% 84%, rgba(255, 51, 85, 0.32) 0%, rgba(255, 51, 85, 0.1) 55%, rgba(255, 51, 85, 0) 100%),
+    linear-gradient(0deg, rgba(255, 51, 85, 0.1) 0%, rgba(255, 51, 85, 0) 65%);
+}
+
+.gg-atmo-tint--error[data-on='true'] {
+  animation: gg-atmo-alarm 2.4s steps(4) infinite;
+}
+
+@keyframes gg-atmo-alarm {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Faint CRT scanlines: 2px dark line every 4 real px */
+.gg-atmo-scan {
+  background: repeating-linear-gradient(0deg, rgba(11, 8, 32, 0.16) 0 2px, rgba(11, 8, 32, 0) 2px 4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-atmo-css-nebula,
+  .gg-atmo-tint--error[data-on='true'] {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* SpireHalo — every class / keyframe is prefixed gg-halo-.            */
+/* All sizes are LOGICAL px: this lives inside the scaled 384×216 stage. */
+
+.gg-halo {
+  --gg-halo-main: var(--gg-cyan);
+  --gg-halo-hi: var(--gg-pink);
+  --gg-halo-glow: rgba(0, 240, 255, 0.6);
+  --gg-halo-bloom: rgba(0, 240, 255, 0.22);
+  position: absolute;
+  pointer-events: none;
+  isolation: isolate;
+  filter: drop-shadow(0 0 1px var(--gg-halo-glow)) drop-shadow(0 0 4px var(--gg-halo-bloom));
+  transition: filter 0.4s ease;
+}
+
+.gg-halo[data-state='approval'] {
+  --gg-halo-main: var(--gg-yellow);
+  --gg-halo-hi: var(--gg-ink);
+  --gg-halo-glow: rgba(255, 212, 0, 0.6);
+  --gg-halo-bloom: rgba(255, 212, 0, 0.22);
+}
+
+.gg-halo[data-state='error'] {
+  --gg-halo-main: var(--gg-red);
+  --gg-halo-hi: var(--gg-ink);
+  --gg-halo-glow: rgba(255, 51, 85, 0.6);
+  --gg-halo-bloom: rgba(255, 51, 85, 0.25);
+}
+
+.gg-halo i,
+.gg-halo span {
+  position: absolute;
+  display: block;
+}
+
+/* moving ring / satellite pixels (positioned every frame by SpireHalo) */
+.gg-halo-px {
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  background-color: var(--gg-halo-main);
+  transition: background-color 0.4s ease;
+}
+.gg-halo-px--seg {
+  width: 2px;
+}
+.gg-halo-px--sat {
+  width: 2px;
+  height: 2px;
+}
+.gg-halo-px--hi {
+  background-color: var(--gg-halo-hi);
+}
+.gg-halo-px--ink {
+  background-color: var(--gg-ink);
+}
+
+/* static ellipse tracks: box-shadow pixels on a 1×1 anchor at (0,0) */
+.gg-halo-track {
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  color: var(--gg-halo-main);
+  opacity: 0.22;
+  z-index: 1;
+  transition: color 0.4s ease;
+}
+.gg-halo-track--inner {
+  opacity: 0.14;
+}
+
+/* projector cone: pixel staircase from the antenna up to the ring */
+.gg-halo .gg-halo-cone {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.12;
+  animation: gg-halo-flicker 2.4s steps(4) infinite;
+}
+.gg-halo-cone i {
+  background-color: var(--gg-halo-main);
+}
+
+/* core beam: brightest at the antenna, stepped fade toward the ring */
+.gg-halo-beam {
+  width: 2px;
+  z-index: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--gg-halo-main) 70%, transparent) 0 30%,
+    color-mix(in srgb, var(--gg-halo-main) 45%, transparent) 30% 65%,
+    color-mix(in srgb, var(--gg-halo-main) 22%, transparent) 65% 100%
+  );
+}
+
+/* faint beam leaking above the halo into the sky */
+.gg-halo-beam-up {
+  width: 2px;
+  z-index: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--gg-halo-main) 40%, transparent) 0 35%,
+    color-mix(in srgb, var(--gg-halo-main) 18%, transparent) 35% 70%,
+    color-mix(in srgb, var(--gg-halo-main) 7%, transparent) 70% 100%
+  );
+}
+
+/* data packet rising up the beam */
+.gg-halo-packet {
+  top: 0;
+  width: 2px;
+  height: 2px;
+  z-index: 2;
+  background-color: var(--gg-halo-hi);
+  animation: gg-halo-rise 1.2s steps(8) infinite;
+}
+.gg-halo[data-working='true'] .gg-halo-packet {
+  animation-duration: 0.6s;
+}
+
+/* floating diamond core between the two rings */
+.gg-halo-core {
+  width: 1px;
+  height: 1px;
+  z-index: 2;
+  box-shadow:
+    1px 0 0 0 var(--gg-halo-hi),
+    2px 0 0 0 var(--gg-halo-hi),
+    0 1px 0 0 var(--gg-halo-hi),
+    1px 1px 0 0 var(--gg-ink),
+    2px 1px 0 0 var(--gg-ink),
+    3px 1px 0 0 var(--gg-halo-hi),
+    0 2px 0 0 var(--gg-halo-hi),
+    1px 2px 0 0 var(--gg-ink),
+    2px 2px 0 0 var(--gg-ink),
+    3px 2px 0 0 var(--gg-halo-hi),
+    1px 3px 0 0 var(--gg-halo-hi),
+    2px 3px 0 0 var(--gg-halo-hi);
+  animation: gg-halo-bob 0.8s steps(2) infinite;
+}
+
+@keyframes gg-halo-flicker {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  25% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  75% {
+    opacity: 0.14;
+  }
+}
+
+@keyframes gg-halo-rise {
+  from {
+    transform: translateY(26px);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(10px);
+    opacity: 0.2;
+  }
+}
+
+@keyframes gg-halo-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-halo .gg-halo-cone,
+  .gg-halo-packet,
+  .gg-halo-core {
+    animation: none;
+  }
+  .gg-halo .gg-halo-packet {
+    display: none;
+  }
+}

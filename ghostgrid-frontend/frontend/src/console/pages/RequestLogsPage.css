@@ -1,0 +1,88 @@
+/* Request Logs page. Every class and keyframe is prefixed gg-logs- (module: logs). */
+
+.gg-logs-focus {
+  outline: none;
+}
+.gg-logs-focus:focus-visible {
+  outline: 2px solid var(--gg-cyan);
+  outline-offset: -2px;
+}
+
+/* Pixel button: hard shadow, pressed state shifts by 2px. */
+.gg-logs-btn {
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.5);
+}
+.gg-logs-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.5);
+}
+.gg-logs-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* A row that arrived on a live refresh. */
+.gg-logs-fresh {
+  animation: gg-logs-fresh 1.6s steps(8) 1;
+}
+@keyframes gg-logs-fresh {
+  0% {
+    background-color: color-mix(in srgb, var(--gg-pink) 30%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.gg-logs-live-dot {
+  animation: gg-logs-blink 1s steps(2) infinite;
+}
+.gg-logs-skel {
+  animation: gg-logs-blink 1.2s steps(2) infinite;
+}
+@keyframes gg-logs-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.gg-logs-spin {
+  animation: gg-logs-spin 0.6s steps(8) infinite;
+}
+@keyframes gg-logs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty-state ghost: bobs 4px, cyan glow under 0.6 alpha. */
+.gg-logs-ghost {
+  animation: gg-logs-bob 0.8s steps(2) infinite;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.35));
+}
+@keyframes gg-logs-bob {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* JSON viewer: faint CRT scanlines behind the code. */
+.gg-logs-code {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.18) 2px 4px);
+  overflow-wrap: anywhere;
+  scrollbar-color: var(--gg-haze) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-logs-fresh,
+  .gg-logs-live-dot,
+  .gg-logs-skel,
+  .gg-logs-spin,
+  .gg-logs-ghost {
+    animation: none;
+  }
+  .gg-logs-btn:active:not(:disabled) {
+    transform: none;
+  }
+}

@@ -1,0 +1,12 @@
+.gg-weather { position: absolute; bottom: 16px; left: 16px; z-index: 30; width: 250px; padding: 12px; border: 2px solid var(--gg-haze); background: rgba(11,8,32,.94); color: var(--gg-ink); box-shadow: 4px 4px 0 rgba(0,0,0,.5); }
+.gg-weather-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 8px; color: var(--gg-cyan); }
+.gg-weather-source { color: var(--gg-mute); font-size: 7px; }
+.gg-weather-main { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.gg-weather-main > svg { color: var(--gg-yellow); flex-shrink: 0; }
+.gg-weather-main .font-pixel { font-size: 16px; }
+.gg-weather-main .font-mono { font-size: 11px; }
+.gg-weather-details { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10px; color: var(--gg-mute); }
+.gg-weather-details > span { display: flex; align-items: center; gap: 4px; }
+.gg-weather-details a:hover { color: var(--gg-cyan); }
+.gg-weather-details a:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 2px; }
+@media (width < 600px) { .gg-weather { bottom: 12px; left: 12px; width: 220px; padding: 10px; } .gg-weather-main { margin: 10px 0; gap: 10px; } .gg-weather-main .font-pixel { font-size: 14px; } }

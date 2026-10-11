@@ -1,0 +1,120 @@
+/* API Keys page (module: keys). Every class and @keyframes name is prefixed gg-keys-. */
+
+/* ---- Native <select> skin ---- */
+.gg-keys-select option {
+  background: var(--gg-night);
+  color: var(--gg-ink);
+}
+
+/* ---- Pixel loader: three blocks light up in sequence ---- */
+.gg-keys-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.gg-keys-loader > span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  opacity: 0.25;
+  animation: gg-keys-step 0.9s steps(1, end) infinite;
+}
+.gg-keys-loader > span:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.gg-keys-loader > span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+@keyframes gg-keys-step {
+  0% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.25;
+  }
+}
+
+/* ---- Big pixel key (empty state) ---- */
+.gg-keys-pixkey {
+  filter: drop-shadow(0 0 6px rgba(255, 43, 214, 0.5));
+  animation: gg-keys-bob 1.6s steps(1, end) infinite;
+}
+@keyframes gg-keys-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.gg-keys-sparkle {
+  animation: gg-keys-sparkle 2.4s steps(1, end) infinite;
+}
+@keyframes gg-keys-sparkle {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  70%,
+  90% {
+    opacity: 1;
+  }
+}
+
+/* ---- Notice banner: hazard stripe on the left edge (hard edges, no blur) ---- */
+.gg-keys-hazard {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--gg-yellow) 0 6px,
+    var(--gg-void) 6px 12px
+  );
+}
+
+/* ---- Newly added row: pink flash, then settle ---- */
+.gg-keys-row-new {
+  animation: gg-keys-flash 1.2s steps(6, end) both;
+}
+@keyframes gg-keys-flash {
+  0%,
+  30% {
+    background: rgba(255, 43, 214, 0.18);
+    box-shadow: inset 4px 0 0 0 var(--gg-pink);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 4px 0 0 0 transparent;
+  }
+}
+
+/* ---- One-time secret box ---- */
+.gg-keys-secret {
+  user-select: all;
+  box-shadow:
+    inset 0 0 0 2px var(--gg-green),
+    0 0 10px rgba(57, 255, 20, 0.25);
+}
+
+/* ---- Blinking cursor ---- */
+.gg-keys-cursor {
+  animation: gg-keys-cursor 1s steps(1, end) infinite;
+}
+@keyframes gg-keys-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-keys-pixkey,
+  .gg-keys-sparkle,
+  .gg-keys-row-new,
+  .gg-keys-cursor {
+    animation: none;
+  }
+  .gg-keys-loader > span {
+    animation: none;
+    opacity: 1;
+  }
+}

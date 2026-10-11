@@ -1,0 +1,198 @@
+/* Office interior styles. Every class and keyframe is prefixed "gg-of-". Pixel art only:
+   2px borders, radius 0, hard shadows, steps() animation. Colors come from the Slop Angeles tokens. */
+
+.gg-of-shell {
+  box-shadow:
+    8px 8px 0 0 rgba(0, 0, 0, 0.6),
+    inset 0 0 0 2px var(--gg-void);
+}
+
+.gg-of-scan {
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(232, 230, 255, 0.03) 0,
+    rgba(232, 230, 255, 0.03) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+/* ---- room shell: back wall, window strip, floor ---- */
+
+.gg-of-wall {
+  background-color: var(--gg-night);
+  /* faint wall panel seams every 32px */
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(61, 42, 122, 0.55) 0,
+    rgba(61, 42, 122, 0.55) 2px,
+    transparent 2px,
+    transparent 32px
+  );
+}
+
+/* Floor: perspective-free tile grid (the city is dimetric, the office is a flat side view). */
+.gg-of-floor {
+  background-color: var(--gg-void);
+  background-image:
+    repeating-linear-gradient(to right, rgba(61, 42, 122, 0.5) 0, rgba(61, 42, 122, 0.5) 2px, transparent 2px, transparent 24px),
+    repeating-linear-gradient(to bottom, rgba(61, 42, 122, 0.35) 0, rgba(61, 42, 122, 0.35) 2px, transparent 2px, transparent 24px);
+}
+
+/* Night skyline behind the window: distant blocks, lit windows flicker. */
+.gg-of-win {
+  animation: gg-of-flicker 2.4s steps(4) infinite;
+}
+@keyframes gg-of-flicker {
+  0% { opacity: 1; }
+  25% { opacity: 0.5; }
+  50% { opacity: 1; }
+  75% { opacity: 0.75; }
+}
+
+/* ---- desks (one per session) ---- */
+
+.gg-of-desk {
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.55);
+  transition: transform 80ms steps(2), box-shadow 80ms steps(2);
+}
+.gg-of-desk[data-busy='1'] {
+  box-shadow:
+    4px 4px 0 0 rgba(0, 0, 0, 0.55),
+    0 0 10px 0 var(--gg-of-glow);
+}
+
+/* Monitor screen. The glyph layer scrolls only while the session runs. */
+.gg-of-screen {
+  background-color: #060412;
+  box-shadow: inset 0 0 0 2px var(--gg-haze);
+  overflow: hidden;
+}
+.gg-of-glyph {
+  position: absolute;
+  inset: -100% 0 -100% 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--gg-of-tone) 0,
+    var(--gg-of-tone) 2px,
+    transparent 2px,
+    transparent 6px
+  );
+  opacity: 0.55;
+}
+.gg-of-glyph[data-run='1'] {
+  animation: gg-of-scroll 1.2s steps(8) infinite;
+}
+@keyframes gg-of-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(24px); }
+}
+
+/* Cursor block on an idle / queued screen */
+.gg-of-caret {
+  animation: gg-of-blink 1s steps(2) infinite;
+}
+@keyframes gg-of-blink {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* The little worker at the desk: nods while the session runs. */
+.gg-of-worker[data-run='1'] {
+  animation: gg-of-nod 0.8s steps(2) infinite;
+}
+@keyframes gg-of-nod {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+/* ---- wall fixtures ---- */
+
+.gg-of-led {
+  animation: gg-of-blink 0.6s steps(2) infinite;
+}
+.gg-of-led-2 { animation-delay: 0.2s; }
+.gg-of-led-3 { animation-delay: 0.4s; }
+.gg-of-led-4 { animation-delay: 0.15s; }
+
+/* Groq pit rail: chevrons chase toward the exit */
+.gg-of-chev {
+  animation: gg-of-chase 0.9s steps(3) infinite;
+}
+.gg-of-chev-2 { animation-delay: 0.3s; }
+.gg-of-chev-3 { animation-delay: 0.6s; }
+@keyframes gg-of-chase {
+  0%, 60% { opacity: 0.2; }
+  30% { opacity: 1; }
+}
+
+/* Router switchboard: one plug lights at a time */
+.gg-of-plug {
+  animation: gg-of-chase 1.5s steps(5) infinite;
+}
+
+.gg-of-btn {
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.6);
+  transition: transform 80ms steps(2), box-shadow 80ms steps(2), background-color 80ms steps(2), color 80ms steps(2);
+}
+.gg-of-btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.6); }
+.gg-of-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.6); }
+.gg-of-btn:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 2px; }
+.gg-of-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Runtime tiles in the session menu */
+.gg-of-rt {
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.55);
+}
+.gg-of-rt[aria-pressed='true'] {
+  border-color: var(--gg-of-tone);
+  box-shadow:
+    2px 2px 0 0 rgba(0, 0, 0, 0.55),
+    0 0 8px 0 var(--gg-of-glow);
+}
+.gg-of-rt:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 2px; }
+
+.gg-of-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gg-haze) var(--gg-void);
+}
+.gg-of-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.gg-of-scroll::-webkit-scrollbar-track { background: var(--gg-void); }
+.gg-of-scroll::-webkit-scrollbar-thumb { background: var(--gg-haze); border-radius: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-of-win,
+  .gg-of-glyph,
+  .gg-of-caret,
+  .gg-of-worker,
+  .gg-of-led,
+  .gg-of-chev,
+  .gg-of-plug {
+    animation: none !important;
+  }
+  .gg-of-btn,
+  .gg-of-btn:hover,
+  .gg-of-btn:active {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Inputs + selects in the session menu (self-contained: the office does not depend on panel.css) */
+.gg-of-input,
+.gg-of-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+.gg-of-input:focus-visible,
+.gg-of-select:focus-visible {
+  outline: none;
+  border-color: var(--gg-cyan);
+  box-shadow: 0 0 8px 0 rgba(0, 240, 255, 0.35);
+}
+.gg-of-select option {
+  background: var(--gg-night);
+  color: var(--gg-ink);
+}

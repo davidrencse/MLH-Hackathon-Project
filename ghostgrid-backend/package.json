@@ -1,0 +1,40 @@
+{
+  "name": "ghostgrid-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "start": "tsx --env-file-if-exists=.env src/server.ts",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-migrations.mjs",
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism",
+    "check": "tsc --noEmit",
+    "start:built": "node --env-file-if-exists=.env dist/server.js",
+    "demo": "tsx scripts/demo.ts",
+    "test:built": "node scripts/smoke-built.mjs",
+    "test:http": "node scripts/validate-http.mjs",
+    "check:scripts": "node scripts/check-scripts.mjs",
+    "verify": "node scripts/verify.mjs",
+    "check:providers": "node --env-file-if-exists=.env --import tsx scripts/check-provider-connectivity.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "fastify": "5.12.5",
+    "pino": "10.4.0",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.296",
+    "@openai/codex-sdk": "0.162.1"
+  }
+}

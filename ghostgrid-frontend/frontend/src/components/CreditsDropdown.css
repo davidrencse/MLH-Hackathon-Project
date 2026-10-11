@@ -1,0 +1,165 @@
+/* CREDITS hover panel (gg-cred-*). Matches the HUD: 2px borders, pixel font, hard shadows. */
+
+.gg-cred-anchor {
+  display: contents;
+}
+
+.gg-cred-panel {
+  position: fixed;
+  z-index: 50;
+  width: 320px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--gg-void);
+  border: 2px solid var(--gg-cyan);
+  /* stepped bloom instead of a blurred shadow, so the edge stays pixel-crisp */
+  box-shadow:
+    0 0 0 2px rgba(0, 240, 255, 0.35),
+    0 0 0 4px rgba(0, 240, 255, 0.14);
+  animation: gg-cred-in 90ms steps(3, end);
+}
+
+@keyframes gg-cred-in {
+  from {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+}
+
+.gg-cred-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--gg-haze);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--gg-cyan);
+}
+
+.gg-cred-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--gg-mute);
+  border: 2px solid var(--gg-haze);
+  background: transparent;
+  cursor: pointer;
+}
+.gg-cred-refresh:hover:not(:disabled) {
+  color: var(--gg-pink);
+  border-color: var(--gg-pink);
+}
+.gg-cred-refresh:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.gg-cred-spin {
+  animation: gg-cred-spin 1s steps(8, end) infinite;
+}
+@keyframes gg-cred-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gg-cred-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* dot | name | value | sub, with the bar spanning the full width underneath */
+.gg-cred-row {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  grid-template-areas:
+    'dot name value'
+    'bar bar sub';
+  align-items: center;
+  gap: 2px 8px;
+  padding: 5px 4px;
+  border: 2px solid transparent;
+}
+.gg-cred-row:hover {
+  border-color: var(--gg-haze);
+}
+/* nothing readable from this provider: dim the whole row */
+.gg-cred-row[data-status='nokey'],
+.gg-cred-row[data-status='unsupported'] {
+  opacity: 0.55;
+}
+
+.gg-cred-dot {
+  grid-area: dot;
+  width: 8px;
+  height: 8px;
+}
+
+.gg-cred-name {
+  grid-area: name;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--gg-ink);
+}
+
+.gg-cred-value {
+  grid-area: value;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.gg-cred-sub {
+  grid-area: sub;
+  justify-self: end;
+  max-width: 180px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.1;
+  color: var(--gg-mute);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gg-cred-bar {
+  grid-area: bar;
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  margin-top: 2px;
+}
+.gg-cred-bar > span {
+  flex: 1;
+}
+
+.gg-cred-err {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--gg-red);
+}
+
+.gg-cred-foot {
+  margin: 0;
+  padding-top: 6px;
+  border-top: 2px solid var(--gg-haze);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--gg-mute);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-cred-panel,
+  .gg-cred-spin {
+    animation: none;
+  }
+}

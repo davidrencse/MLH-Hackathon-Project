@@ -1,0 +1,43 @@
+/* CITY STATS overview (owned by the overview module). Every class / keyframe is prefixed gg-ov-. */
+
+/* Game-window frame: inner bevel + hard drop shadow, no blur. */
+.gg-ov-frame {
+  box-shadow:
+    inset 2px 2px 0 0 rgba(255, 255, 255, 0.05),
+    inset -2px -2px 0 0 rgba(0, 0, 0, 0.35),
+    4px 4px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+.gg-ov-pip {
+  box-shadow: inset -2px -2px 0 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Alert-level resource tile: pip blinks like the error beacon (0.6s steps(2)). */
+.gg-ov-alert {
+  animation: gg-ov-blink 0.6s infinite steps(1, end);
+}
+
+/* Blinking terminal cursor / loading text. */
+.gg-ov-cursor {
+  animation: gg-ov-blink 1s infinite steps(1, end);
+}
+
+@keyframes gg-ov-blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* Accent pixel icon for citizens: 4px bevel block. */
+.gg-ov-icon {
+  box-shadow:
+    inset 4px 4px 0 0 rgba(255, 255, 255, 0.22),
+    inset -4px -4px 0 0 rgba(0, 0, 0, 0.35),
+    2px 2px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-ov-alert,
+  .gg-ov-cursor {
+    animation: none !important;
+  }
+}

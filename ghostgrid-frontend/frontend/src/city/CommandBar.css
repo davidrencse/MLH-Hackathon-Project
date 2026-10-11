@@ -1,0 +1,100 @@
+/* CommandBar — all names prefixed gg-cmd- */
+
+/* faint CRT scanlines inside the bar */
+.gg-cmd-scan {
+  background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px);
+}
+
+/* crisp neon ring when the input has focus (no blur) */
+.gg-cmd-bar:focus-within {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gg-cyan) 28%, transparent);
+}
+
+.gg-cmd-glyph {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--gg-cyan) 55%, transparent));
+}
+
+/* phase step indicator (8×8 pixel square) */
+.gg-cmd-pip {
+  width: 8px;
+  height: 8px;
+  flex: none;
+}
+.gg-cmd-pip-on {
+  background: var(--gg-cmd-c);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--gg-cmd-c) 60%, transparent);
+}
+.gg-cmd-pip-past {
+  background: var(--gg-mute);
+}
+.gg-cmd-pip-off {
+  box-shadow: inset 0 0 0 2px var(--gg-haze);
+}
+
+/* approval: 0.8s steps(2) blink */
+.gg-cmd-blink {
+  animation: gg-cmd-blink 0.8s steps(2, jump-none) infinite;
+}
+@keyframes gg-cmd-blink {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+/* busy loader: three pixel blocks lighting in sequence */
+.gg-cmd-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--gg-cmd-c);
+  opacity: 0.2;
+  animation: gg-cmd-dot 0.9s steps(1, end) infinite;
+}
+.gg-cmd-dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.gg-cmd-dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+@keyframes gg-cmd-dot {
+  0% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.2;
+  }
+}
+
+/* busy sweep along the bottom edge of the bar */
+.gg-cmd-sweep {
+  width: 25%;
+  height: 2px;
+  background: var(--gg-cmd-c);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--gg-cmd-c) 60%, transparent);
+  animation: gg-cmd-sweep 1.2s steps(16, end) infinite;
+}
+@keyframes gg-cmd-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-cmd-blink,
+  .gg-cmd-dot,
+  .gg-cmd-sweep {
+    animation: none;
+  }
+  .gg-cmd-dot {
+    opacity: 1;
+  }
+  .gg-cmd-sweep {
+    width: 100%;
+    opacity: 0.6;
+  }
+}

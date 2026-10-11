@@ -1,0 +1,308 @@
+/* Flight layer sprites. All units are LOGICAL px (stage is integer-scaled). Prefix: gg-flt- */
+
+.gg-flt-anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+.gg-flt-box {
+  position: absolute;
+}
+.gg-flt-flip {
+  transform: scaleX(-1);
+}
+/* Carrier for box-shadow pixels: sits at (-2,-2), shadows are offset by +2 (see Drone.tsx). */
+.gg-flt-px {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 1px;
+  height: 1px;
+  display: block;
+}
+
+/* ---- glow (neon <= 0.6 alpha) ---- */
+.gg-flt-glow-cyan {
+  filter: drop-shadow(0 0 1px rgba(0, 240, 255, 0.45));
+}
+.gg-flt-glow-yellow {
+  filter: drop-shadow(0 0 1px rgba(255, 212, 0, 0.6));
+}
+
+/* ---- loops ---- */
+.gg-flt-rotor {
+  animation: gg-flt-blink 0.14s steps(2, jump-none) infinite;
+}
+.gg-flt-rotor-idle {
+  animation-duration: 0.36s;
+}
+.gg-flt-led {
+  filter: drop-shadow(0 0 1px rgba(255, 43, 214, 0.6));
+  animation: gg-flt-blink 0.8s steps(2, jump-none) infinite;
+}
+.gg-flt-led-red {
+  filter: drop-shadow(0 0 1px rgba(255, 51, 85, 0.6));
+  animation-duration: 0.3s;
+}
+.gg-flt-cube {
+  filter: drop-shadow(0 0 1.5px rgba(57, 255, 20, 0.6));
+  animation: gg-flt-pulse 0.6s steps(2, jump-none) infinite;
+}
+.gg-flt-spark {
+  animation: gg-flt-blink 0.16s steps(2, jump-none) infinite;
+}
+.gg-flt-shake {
+  animation: gg-flt-shake 0.3s steps(1, end) infinite;
+}
+.gg-flt-bob {
+  animation: gg-flt-bob 1.2s steps(2, jump-none) infinite;
+}
+.gg-flt-bob-slow {
+  animation-duration: 1.8s;
+}
+
+@keyframes gg-flt-blink {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes gg-flt-pulse {
+  to {
+    opacity: 0.7;
+  }
+}
+@keyframes gg-flt-bob {
+  to {
+    transform: translateY(-1px);
+  }
+}
+@keyframes gg-flt-shake {
+  0% {
+    transform: translate(-1px, 0);
+  }
+  33% {
+    transform: translate(1px, 0);
+  }
+  66% {
+    transform: translate(0, 1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* ---- parked drone power-up flicker (waits for a landing drone to finish) ---- */
+.gg-flt-boot {
+  animation: gg-flt-boot 0.4s steps(1, end) 0.3s both;
+}
+@keyframes gg-flt-boot {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0;
+  }
+  75%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ---- landing: sink 2px into the dock and cut out ---- */
+.gg-flt-dock {
+  animation: gg-flt-dock 0.3s steps(1, end) forwards;
+}
+@keyframes gg-flt-dock {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  33% {
+    transform: translateY(1px);
+    opacity: 1;
+  }
+  66% {
+    transform: translateY(2px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(2px);
+    opacity: 0;
+  }
+}
+
+/* ---- ring burst (take-off / landing). color = kind color via currentColor ---- */
+.gg-flt-burst {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  display: block;
+  animation: gg-flt-burst 0.36s steps(1, end) forwards;
+}
+@keyframes gg-flt-burst {
+  0% {
+    opacity: 1;
+    box-shadow:
+      -2px 0 0 0 currentColor,
+      2px 0 0 0 currentColor,
+      0 -2px 0 0 currentColor,
+      0 2px 0 0 currentColor,
+      -2px 0 0 0 currentColor,
+      2px 0 0 0 currentColor,
+      0 -2px 0 0 currentColor,
+      0 2px 0 0 currentColor;
+  }
+  33% {
+    opacity: 1;
+    box-shadow:
+      -4px 0 0 0 currentColor,
+      4px 0 0 0 currentColor,
+      0 -4px 0 0 currentColor,
+      0 3px 0 0 currentColor,
+      -3px -3px 0 0 currentColor,
+      3px -3px 0 0 currentColor,
+      -3px 2px 0 0 currentColor,
+      3px 2px 0 0 currentColor;
+  }
+  66% {
+    opacity: 0.5;
+    box-shadow:
+      -6px 0 0 0 currentColor,
+      6px 0 0 0 currentColor,
+      0 -6px 0 0 currentColor,
+      0 4px 0 0 currentColor,
+      -5px -4px 0 0 currentColor,
+      5px -4px 0 0 currentColor,
+      -5px 3px 0 0 currentColor,
+      5px 3px 0 0 currentColor;
+  }
+  100% {
+    opacity: 0;
+    box-shadow:
+      -6px 0 0 0 currentColor,
+      6px 0 0 0 currentColor,
+      0 -6px 0 0 currentColor,
+      0 4px 0 0 currentColor,
+      -5px -4px 0 0 currentColor,
+      5px -4px 0 0 currentColor,
+      -5px 3px 0 0 currentColor,
+      5px 3px 0 0 currentColor;
+  }
+}
+
+/* ---- smoke puff (damaged drone): grows 2x2 → blob → ring → dust, rising 4px ---- */
+.gg-flt-puff {
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  width: 1px;
+  height: 1px;
+  display: block;
+  animation: gg-flt-puff 0.9s steps(1, end) forwards;
+}
+@keyframes gg-flt-puff {
+  0% {
+    opacity: 0.9;
+    transform: translateY(0);
+    box-shadow:
+      2px 2px 0 0 currentColor,
+      3px 2px 0 0 currentColor,
+      2px 3px 0 0 currentColor,
+      3px 3px 0 0 currentColor,
+      2px 2px 0 0 currentColor,
+      3px 2px 0 0 currentColor,
+      2px 3px 0 0 currentColor,
+      3px 3px 0 0 currentColor;
+  }
+  25% {
+    opacity: 0.75;
+    transform: translateY(-1px);
+    box-shadow:
+      2px 1px 0 0 currentColor,
+      3px 1px 0 0 currentColor,
+      1px 2px 0 0 currentColor,
+      2px 2px 0 0 currentColor,
+      3px 2px 0 0 currentColor,
+      4px 2px 0 0 currentColor,
+      2px 3px 0 0 currentColor,
+      3px 3px 0 0 currentColor;
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-2px);
+    box-shadow:
+      2px 1px 0 0 currentColor,
+      3px 1px 0 0 currentColor,
+      1px 2px 0 0 currentColor,
+      4px 2px 0 0 currentColor,
+      1px 3px 0 0 currentColor,
+      4px 3px 0 0 currentColor,
+      2px 4px 0 0 currentColor,
+      3px 4px 0 0 currentColor;
+  }
+  75% {
+    opacity: 0.3;
+    transform: translateY(-3px);
+    box-shadow:
+      1px 1px 0 0 currentColor,
+      4px 1px 0 0 currentColor,
+      1px 4px 0 0 currentColor,
+      4px 4px 0 0 currentColor,
+      1px 1px 0 0 currentColor,
+      4px 1px 0 0 currentColor,
+      1px 4px 0 0 currentColor,
+      4px 4px 0 0 currentColor;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+    box-shadow:
+      1px 1px 0 0 currentColor,
+      4px 1px 0 0 currentColor,
+      1px 4px 0 0 currentColor,
+      4px 4px 0 0 currentColor,
+      1px 1px 0 0 currentColor,
+      4px 1px 0 0 currentColor,
+      1px 4px 0 0 currentColor,
+      4px 4px 0 0 currentColor;
+  }
+}
+
+/* ---- ambient patrol drone: 1 logical px per step, crosses then waits off-stage ---- */
+.gg-flt-patrol {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  opacity: 0.7;
+  animation: gg-flt-patrol 44s steps(400) -4s infinite;
+}
+@keyframes gg-flt-patrol {
+  0% {
+    transform: translateX(-8px);
+  }
+  70%,
+  100% {
+    transform: translateX(392px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-flt-patrol,
+  .gg-flt-trail,
+  .gg-flt-puff {
+    display: none;
+  }
+  .gg-flt-rotor,
+  .gg-flt-led,
+  .gg-flt-cube,
+  .gg-flt-spark,
+  .gg-flt-shake,
+  .gg-flt-bob {
+    animation: none;
+  }
+}

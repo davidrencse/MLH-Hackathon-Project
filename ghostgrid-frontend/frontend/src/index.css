@@ -1,0 +1,158 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource/press-start-2p";
+@import "@fontsource/vt323";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-pixel);
+    --font-sans: 'VT323', monospace;
+    --font-mono: 'VT323', monospace;
+    --font-pixel: 'Press Start 2P', monospace;
+    --color-gg-void: #0b0820;
+    --color-gg-night: #1a1040;
+    --color-gg-dusk: #2a1a5e;
+    --color-gg-haze: #3d2a7a;
+    --color-gg-ink: #e8e6ff;
+    --color-gg-mute: #8f8ab8;
+    --color-gg-pink: #ff2bd6;
+    --color-gg-cyan: #00f0ff;
+    --color-gg-green: #39ff14;
+    --color-gg-yellow: #ffd400;
+    --color-gg-red: #ff3355;
+    --color-gg-grey: #5a5677;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    /* Slop Angeles tokens (see DESIGN.md) */
+    --gg-void: #0b0820;
+    --gg-night: #1a1040;
+    --gg-dusk: #2a1a5e;
+    --gg-haze: #3d2a7a;
+    --gg-ink: #e8e6ff;
+    --gg-mute: #8f8ab8;
+    --gg-pink: #ff2bd6;
+    --gg-cyan: #00f0ff;
+    --gg-green: #39ff14;
+    --gg-yellow: #ffd400;
+    --gg-red: #ff3355;
+    --gg-grey: #5a5677;
+
+    /* shadcn tokens mapped to the Slop Angeles palette. Always dark. */
+    --background: #0b0820;
+    --foreground: #e8e6ff;
+    --card: #1a1040;
+    --card-foreground: #e8e6ff;
+    --popover: #1a1040;
+    --popover-foreground: #e8e6ff;
+    --primary: #00f0ff;
+    --primary-foreground: #0b0820;
+    --secondary: #2a1a5e;
+    --secondary-foreground: #e8e6ff;
+    --muted: #1a1040;
+    --muted-foreground: #8f8ab8;
+    --accent: #2a1a5e;
+    --accent-foreground: #e8e6ff;
+    --destructive: #ff3355;
+    --border: #3d2a7a;
+    --input: #3d2a7a;
+    --ring: #00f0ff;
+    --chart-1: #00f0ff;
+    --chart-2: #ff2bd6;
+    --chart-3: #39ff14;
+    --chart-4: #ffd400;
+    --chart-5: #ff3355;
+    --radius: 0rem;
+    --sidebar: #120b30;
+    --sidebar-foreground: #e8e6ff;
+    --sidebar-primary: #00f0ff;
+    --sidebar-primary-foreground: #0b0820;
+    --sidebar-accent: #2a1a5e;
+    --sidebar-accent-foreground: #e8e6ff;
+    --sidebar-border: #3d2a7a;
+    --sidebar-ring: #00f0ff;
+}
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+
+html, body, #root {
+  height: 100%;
+}
+body {
+  font-size: 18px;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+.font-pixel {
+  font-family: var(--font-pixel);
+  letter-spacing: 0;
+}
+.pixelated {
+  image-rendering: pixelated;
+}
+/* 2px pixel bevel border, no blur */
+.pixel-border {
+  box-shadow:
+    0 0 0 2px var(--gg-haze),
+    4px 4px 0 0 rgba(0, 0, 0, 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
