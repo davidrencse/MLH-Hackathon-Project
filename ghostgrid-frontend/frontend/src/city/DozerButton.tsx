@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useDozer } from '../city3d/dozer'
+import { usePlots } from '../city3d/OuterDistricts'
 
 // Bulldozer tool: toggle on, then click any building (except the Router) to demolish it. Esc to exit.
 export function DozerButton() {
@@ -10,7 +11,10 @@ export function DozerButton() {
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, [])
+  const opened = usePlots((s) => s.open.length)
   return (
+    <>
+    {opened > 0 && <button onClick={() => usePlots.getState().reset()} title="Re-lock all outer plots" style={{ position: 'absolute', right: 16, top: 134, zIndex: 40, font: "9px 'Press Start 2P', monospace", padding: '8px 10px', border: '2px solid #000', boxShadow: '3px 3px 0 #000', background: '#c2c3c7', color: '#111', cursor: 'pointer' }}>↺ RESET PLOTS ({opened}/8)</button>}
     <button
       onClick={toggle}
       title="Bulldozer: click a building to demolish (Esc to exit)"
@@ -23,5 +27,6 @@ export function DozerButton() {
     >
       🚜 {on ? 'DOZER ON · ESC' : 'BULLDOZE'}
     </button>
+    </>
   )
 }
