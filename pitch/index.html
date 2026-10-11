@@ -169,7 +169,7 @@ h2{font-size:120px;max-width:1500px}
     <iframe id="liveframe" title="Ghost Grid live" allow="fullscreen"></iframe>
     <div class="live"><i></i>LIVE</div>
     <div class="fallback">
-      <div class="label rv" style="margin-bottom:30px">03 / Demo — http://localhost:5173/</div>
+      <div class="label rv" style="margin-bottom:30px">03 / Demo — live city</div>
       <h2><span class="ln"><span>Switch to</span></span><span class="ln"><span data-d="120" class="acc">live demo.</span></span></h2>
       <button class="fbtn rv" id="retry" data-d="400">Retry connection ↻</button>
     </div>
@@ -201,9 +201,27 @@ h2{font-size:120px;max-width:1500px}
     <div class="bangbox rv" data-d="700"><span class="label lbl">State</span><div class="x">!</div></div>
   </section>
 
+  <section class="slide" id="n1">
+    <div class="head"><div class="top label rv"><span>06 / The city</span><span>Built today</span></div><div class="rule"></div></div>
+    <h2><span class="ln"><span>A city that</span></span><span class="ln"><span data-d="120" class="acc">grows with you.</span></span></h2>
+    <div class="cols" style="margin-top:60px"><div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">World</div><div class="h">Megastructures + skyline</div><div class="d">Taller neon towers, 8 unlockable districts, zeppelins overhead.</div></div><div class="col rv" data-d="420"><div class="rule" data-d="420"></div><div class="label">Play</div><div class="h">Citizens + bulldozer</div><div class="d">Pick up and throw citizens. Bulldoze any building.</div></div><div class="col rv" data-d="540"><div class="rule" data-d="540"></div><div class="label">Scale</div><div class="h">Open a plot</div><div class="d">Each locked plot opens and grows a new district.</div></div></div>
+  </section>
+
+  <section class="slide" id="n2">
+    <div class="head"><div class="top label rv"><span>07 / Offices</span><span>Org chart</span></div><div class="rule"></div></div>
+    <h2><span class="ln"><span>Every building</span></span><span class="ln"><span data-d="120" class="acc">is a company.</span></span></h2>
+    <div class="cols" style="margin-top:60px"><div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">Hierarchy</div><div class="h">Manager → Leads → Engineers</div><div class="d">Walled offices per team, staffed in 3D.</div></div><div class="col rv" data-d="420"><div class="rule" data-d="420"></div><div class="label">Drag</div><div class="h">Move people between offices</div><div class="d">Drag an employee into another office to transfer them.</div></div><div class="col rv" data-d="540"><div class="rule" data-d="540"></div><div class="label">Assign</div><div class="h">Staffing board</div><div class="d">Drag cards onto projects. Labels follow them in 3D.</div></div></div>
+  </section>
+
+  <section class="slide" id="n3">
+    <div class="head"><div class="top label rv"><span>08 / Real agents</span><span>Not a mock</span></div><div class="rule"></div></div>
+    <h2><span class="ln"><span>Real CLIs.</span></span><span class="ln"><span data-d="120" class="acc">Real work.</span></span></h2>
+    <div class="cols" style="margin-top:60px"><div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">Runtime</div><div class="h">Codex + Claude CLI</div><div class="d">City tasks run on the real CLIs on our laptop. Smoke test: "GHOSTGRID OK".</div></div><div class="col rv" data-d="420"><div class="rule" data-d="420"></div><div class="label">Office</div><div class="h">Open a worker</div><div class="d">Adding a desk opens a live Codex/Claude session in Terminal.</div></div><div class="col rv" data-d="540"><div class="rule" data-d="540"></div><div class="label">Console</div><div class="h">API platform dashboard</div><div class="d">Usage, cost, latency and request logs per agent.</div></div></div>
+  </section>
+
   <!-- 7 NEXT -->
   <section class="slide" id="s7">
-    <div class="head"><div class="top label rv"><span>06 / Next</span><span>Roadmap</span></div><div class="rule"></div></div>
+    <div class="head"><div class="top label rv"><span>09 / Next</span><span>Roadmap</span></div><div class="rule"></div></div>
     <h2><span class="ln"><span>The city keeps growing.</span></span></h2>
     <div class="cols" style="margin-top:70px">
       <div class="col rv" data-d="300"><div class="rule" data-d="300"></div><div class="label">District</div><div class="h">Market district</div><div class="d">Trading bots get their own blocks.</div></div>
@@ -216,12 +234,12 @@ h2{font-size:120px;max-width:1500px}
     </div>
   </section>
 
-  <div id="hud"><span>Ghost Grid — AI Engineer NYC 2026</span><span id="counter"><b>01</b> / 07</span></div>
+  <div id="hud"><span>Ghost Grid — AI Engineer NYC 2026</span><span id="counter"><b>01</b> / 10</span></div>
 </div></div>
 <div id="nav"><button id="prevBtn" aria-label="Previous slide">←</button><button id="nextBtn" aria-label="Next slide">→</button></div>
 <script>
 (function(){
-const LIVE_URL='http://localhost:5173/';
+const LIVE_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'http://localhost:5173/':location.origin+'/demo/';
 const stage=document.getElementById('stage'),slides=[...document.querySelectorAll('.slide')],N=slides.length;
 let cur=-1,timers=[],raf=0;
 function fit(){stage.style.transform='scale('+Math.min(innerWidth/1920,innerHeight/1080)+')'}
