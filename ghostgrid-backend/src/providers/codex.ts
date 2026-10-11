@@ -107,7 +107,7 @@ export class CodexAdapter implements ProviderAdapter {
       sandboxMode: input.agent.permissions.includes("write")
         ? "workspace-write"
         : "read-only",
-      approvalPolicy: "untrusted",
+      approvalPolicy: "never",
       networkAccessEnabled: false,
       webSearchMode: "disabled",
     };
