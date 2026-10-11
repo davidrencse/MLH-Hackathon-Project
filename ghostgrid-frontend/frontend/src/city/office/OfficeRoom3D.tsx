@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { pickLine } from './slang'
 import { employeeFor, managerOf, useOrg, type Employee } from './org'
 import { OrgPanel } from './OrgPanel'
+import { useBuildingOffices, type Office } from './OrgChart'
 import { useReducedMotion } from 'framer-motion'
 import * as THREE from 'three'
 import type { OfficeWorker } from '@/api/backend'
@@ -169,12 +170,52 @@ function Desk({ worker, x, z, selected, accent, onSelect, emp }: {
   </group>
 }
 
-export function OfficeRoom3D({ workers, accent, selected, onSelect }: { workers: OfficeWorker[]; accent: string; selected: string | null; onSelect: (id: string) => void }) {
+const POD_W = 6.2
+const POD_D = 5
+const RUGS = ['#3b2f5c', '#2f4a5c', '#5c2f45', '#2f5c46', '#5c4a2f', '#46305c']
+const ROLE_ORDER = { Manager: 0, 'Team Lead': 1, Engineer: 2 } as const
+
+// One team "pod" per org-chart office: colored rug, name sign, manager desk up front, team desks behind.
+function OfficePod({ office, index, x, z, accent }: { office: Office; index: number; x: number; z: number; accent: string }) {
+  const people = [...office.people].sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role])
+  const mgr = people.find((p) => p.role === 'Manager')
+  const team = people.filter((p) => p.role !== 'Manager').slice(0, 6)
+  const rug = RUGS[index % RUGS.length]
+  return <group position={[x, 0, z]}>
+    <Block color={rug} position={[0, 0.06, 0]} size={[POD_W - 0.4, 0.04, POD_D - 0.4]} />
+    <Block color={accent} position={[0, 0.07, -POD_D / 2 + 0.25]} size={[POD_W - 0.4, 0.05, 0.08]} />
+    <Html position={[0, 2.6, -POD_D / 2 + 0.3]} center zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
+      <div style={{ font: "9px 'Press Start 2P', monospace", background: '#111', color: '#ffec27', border: `2px solid ${accent}`, padding: '3px 6px', whiteSpace: 'nowrap' }}>🏢 {office.name} · {office.people.length}</div>
+    </Html>
+    {mgr && <group position={[0, 0, POD_D / 2 - 1.1]}>
+      <Block color="#7a5a48" position={[0, 0.75, -0.55]} size={[1.6, 0.1, 0.7]} />
+      <Block color="#2b2140" position={[0, 1.05, -0.8]} size={[0.6, 0.4, 0.05]} />
+      <Person color="#e2a197" host seed={index * 31 + 3} emp={{ id: mgr.id, name: mgr.name, role: 'Manager' }} />
+    </group>}
+    {team.map((p, i) => {
+      const col = i % 3, row = Math.floor(i / 3)
+      const px = (col - 1) * 1.9, pz = -POD_D / 2 + 1.0 + row * 1.6
+      return <group key={p.id} position={[px, 0, pz]}>
+        <Block color="#b88a6a" position={[0, 0.72, -0.35]} size={[1.2, 0.08, 0.55]} />
+        <Block color={accent} position={[0, 1.0, -0.55]} size={[0.5, 0.34, 0.04]} />
+        <group scale={0.8} position={[0, 0, 0.15]}><Person color={p.role === 'Team Lead' ? '#ffa300' : accent} typing seed={index * 31 + i + 7}
+          emp={{ id: p.id, name: p.name, role: p.role, reportsTo: p.role === 'Team Lead' ? mgr?.id : people.find((q) => q.role === 'Team Lead')?.id ?? mgr?.id }} /></group>
+      </group>
+    })}
+  </group>
+}
+
+export function OfficeRoom3D({ workers, accent, selected, onSelect, buildingId = 'office' }: { workers: OfficeWorker[]; accent: string; selected: string | null; onSelect: (id: string) => void; buildingId?: string }) {
+  const offices = useBuildingOffices(buildingId)
+  const podCols = Math.min(2, offices.length)
+  const podRows = Math.ceil(offices.length / podCols)
   const count = Math.max(3, workers.length + (workers.length < 12 ? 1 : 0))
   const columns = Math.min(3, count)
   const rows = Math.ceil(count / columns)
-  const width = columns * 3.3 + 2
-  const depth = rows * 3.2 + 3.2
+  const deskW = columns * 3.3 + 2
+  const deskD = rows * 3.2 + 3.2
+  const width = Math.max(deskW, podCols * POD_W + 1.5)
+  const depth = deskD + podRows * POD_D + 0.5
   const room = workers[0]?.buildingId ?? decodeURIComponent(location.pathname.split('/').pop() ?? 'office')
   const mgr = managerOf(room)
   const emps = workers.map((w, i) => employeeFor(room, w, i, columns))
@@ -211,7 +252,9 @@ export function OfficeRoom3D({ workers, accent, selected, onSelect }: { workers:
       </group>)}
       <Plant x={width / 2 - 0.8} z={-depth / 2 + 0.8} />
       <Plant x={-width / 2 + 0.6} z={depth / 2 - 0.6} />
-      <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host seed={3} emp={mgr} /></group>
+      <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host seed={3} /></group>
+      {offices.map((o, i) => <OfficePod key={o.id} office={o} index={i} accent={accent}
+        x={((i % podCols) - (podCols - 1) / 2) * POD_W} z={-depth / 2 + deskD + Math.floor(i / podCols) * POD_D + POD_D / 2} />)}
       {Array.from({ length: count }, (_, i) => <Desk key={workers[i]?.id ?? `empty_${i}`} worker={workers[i]}
         x={(i % columns - (columns - 1) / 2) * 3.3} z={Math.floor(i / columns) * 3.2 - depth / 2 + 2.3}
         selected={selected === workers[i]?.id} accent={accent} onSelect={onSelect} emp={emps[i]} />)}

@@ -138,7 +138,7 @@ export function OfficePage() {
             <button type="button" className="native-open-worker" disabled={opening} title="Open a fresh window in the native app" onClick={() => void openAgain()}><Monitor size={16} />{opening ? 'Opening…' : 'Open another window'}</button>
             <button type="button" className="native-remove-worker" disabled={removing !== null} onClick={() => void removeWorker(selectedWorker.id)}><Trash2 size={16} />Remove desk</button>
           </section>}
-          <Suspense fallback={<p role="status" className="native-room-notice">Building your room…</p>}><OfficeRoom3D workers={floorWorkers} accent={accent} selected={selected} onSelect={setSelected} /></Suspense>
+          <Suspense fallback={<p role="status" className="native-room-notice">Building your room…</p>}><OfficeRoom3D workers={floorWorkers} accent={accent} selected={selected} onSelect={setSelected} buildingId={buildingId} /></Suspense>
           {floorWorkers.length > 0 && <nav className="native-worker-picker" aria-label="Select a worker">{floorWorkers.map((worker) => <button key={worker.id} type="button" aria-pressed={selected === worker.id} onClick={() => setSelected(worker.id)}>{worker.name}</button>)}</nav>}
           <footer className="native-room-footer"><span>COFFEE IS ON THE HOUSE</span><span>ONE WORKER · ONE WINDOW</span></footer>
         </section>
