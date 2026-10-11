@@ -1,0 +1,11 @@
+{
+  "name": "slop-angeles-host",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "build": "bash scripts/build-host.sh",
+    "start": "node scripts/host.mjs",
+    "test:host": "node --test scripts/host.test.mjs"
+  }
+}

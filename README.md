@@ -31,3 +31,9 @@ npm test --prefix ghostgrid-backend
 ```
 
 See the backend README, FRONTEND.md, PROVIDERS.md, and TESTING.md for API and integration details. Production hosting must serve the frontend build and proxy `/gg` to the backend, or configure `VITE_GG_API_URL` and permitted backend origins. Credentials, dependencies, generated builds, and local databases are excluded from Git.
+
+## Hosted demo
+
+`npm run build` builds both apps, and `npm start` serves the production frontend and backend together on `PORT` (default 10000). `/health` checks the running API. `npm run test:host` validates the combined host after building.
+
+The public demo runs without provider credentials and uses labeled demo credit allowances. Connected providers and desktop workers run in the local app. Hosted demo state is shared among visitors; on a free host the local SQLite database resets on restarts and deployments.

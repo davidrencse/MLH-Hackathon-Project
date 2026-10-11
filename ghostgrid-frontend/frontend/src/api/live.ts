@@ -87,7 +87,7 @@ async function ensureProvider(): Promise<string> {
   const list = await ggGet<ListResponse<{ id: string; type: string }>>('/api/v1/providers?limit=200')
   const existing = list.items?.find((p) => p.type === 'mock')
   if (existing) return existing.id
-  const created = await ggPost<{ id: string }>('/api/v1/providers', { name: 'Mock Runtime', type: 'mock', concurrency: 4 })
+  const created = await ggPost<{ id: string }>('/api/v1/providers', { name: 'Demo Runtime', type: 'mock', concurrency: 4 })
   return created.id
 }
 
