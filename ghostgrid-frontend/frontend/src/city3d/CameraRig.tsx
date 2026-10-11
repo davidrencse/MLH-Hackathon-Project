@@ -25,7 +25,7 @@ const ORIGIN: [number, number, number] = [0, 0, 0]
 // Points that bound the city: platform slab, corner towers with antennas, router spire.
 // The set is symmetric under 90° turns, so one fit works for every Q / E view.
 // Default view is this much closer than "fit whole city" so more detail is visible. 1 = old view.
-const CITY_SCALE = 1.6
+const CITY_SCALE = 2.2
 const FIT_POINTS: [number, number, number][] = [[0, 9.5, 0]]
 for (const sx of [-1, 1])
   for (const sz of [-1, 1]) FIT_POINTS.push([sx * 12.3, 0, sz * 12.3], [sx * 12.3, -1.2, sz * 12.3], [sx * 5.5, 6.7, sz * 5.5])

@@ -103,4 +103,4 @@ export const CAMERA = {
 }
 
 // Each rendered pixel covers PIXEL_SIZE × PIXEL_SIZE CSS pixels (pixel-art look + cheap rendering).
-export const PIXEL_SIZE = 3
+export const PIXEL_SIZE = 1 // was chunky pixel upscale; 1 = native high-res

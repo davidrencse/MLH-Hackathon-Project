@@ -71,7 +71,7 @@ export function CityCanvas() {
       <Canvas
         orthographic
         frameloop={visible ? 'always' : 'never'}
-        dpr={1 / PIXEL_SIZE}
+        dpr={Math.min(2, window.devicePixelRatio || 1) / PIXEL_SIZE}
         camera={{ position: CAMERA.position, zoom: CAMERA.zoom, near: CAMERA.near, far: CAMERA.far }}
         gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
         onCreated={({ gl }) => {
