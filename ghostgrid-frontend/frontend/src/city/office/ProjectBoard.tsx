@@ -24,10 +24,10 @@ export function ProjectBoard({ buildingId }: { buildingId: string }) {
   }
 
   return (
-    <section style={{ background: '#1a1040', border: '3px solid #111', boxShadow: '5px 5px 0 #111', padding: 12, marginBottom: 20, font: `9px/1.5 ${px}`, color: '#e8e6ff' }}>
+    <section className="gg-staffing-board" style={{ background: '#1a1040', border: '3px solid #111', boxShadow: '5px 5px 0 #111', padding: 12, marginBottom: 20, font: `9px/1.5 ${px}`, color: '#e8e6ff' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <b style={{ fontSize: 11, color: '#ffec27' }}>STAFFING BOARD</b>
-        <span style={{ fontSize: 8, color: '#a99fd0' }}>drag people onto a project</span>
+        <span style={{ fontSize: 8, color: '#a99fd0' }}>Assign below or drag to a project</span>
       </div>
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
         {columns.map((col, i) => {
@@ -48,6 +48,7 @@ export function ProjectBoard({ buildingId }: { buildingId: string }) {
                     style={{ background: '#fffbe8', color: '#111', border: '2px solid #111', boxShadow: dragging === p.id ? 'none' : '2px 2px 0 #000', opacity: dragging === p.id ? 0.4 : 1, padding: '4px 5px', marginBottom: 5, cursor: 'grab', font: `8px/1.4 ${px}`, borderLeft: `6px solid ${c}` }}>
                     <span style={{ background: c, color: '#fff', padding: '0 3px', marginRight: 4 }}>{t}</span>{p.name}
                     <div style={{ color: '#666', fontSize: 7 }}>{p.office}</div>
+                    <select aria-label={`Assign ${p.name} to a project`} value={assign[p.id] ?? ''} onPointerDown={(e) => e.stopPropagation()} onChange={(e) => assignTo(p.id, e.target.value)} className="gg-staffing-assignment"><option value="">Bench</option>{projects.map((project) => <option key={project} value={project}>{project}</option>)}</select>
                   </div>
                 )
               })}
@@ -56,7 +57,7 @@ export function ProjectBoard({ buildingId }: { buildingId: string }) {
           )
         })}
         <form onSubmit={(e) => { e.preventDefault(); addProject(draft); setDraft('') }} style={{ minWidth: 150, flex: '0 0 150px', border: '2px dashed #3a2f6b', padding: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="New project…" style={{ font: `8px ${px}`, padding: 5, border: '2px solid #111' }} />
+          <input aria-label="New project name" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="New project…" style={{ font: `8px ${px}`, padding: 5, border: '2px solid #111' }} />
           <button style={{ font: `9px ${px}`, background: '#ffec27', border: '2px solid #111', padding: 6, cursor: 'pointer', boxShadow: '2px 2px 0 #000' }}>＋ PROJECT</button>
         </form>
       </div>

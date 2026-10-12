@@ -1,0 +1,64 @@
+.gg-mobile-city-controls, .gg-mobile-build-toggle { display: none; }
+@media (width < 900px) {
+  .gg-mobile-city-controls { display: block; position: absolute; inset: auto 12px calc(var(--mobile-nav-height) + 8px); z-index: 35; }
+  .gg-mobile-city-controls[hidden] { display: none; }
+  .gg-mobile-city-toolbar { display: flex; gap: 8px; align-items: center; }
+  .gg-mobile-city-controls button, .gg-mobile-directory a { min-height: 44px; color: var(--gg-ink); background: var(--gg-night); border: 2px solid var(--gg-haze); display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .gg-directory-toggle { padding: 0 12px; flex: 1; font-size: 20px; }
+  .gg-camera-controls { display: flex; }
+  .gg-camera-controls button { width: 44px; margin-left: -2px; }
+  .gg-mobile-city-controls button:active { background: var(--gg-dusk); color: var(--gg-cyan); }
+  .gg-mobile-city-hint { text-align: center; color: var(--gg-mute); font-size: 16px; margin: 8px 0 0; }
+  .gg-mobile-directory { margin-bottom: 12px; background: var(--gg-void); border: 2px solid var(--gg-cyan); box-shadow: 4px 4px 0 #0008; }
+  .gg-mobile-directory header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 2px solid var(--gg-haze); }
+  .gg-mobile-directory h2 { font: 10px/1.6 var(--font-pixel); color: var(--gg-cyan); }
+  .gg-mobile-directory header button { width: 44px; }
+  .gg-mobile-directory-list { overflow-y: auto; max-height: min(360px, 45dvh); }
+  .gg-mobile-directory-list > div { display: flex; align-items: center; border-bottom: 1px solid var(--gg-haze); }
+  .gg-mobile-directory-list > div > button { background: transparent; border: 0; flex: 1; padding: 12px; justify-content: start; text-align: left; min-width: 0; }
+  .gg-mobile-directory-list button > span:nth-child(2) { flex: 1; overflow-wrap: anywhere; line-height: 1.1; font-size: 22px; }
+  .gg-mobile-directory-list small { display: block; font-size: 18px; color: var(--gg-mute); }
+  .gg-building-pip { width: 12px; height: 12px; flex-shrink: 0; }
+  .gg-mobile-directory a { padding: 0 12px; margin-right: 12px; color: var(--gg-cyan); }
+  .gg-build-menu { display: none; }
+  .gg-build-menu[data-expanded='true'] { display: flex; width: calc(100% - 24px); top: auto; bottom: calc(var(--mobile-nav-height) + 92px); left: 12px; background: var(--gg-night); z-index: 45; max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-nav-height) - 172px); overflow-y: auto; }
+  .gg-build-menu ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px; }
+  .gg-build-menu ul button { min-height: 72px; flex-direction: column; padding: 8px 4px; }
+  .gg-build-menu ul button > span { display: flex; align-items: center; text-align: center; }
+  .gg-build-menu ul button > span > span:first-child { font-size: 8px; }
+  .gg-build-menu > div:last-child { text-align: left; }
+  .gg-build-menu > div:last-child > span:first-child { display: inline; }
+  .gg-mobile-build-toggle { display: flex; align-items: center; gap: 8px; position: absolute; left: 12px; top: calc(var(--mobile-header-height) + 12px); z-index: 40; min-height: 44px; padding: 0 12px; border: 2px solid var(--gg-cyan); background: var(--gg-night); color: var(--gg-cyan); font-size: 20px; }
+  .gg-dozer-button { top: calc(var(--mobile-header-height) + 12px) !important; right: 12px !important; min-height: 44px; font-size: 8px !important; padding: 8px !important; }
+  .gg-reset-plots { top: calc(var(--mobile-header-height) + 64px) !important; right: 12px !important; min-height: 44px; max-width: 160px; font-size: 8px !important; }
+  .gg-weather { bottom: calc(var(--mobile-nav-height) + 96px); left: 12px; width: auto; max-width: calc(100% - 24px); padding: 8px 12px; }
+  .gg-weather-heading { font-size: 8px; }
+  .gg-weather-main { margin: 8px 0 0; }
+  .gg-weather-main > svg { width: 20px; height: 20px; }
+  .gg-weather-main .font-pixel { font-size: 10px; }
+  .gg-weather-main .font-mono { font-size: 16px; }
+  .gg-weather-details { display: none; }
+  .gg-placing-banner { top: calc(var(--mobile-header-height) + 68px); }
+  .gg-sp-shell { top: auto; right: 8px; left: 8px; bottom: calc(var(--mobile-nav-height) + 8px); width: auto; max-width: none; max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-nav-height) - 24px); height: 68dvh; }
+  .gg-sp-shell > div:has(> button[aria-label^='Close']) { height: 56px; }
+  .gg-sp-shell button[aria-label^='Close'] { width: 44px; height: 44px; }
+  .gg-of-shell { max-height: calc(100dvh - 24px); }
+}
+@media (width < 360px) {
+  .gg-directory-toggle { padding: 0 8px; }
+  .gg-directory-toggle > svg { display: none; }
+}
+@media (width < 900px) and (height < 500px) {
+  .gg-weather { display: none; }
+  .gg-mobile-city-hint { display: none; }
+  .gg-build-menu[data-expanded='true'] { bottom: calc(var(--mobile-nav-height) + 60px); overflow-y: auto; }
+}
+@media (width < 900px) {
+  .gg-mobile-city-controls:has(.gg-mobile-directory) { z-index: 46; }
+  .gg-mobile-directory-list { max-height: min(360px, calc(100dvh - var(--mobile-header-height) - var(--mobile-nav-height) - 248px)); }
+}
+
+@media (width < 900px) and (height < 500px) {
+  .gg-mobile-directory { position: fixed; inset: calc(var(--mobile-header-height) + 64px) 12px calc(var(--mobile-nav-height) + 12px); display: flex; flex-direction: column; margin: 0; }
+  .gg-mobile-directory-list { max-height: none; flex: 1; min-height: 0; }
+}

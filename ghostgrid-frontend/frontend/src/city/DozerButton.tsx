@@ -14,8 +14,10 @@ export function DozerButton() {
   const opened = usePlots((s) => s.open.length)
   return (
     <>
-    {opened > 0 && <button onClick={() => usePlots.getState().reset()} title="Re-lock all outer plots" style={{ position: 'absolute', right: 16, top: 134, zIndex: 40, font: "9px 'Press Start 2P', monospace", padding: '8px 10px', border: '2px solid #000', boxShadow: '3px 3px 0 #000', background: '#c2c3c7', color: '#111', cursor: 'pointer' }}>↺ RESET PLOTS ({opened}/8)</button>}
+    {opened > 0 && <button className="gg-reset-plots" onClick={() => usePlots.getState().reset()} title="Re-lock all outer plots" style={{ position: 'absolute', right: 16, top: 134, zIndex: 40, font: "9px 'Press Start 2P', monospace", padding: '8px 10px', border: '2px solid #000', boxShadow: '3px 3px 0 #000', background: '#c2c3c7', color: '#111', cursor: 'pointer' }}>↺ RESET PLOTS ({opened}/8)</button>}
     <button
+      className="gg-dozer-button"
+      aria-pressed={on}
       onClick={toggle}
       title="Bulldozer: click a building to demolish (Esc to exit)"
       style={{

@@ -1,7 +1,9 @@
 /* CREDITS hover panel (gg-cred-*). Matches the HUD: 2px borders, pixel font, hard shadows. */
 
 .gg-cred-anchor {
-  display: contents;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .gg-cred-panel {
@@ -162,4 +164,11 @@
   .gg-cred-spin {
     animation: none;
   }
+}
+
+.gg-cred-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: auto; border: 2px solid var(--gg-haze); color: var(--gg-ink); background: var(--gg-night); }
+@media (width < 900px) {
+  .gg-cred-anchor { min-height: 44px; }
+  .gg-cred-panel { width: min(320px, calc(100vw - 16px)); max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-nav-height) - 16px); overflow-y: auto; }
+  .gg-cred-panel :is(.gg-cred-close, .gg-cred-refresh) { min-width: 44px; min-height: 44px; }
 }

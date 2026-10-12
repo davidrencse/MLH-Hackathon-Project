@@ -2,7 +2,7 @@
 // Logo · resource bar (game resources + separated real-money COST) · tabs · key button · clock. Fixed, 64px, z-40.
 import { memo, useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { KeyRound } from 'lucide-react'
+import { Building2, LayoutDashboard, Users, Activity, KeyRound } from 'lucide-react'
 import { CreditsHover } from './CreditsDropdown'
 import { useKeys } from '../store/keys'
 import { useResources } from '../store/resources'
@@ -202,7 +202,8 @@ const Divider = ({ className = '' }: { className?: string }) => (
 
 export function TopNav() {
   return (
-    <header className="fixed inset-x-0 top-0 z-40 h-16 border-b-2 border-gg-haze" style={{ background: 'rgba(11,8,32,0.82)' }}>
+    <>
+    <header className="gg-top-nav fixed inset-x-0 top-0 z-40 h-16 border-b-2 border-gg-haze" style={{ background: 'rgba(11,8,32,0.82)' }}>
       <div className="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4">
         <div className="justify-self-start">
           <Logo />
@@ -232,5 +233,15 @@ export function TopNav() {
         <span className="w-2 bg-gg-cyan" />
       </span>
     </header>
+    <MobileNav />
+    </>
   )
+}
+
+export function MobileNav() {
+  return <nav className="gg-mobile-nav" aria-label="Mobile navigation">
+    {[{ to: "/", label: "City", icon: Building2, end: true }, { to: "/dashboard", label: "Stats", icon: LayoutDashboard, end: true }, { to: "/dashboard/agents", label: "Agents", icon: Users }, { to: "/dashboard/activity", label: "Activity", icon: Activity }].map(({ to, label, icon: Icon, end }) =>
+      <NavLink key={to} to={to} end={end} className={({ isActive }) => isActive ? "is-active" : ""}><Icon size={20} strokeWidth={2} aria-hidden /><span>{label}</span></NavLink>
+    )}
+  </nav>
 }

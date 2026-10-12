@@ -51,10 +51,12 @@ function computeFit(w: number, h: number) {
   }
   const side = w >= 900 ? 216 : w < 600 ? 24 : 72 // clear of the BuildMenu column (mirrored on the right)
   const availW = Math.max(120, w - 2 * side)
-  const availH = Math.max(120, h - HUD_TOP - HUD_BOTTOM)
+  const top = w < 900 ? 124 : HUD_TOP
+  const bottom = w < 900 ? 210 : HUD_BOTTOM
+  const availH = Math.max(120, h - top - bottom)
   const zoom = Math.min(availW / (u1 - u0), availH / (v1 - v0))
   const ox = -((u0 + u1) / 2) * zoom
-  const oy = (HUD_BOTTOM - HUD_TOP) / 2 - ((v0 + v1) / 2) * zoom
+  const oy = (bottom - top) / 2 - ((v0 + v1) / 2) * zoom
   return { zoom, ox, oy }
 }
 
@@ -107,7 +109,7 @@ export function CameraRig() {
   useLayoutEffect(() => {
     if (!size.width || !size.height) return
     const prev = fitRef.current
-    const z = fitted.current ? camera.zoom * (fit.zoom / prev.zoom) : fit.zoom * CITY_SCALE
+    const z = fitted.current ? camera.zoom * (fit.zoom / prev.zoom) : fit.zoom * (size.width < 900 ? 1.45 : CITY_SCALE)
     camera.zoom = Math.min(fit.zoom * 14, Math.max(fit.zoom * 0.18, z))
     camera.setViewOffset(size.width, size.height, -fit.ox, fit.oy, size.width, size.height)
     camera.updateProjectionMatrix()
@@ -166,8 +168,26 @@ export function CameraRig() {
     const c = controls.current
     if (!c) return
     const az = c.getAzimuthalAngle()
-    startTween(az + shortestDelta(az, HOME_AZ), HOME_POLAR, fitRef.current.zoom * CITY_SCALE)
-  }, [startTween])
+    startTween(az + shortestDelta(az, HOME_AZ), HOME_POLAR, fitRef.current.zoom * (size.width < 900 ? 1.45 : CITY_SCALE))
+  }, [startTween, size.width])
+
+  // Shared camera actions give touch users the same controls as the keyboard.
+  useEffect(() => {
+    const onCamera = (event: Event) => {
+      const action = (event as CustomEvent<string>).detail
+      if (action === 'left') turn(1)
+      else if (action === 'right') turn(-1)
+      else if (action === 'reset') { controls.current?.target.set(0, 0, 0); reset() }
+      else if (action === 'in' || action === 'out') {
+        const c = controls.current
+        if (!c) return
+        const zoom = Math.min(fitRef.current.zoom * 14, Math.max(fitRef.current.zoom * 0.18, camera.zoom * (action === 'in' ? 1.35 : 1 / 1.35)))
+        startTween(c.getAzimuthalAngle(), c.getPolarAngle(), zoom)
+      }
+    }
+    window.addEventListener('gg:camera', onCamera)
+    return () => window.removeEventListener('gg:camera', onCamera)
+  }, [camera, turn, reset, startTween])
 
   // Keyboard: Q / E turn, R reset. Ignored while typing or with modifier keys (Cmd+R must still reload).
   useEffect(() => {

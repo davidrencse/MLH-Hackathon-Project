@@ -9,6 +9,7 @@ import { CATALOG } from '@/constants'
 import { useGrid } from '@/store/grid'
 import './native-office.css'
 import { DESK_COMMANDS } from './deskCommands'
+import { MobileNav } from '@/components/TopNav'
 import { OrgChart } from './OrgChart'
 import { ProjectBoard } from './ProjectBoard'
 const OfficeRoom3D = lazy(() => import('./OfficeRoom3D').then((module) => ({ default: module.OfficeRoom3D })))
@@ -123,6 +124,7 @@ export function OfficePage() {
   }
   return (
     <main className="native-office" style={{ '--office-accent': accent } as CSSProperties}>
+      <MobileNav />
       <header className="native-office-header">
         <Link className="native-office-back" to="/"><ArrowLeft size={16} /> Back to city</Link>
         <div><h1>{building.type === 'claude' ? 'Claude’s cozy office' : 'Codex’s cozy office'}</h1>

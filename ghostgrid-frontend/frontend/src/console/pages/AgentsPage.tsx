@@ -288,7 +288,7 @@ export function AgentsPage() {
       </div>
 
       <div className={PANEL}>
-        <Table className="text-lg">
+        <Table className="gg-agents-table text-lg">
           <TableHeader className="[&_tr]:border-b-2 [&_tr]:border-gg-haze">
             <TableRow className="hover:bg-transparent">
               <TableHead className={HEAD}>NAME</TableHead>
@@ -329,13 +329,13 @@ export function AgentsPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-4">
+                  <TableCell data-label="TYPE" className="px-4">
                     <span className="font-pixel text-[8px] leading-none whitespace-nowrap" style={{ color: accent }}>
                       {typeLabel(b)}
                     </span>
                   </TableCell>
-                  <TableCell className="px-4 text-gg-ink">{model}</TableCell>
-                  <TableCell className="px-4 leading-none">
+                  <TableCell data-label="MODEL" className="px-4 text-gg-ink">{model}</TableCell>
+                  <TableCell data-label="PROVIDER" className="px-4 leading-none">
                     {key ? (
                       <>
                         <div className="text-gg-ink">{PROVIDERS[key.provider].label}</div>
@@ -352,14 +352,14 @@ export function AgentsPage() {
                       </>
                     )}
                   </TableCell>
-                  <TableCell className="px-4">
+                  <TableCell data-label="STATUS" className="px-4">
                     <StatusBadge status={status} />
                   </TableCell>
-                  <TableCell className="px-4 text-right whitespace-nowrap">
+                  <TableCell data-label="SESSIONS" className="px-4 text-right whitespace-nowrap">
                     <span className={running ? 'text-gg-green' : 'text-gg-mute'}>{running}</span>
                     <span className="text-gg-mute"> / {b.sessions.length}</span>
                   </TableCell>
-                  <TableCell className={`px-4 whitespace-nowrap ${fresh ? 'text-gg-green' : 'text-gg-mute'}`}>
+                  <TableCell data-label="LAST ACTIVITY" className={`px-4 whitespace-nowrap ${fresh ? 'text-gg-green' : 'text-gg-mute'}`}>
                     <span title={new Date(ts).toLocaleString('en-US')}>{ago(ts, now)}</span>
                   </TableCell>
                   <TableCell className="w-8 pr-4">

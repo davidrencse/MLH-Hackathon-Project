@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, X } from 'lucide-react'
 import {
   CREDIT_LABEL,
   CREDIT_PROVIDERS,
@@ -106,6 +106,7 @@ export function CreditsDropdown({
     >
       <div className="gg-cred-head">
         <span className="font-pixel">PROVIDER CREDITS</span>
+        <button type="button" className="gg-cred-close" onClick={(event) => { event.stopPropagation(); onClose() }} aria-label="Close provider credits"><X size={16} strokeWidth={2.5} /></button>
         <button type="button" className="gg-cred-refresh" onClick={refresh} disabled={loading} aria-label="Refresh credits">
           <RefreshCw size={12} strokeWidth={3} className={loading ? 'gg-cred-spin' : ''} aria-hidden />
         </button>
@@ -151,8 +152,14 @@ export function CreditsHover({ children }: { children: ReactNode }) {
     <div
       ref={setAnchor}
       className="gg-cred-anchor"
-      onPointerEnter={show}
-      onPointerLeave={hide}
+      role="button"
+      tabIndex={0}
+      aria-label="View provider credits"
+      aria-expanded={open}
+      onClick={(event) => { if (anchor?.contains(event.target as Node)) show() }}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); show() } }}
+      onPointerEnter={(event) => { if (event.pointerType !== 'touch') show() }}
+      onPointerLeave={(event) => { if (event.pointerType !== 'touch') hide() }}
       onFocusCapture={show}
       onBlurCapture={hide}
     >

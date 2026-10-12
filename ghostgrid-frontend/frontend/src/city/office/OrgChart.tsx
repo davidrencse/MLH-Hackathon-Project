@@ -51,7 +51,7 @@ export function OrgChart({ buildingId, buildingName, realWorkers }: { buildingId
   const closeOffice = (oid: string) => update(buildingId, (os) => os.length > 1 ? os.filter((o) => o.id !== oid) : os)
 
   return (
-    <section style={{ background: '#fffbe8', color: '#111', border: '3px solid #111', boxShadow: '5px 5px 0 #111', padding: 14, marginBottom: 20, font: `10px/1.6 ${px}` }}>
+    <section className="gg-org-chart" style={{ background: '#fffbe8', color: '#111', border: '3px solid #111', boxShadow: '5px 5px 0 #111', padding: 14, marginBottom: 20, font: `10px/1.6 ${px}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <b style={{ fontSize: 12 }}>ORG CHART · {buildingName}</b>
         <button style={{ ...btn, fontSize: 14, padding: '4px 10px' }} title="Add office" onClick={addOffice}>＋</button>
@@ -84,12 +84,12 @@ export function OrgChart({ buildingId, buildingName, realWorkers }: { buildingId
             {sel && sel.office === o.id && (
               <div style={{ marginTop: 8, borderTop: '2px dashed #111', paddingTop: 8 }}>
                 <div>{sel.person.name} · {sel.person.role} · reports to {sel.person.role === 'Manager' ? 'CEO (you)' : mgr?.name ?? 'Manager'}</div>
-                <select value={assign[sel.person.id] ?? ''} onChange={(e) => assignTo(sel.person.id, e.target.value)} style={{ width: '100%', font: `9px ${px}`, padding: 4, border: '2px solid #111', marginTop: 6 }}>
+                <select aria-label={`Assign ${sel.person.name} to a project`} value={assign[sel.person.id] ?? ''} onChange={(e) => assignTo(sel.person.id, e.target.value)} style={{ width: '100%', font: `9px ${px}`, padding: 4, border: '2px solid #111', marginTop: 6 }}>
                   <option value="">— Unassigned (bench) —</option>
                   {projects.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
                 <form onSubmit={(e) => { e.preventDefault(); if (draft.trim()) { addProject(draft); assignTo(sel.person.id, draft.trim()) } setDraft('') }} style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                  <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="New project…" style={{ flex: 1, minWidth: 0, font: `9px ${px}`, padding: 4, border: '2px solid #111' }} />
+                  <input aria-label="New project name" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="New project…" style={{ flex: 1, minWidth: 0, font: `9px ${px}`, padding: 4, border: '2px solid #111' }} />
                   <button style={btn}>＋</button>
                 </form>
                 {!sel.person.name.endsWith('(live)') && <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>

@@ -71,7 +71,7 @@ export function ProviderKeysTab() {
 
       {/* Keys table or empty state */}
       <section className="grid gap-3">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="font-pixel flex items-center gap-3 text-[10px] leading-none text-gg-ink">
             Provider keys
             <span className="border-2 border-gg-haze px-1.5 py-1 text-[8px] text-gg-mute">{keys.length}</span>

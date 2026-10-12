@@ -67,3 +67,9 @@ See the backend README, FRONTEND.md, PROVIDERS.md, and TESTING.md for API and in
 `npm run build` builds both apps, and `npm start` serves the production frontend and backend together on `PORT` (default 10000). `/health` checks the running API. `npm run test:host` validates the combined host after building.
 
 The public demo runs without provider credentials and uses labeled demo credit allowances. Connected providers and desktop workers run in the local app. Hosted demo state is shared among visitors; on a free host the local SQLite database resets on restarts and deployments.
+
+## Mobile web
+
+The same hosted app adapts to phones and smaller tablets (below 900px). A bottom bar opens the city, stats, agents, and activity; API keys remain available in the header and dashboard tabs. City controls include a collapsible build menu, a building directory with office shortcuts, and touch buttons for zoom, rotation, and reset. Drag and pinch still work on the 3D city.
+
+Building details open above the bottom navigation, agent tables become labeled cards, and forms have larger touch targets. Staffing cards include project selectors so assigning a person does not require drag and drop. The layout accounts for device safe areas and browser toolbar height. Desktop workers still open on the machine running the local backend.

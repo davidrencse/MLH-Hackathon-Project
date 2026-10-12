@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource/press-start-2p";
 @import "@fontsource/vt323";
+@import "./mobile.css";
 
 @custom-variant dark (&:is(.dark *));
 

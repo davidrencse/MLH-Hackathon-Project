@@ -2,6 +2,7 @@
 // DOM only. Selectors return primitives / stable values, so this re-renders only when credits, buildMode or lots change.
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { Hammer, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { BOT_KINDS, CATALOG } from '@/constants'
@@ -57,7 +58,7 @@ const activeToolId = (m: BuildMode | null): IconName | null => {
 
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gg-cyan focus-visible:outline-solid'
 
-export function BuildMenu() {
+export function BuildMenu({ expanded, onToggle, onClose }: { expanded: boolean; onToggle: () => void; onClose: () => void }) {
   const credits = useGrid((s) => s.credits)
   const buildMode = useGrid((s) => s.buildMode)
   const occupied = useOccupiedLots()
@@ -92,6 +93,7 @@ export function BuildMenu() {
 
   const pick = (t: Tool) => {
     if (credits < t.cost || free === 0) return
+    onClose()
     const s = useGrid.getState()
     if (t.botKind) {
       if (s.buildMode) s.setBuildMode(null)
@@ -103,9 +105,12 @@ export function BuildMenu() {
 
   return (
     <>
+      <button type="button" className="gg-mobile-build-toggle" aria-label={expanded ? "Close build menu" : "Build a building"} aria-expanded={expanded} aria-controls="city-build-menu" onClick={onToggle}>{expanded ? <X size={20} /> : <Hammer size={20} />}<span>Build</span></button>
       <nav
+        id="city-build-menu"
+        data-expanded={expanded}
         aria-label="Build menu"
-        className="absolute top-24 left-4 z-40 flex w-14 flex-col border-2 border-gg-haze bg-gg-night/90 shadow-[4px_4px_0_0_rgba(0,0,0,0.6)] min-[900px]:w-48"
+        className="gg-build-menu absolute top-24 left-4 z-40 flex w-14 flex-col border-2 border-gg-haze bg-gg-night/90 shadow-[4px_4px_0_0_rgba(0,0,0,0.6)] min-[900px]:w-48"
       >
         <div className="flex items-center justify-between gap-2 border-b-2 border-gg-haze px-2 py-2">
           <span className="font-pixel text-[8px] leading-none text-gg-ink min-[900px]:text-[10px]">BUILD</span>
@@ -190,7 +195,7 @@ function PlacingBanner({ mode }: { mode: BuildMode }) {
   // When the side panel (380px, right-4) is open, center the banner in the space left of it.
   return (
     <div
-      className={`pointer-events-none absolute inset-x-0 top-20 z-40 flex justify-center px-4 ${panelOpen ? 'min-[900px]:right-[396px]' : ''}`}
+      className={`gg-placing-banner pointer-events-none absolute inset-x-0 top-20 z-40 flex justify-center px-4 ${panelOpen ? 'min-[900px]:right-[396px]' : ''}`}
     >
       <div
         role="status"
