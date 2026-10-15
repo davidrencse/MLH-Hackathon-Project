@@ -5,6 +5,8 @@ import { resolve, relative, isAbsolute } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { redact, safeError } from "../security/index.js";
+import { resolvePricing } from "../providers/pricing.js";
+import { usageFromError } from "../providers/usage.js";
 const runFile = promisify(execFile);
 
 type Row = Record<string, any>;
@@ -38,6 +40,32 @@ const invalid = (message: string, statusCode = 400) =>
   Object.assign(new Error(message), { statusCode });
 
 /** Durable local scheduler. Interrupted executions fail rather than replaying side effects. */
+/** Newest turns a session keeps, and the total characters they may use. */
+const MAX_SESSION_MESSAGES = 200;
+const MAX_SESSION_CHARS = 1_000_000;
+
+/**
+ * Drops the oldest turns so one session row stays bounded.
+ *
+ * A session's whole history lives in a single JSON column, so every turn rewrites the entire
+ * blob: without a cap, one assistant reply of up to 8,000,000 characters per turn makes the
+ * row grow without limit and the rewrites quadratic. Only the newest 20 messages (32,000
+ * characters) are ever replayed to a provider, so what is kept here exists for history
+ * display, and this much of it is far more than the replay window will ever read.
+ */
+function trimHistory(messages: Row[]): Row[] {
+  const kept: Row[] = [];
+  let characters = 0;
+  for (const message of messages.slice(-MAX_SESSION_MESSAGES).reverse()) {
+    const size = typeof message.content === "string" ? message.content.length : 0;
+    // Always keep the newest turn, however big it is, so a reply is never silently lost.
+    if (kept.length && characters + size > MAX_SESSION_CHARS) break;
+    kept.unshift(message);
+    characters += size;
+  }
+  return kept;
+}
+
 export class Engine {
   readonly emitter = new EventEmitter();
   private active = new Map<
@@ -52,6 +80,8 @@ export class Engine {
   >();
   private timer?: NodeJS.Timeout;
   private stopping = false;
+  /** One report per process is enough for a bad GHOSTGRID_PRICING value. */
+  private warnedPricing = false;
   private notificationFrames: Row[][] = [];
   constructor(
     private store: Storage,
@@ -101,7 +131,10 @@ export class Engine {
     if (this.timer) return;
     this.stopping = false;
     for (const task of this.store.list("tasks"))
-      if (["running", "awaiting_approval"].includes(task.status)) {
+      // A task waiting for approval is deliberately not in this list: it has not been handed
+      // to a provider, so it has no side effects to review, and failing it on every restart
+      // would make the gate unusable on a machine that reboots.
+      if (task.status === "running") {
         this.finish(task, "failed", {
           error: {
             code: "EXECUTION_INTERRUPTED",
@@ -189,6 +222,8 @@ export class Engine {
           contextIds: data.contextIds ?? [],
           timeoutMs: data.timeoutMs ?? this.options.taskTimeoutMs,
           maxRetries: data.maxRetries ?? this.options.maxRetries ?? 0,
+          // Gated work waits for the operator once its dependencies are done; see `pump`.
+          requiresApproval: data.requiresApproval ?? false,
           id: randomUUID(),
           status: "queued",
           priority: data.priority ?? 0,
@@ -210,6 +245,58 @@ export class Engine {
       return row;
     });
     return task;
+  }
+  /** Park a gated task in front of the operator. Reached only from `pump`. */
+  private hold(task: Row) {
+    const held = this.store.update("tasks", task.id, {
+      status: "awaiting_approval",
+      heldAt: now(),
+    });
+    this.event(held, "task.awaiting_approval");
+    return held;
+  }
+  /**
+   * Let a held task run. The prompt it will be given is the one the operator just read: an
+   * approval is only meaningful if nothing changes between the reading and the run, and
+   * everything that composes the prompt — the brief, the goal, the dependency outputs — is
+   * already final by the time a task is held.
+   */
+  approveTask(id: string, approvedBy?: string) {
+    const task = this.store.get("tasks", id);
+    if (!task) throw invalid("Task not found", 404);
+    if (task.status !== "awaiting_approval")
+      throw invalid(
+        `This step is ${task.status}, not waiting for approval`,
+        409,
+      );
+    const approved = this.store.update("tasks", id, {
+      status: "queued",
+      approvedAt: now(),
+      approvedBy: approvedBy?.trim() || "operator",
+    });
+    this.event(approved, "task.approved", { approvedBy: approved.approvedBy });
+    this.pump();
+    return approved;
+  }
+  /**
+   * Decline a held task. It is cancelled rather than failed, and its reason is stored where a
+   * task error goes, so the run reads as a decision somebody made and not as a breakage.
+   * Whatever depended on it fails as a dependency, which is what the operator asked for.
+   */
+  rejectTask(id: string, reason?: string) {
+    const task = this.store.get("tasks", id);
+    if (!task) throw invalid("Task not found", 404);
+    if (task.status !== "awaiting_approval")
+      throw invalid(
+        `This step is ${task.status}, not waiting for approval`,
+        409,
+      );
+    return this.finish(task, "cancelled", {
+      error: {
+        code: "APPROVAL_DECLINED",
+        message: reason?.trim() || "The operator declined this step.",
+      },
+    });
   }
   cancelTask(id: string) {
     const task = this.store.get("tasks", id);
@@ -275,6 +362,13 @@ export class Engine {
         continue;
       }
       if (deps.some((d) => d?.status !== "completed")) continue;
+      // A gated task stops here rather than at submission: its dependencies have just
+      // finished, which is the first moment its prompt is complete and there is something
+      // real to approve. Nothing has been sent to a provider yet.
+      if (task.requiresApproval && !task.approvedAt) {
+        this.hold(task);
+        continue;
+      }
       if (this.active.size >= (this.options.concurrency ?? 2)) break;
       const agent = this.store.get("agents", task.agentId);
       if (!agent) {
@@ -333,12 +427,80 @@ export class Engine {
     }
     throw invalid("Workspace is outside configured allowlist");
   }
+  /**
+   * Writes the durable usage record for one attempt.
+   *
+   * A count the provider did not report stays null, never 0: the city has to be able to
+   * tell a free request from an unmeasured one, which is what `unknownTokenRequests`
+   * counts. A cost is `reported` only when the vendor returned the figure itself,
+   * `estimated` when configured token prices (see providers/pricing.ts) produced it, and
+   * otherwise `unknown` — no price is ever invented to fill the gap.
+   */
+  private recordUsage(
+    task: Row,
+    agent: Row,
+    config: Row | undefined,
+    reported: Row | undefined,
+    extra: Row = {},
+  ) {
+    const count = (value: unknown) =>
+      typeof value === "number" && Number.isFinite(value) && value >= 0
+        ? value
+        : null;
+    const inputTokens = count(reported?.inputTokens);
+    const outputTokens = count(reported?.outputTokens);
+    const cachedInputTokens = count(reported?.cachedInputTokens);
+    const costUsd = count(reported?.costUsd);
+    const { pricing, source, warning } = resolvePricing(config);
+    const estimate =
+      inputTokens !== null && outputTokens !== null && pricing
+        ? (inputTokens * pricing.inputPerMillion +
+            outputTokens * pricing.outputPerMillion) /
+          1_000_000
+        : null;
+    const estimatedCostUsd =
+      estimate !== null && Number.isFinite(estimate) ? estimate : null;
+    const usage = {
+      inputTokens,
+      outputTokens,
+      cachedInputTokens,
+      costUsd,
+      estimatedCostUsd,
+      costSource:
+        costUsd !== null
+          ? "reported"
+          : estimatedCostUsd !== null
+            ? "estimated"
+            : "unknown",
+      // Where the rate behind estimatedCostUsd came from, so an estimate can be audited.
+      pricingSource: source,
+      ...extra,
+    };
+    this.store.insert("usage_records", {
+      id: randomUUID(),
+      taskId: task.id,
+      agentId: agent.id,
+      providerId: agent.providerId,
+      projectId: task.projectId,
+      createdAt: now(),
+      ...usage,
+    });
+    // Misconfigured prices are reported once rather than silently leaving every
+    // request unpriced.
+    if (warning && !this.warnedPricing) {
+      this.warnedPricing = true;
+      this.event(task, "usage.pricing.invalid", { message: warning });
+    }
+    this.event(task, "usage.updated", usage);
+    return usage;
+  }
   private async execute(task: Row, agent: Row, controller: AbortController) {
     let timeout: NodeJS.Timeout | undefined;
     let timedOut = false;
     let pendingArtifactPath: string | undefined;
+    let config: Row | undefined;
     try {
-      const config = this.store.get("providers", agent.providerId);
+      config = this.store.get("providers", agent.providerId);
       if (!config) throw invalid("Provider not found");
       if (controller.signal.aborted) throw controller.signal.reason;
       timeout = setTimeout(
@@ -531,6 +693,10 @@ export class Engine {
         [
           project?.instructions,
           agent.role,
+          // The employee's standing role brief: who they are in the org chart, what project
+          // they are on, and what their title holds them accountable for. Composed from the
+          // org fields by SessionService, never written by a caller.
+          session?.brief,
           session?.memory ? `Saved session notes:\n${session.memory}` : "",
           task.prompt + context + handoff,
         ]
@@ -541,6 +707,11 @@ export class Engine {
         throw invalid(
           "Selected prompt, instructions, context and dependency outputs exceed the 128000-character budget; select fewer context sources",
         );
+      // What the employee is actually given, kept so a transcript can answer "why did they do
+      // that" with the text that reached them rather than with the task's own prompt. The
+      // brief, the dependency outputs and the project instructions are all composed here and
+      // nowhere else, so this is the only place that can record them.
+      this.store.update("tasks", task.id, { effectivePrompt: prompt });
       const messages: Row[] = [];
       let historySize = 0;
       for (const message of [...(session?.messages ?? [])]
@@ -589,57 +760,15 @@ export class Engine {
             this.store.get("sessions", session.id)?.providerSessionId,
           providerSessionConfig: sessionConfig,
           updatedAt: now(),
-          messages: redact([
-            ...(session.messages ?? []),
-            { role: "user", content: task.prompt },
-            { role: "assistant", content: result.output },
-          ]),
+          messages: redact(
+            trimHistory([
+              ...(session.messages ?? []),
+              { role: "user", content: task.prompt },
+              { role: "assistant", content: result.output },
+            ]),
+          ),
         });
-      const knownNumber = (value: unknown): value is number =>
-        typeof value === "number" && Number.isFinite(value) && value >= 0;
-      const inputTokens = knownNumber(result.usage?.inputTokens)
-        ? result.usage.inputTokens
-        : null;
-      const outputTokens = knownNumber(result.usage?.outputTokens)
-        ? result.usage.outputTokens
-        : null;
-      const costUsd = knownNumber(result.usage?.costUsd)
-        ? result.usage.costUsd
-        : null;
-      const pricing = config.pricing;
-      const estimate =
-        inputTokens !== null &&
-        outputTokens !== null &&
-        knownNumber(pricing?.inputPerMillion) &&
-        knownNumber(pricing?.outputPerMillion)
-          ? (inputTokens * pricing.inputPerMillion +
-              outputTokens * pricing.outputPerMillion) /
-            1_000_000
-          : null;
-      const estimatedCostUsd =
-        estimate !== null && Number.isFinite(estimate) ? estimate : null;
-      const usage = {
-        inputTokens,
-        outputTokens,
-        costUsd,
-        estimatedCostUsd,
-        costSource:
-          costUsd !== null
-            ? "reported"
-            : estimatedCostUsd !== null
-              ? "estimated"
-              : "unknown",
-      };
-      this.store.insert("usage_records", {
-        id: randomUUID(),
-        taskId: task.id,
-        agentId: agent.id,
-        providerId: agent.providerId,
-        projectId: task.projectId,
-        createdAt: now(),
-        ...usage,
-      });
-      this.event(task, "usage.updated", usage);
+      const usage = this.recordUsage(task, agent, config, result.usage);
       controller.signal.throwIfAborted();
       await mkdir(this.options.artifactsDir, { recursive: true });
       controller.signal.throwIfAborted();
@@ -670,6 +799,12 @@ export class Engine {
       pendingArtifactPath = undefined;
     } catch (error: any) {
       const current = this.store.get("tasks", task.id);
+      // Tokens an attempt spent before it failed, timed out or was cancelled were still
+      // billed by the vendor. Adapters carry them out on the error; dropping them here
+      // is what made cancelled and failed work look free.
+      const spent = usageFromError(error);
+      if (spent && current)
+        this.recordUsage(task, agent, config, spent, { partial: true });
       if (current && !terminal.has(current.status)) {
         const provider = this.store.get("providers", agent.providerId);
         const inference =
@@ -800,6 +935,7 @@ export class Engine {
           priority: node.priority,
           timeoutMs: node.timeoutMs,
           maxRetries: node.maxRetries,
+          requiresApproval: node.requiresApproval,
         });
         tasks.set(node.key, task);
         this.store.update("workflow_nodes", node.id, { taskId: task.id });

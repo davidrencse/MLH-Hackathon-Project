@@ -36,7 +36,7 @@ Every bot writes one JSON object per line to **stdout**:
 - `bot.alert` — security / health alerts (`data.severity`)
 - `bot.item` — new discovered item (feed entry, commit)
 
-Map these onto the same SSE event model as agent tasks (see `../../FRONTEND.md`): a bot's
+Map these onto the same SSE event model as agent tasks (see `../../docs/FRONTEND.md`): a bot's
 `bot.log`/`bot.metric` lines become events on the stream; its `bot.metric` numbers feed
 the Monitoring Center. Bots emit **real** activity — no fictional currency or XP.
 

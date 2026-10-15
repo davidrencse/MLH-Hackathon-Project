@@ -2,7 +2,7 @@
 // Persisted to localStorage (demo only: keys never leave this browser).
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { BUILDINGS } from '../constants'
+import { BUILDINGS } from '../constants.ts'
 import type { BuildingConfig, BuildingId, ProviderKey } from '../types'
 
 interface KeysState {
@@ -60,7 +60,7 @@ export function resolveKeyForProvider(
 
 // React hook: true when the building has no usable key.
 export function useIsOffline(buildingId: BuildingId): boolean {
-  return useKeys((s) => buildingId !== 'router' && resolveBuildingKey(s, buildingId) === null)
+  return useKeys((s) => resolveBuildingKey(s, buildingId) === null)
 }
 
 export const maskKey = (key: string) => `••••${key.slice(-4)}`

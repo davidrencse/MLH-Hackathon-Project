@@ -8,10 +8,21 @@ import {
   type Emit,
   type Usage,
 } from "./types.js";
+import { attachUsage, completeFromTotal, emptyUsage, mergeUsage, normalizeUsage } from "./usage.js";
+const tokenCount = z.number().int().nonnegative().safe().nullable().optional();
+const cachedDetails = z.object({ cached_tokens: tokenCount }).nullable().optional();
 const usageSchema = z.object({
-  prompt_tokens: z.number().int().nonnegative().safe().nullable().optional(),
-  completion_tokens: z.number().int().nonnegative().safe().nullable().optional(),
+  prompt_tokens: tokenCount,
+  completion_tokens: tokenCount,
+  // Gateways that report only a total, or that name the halves the way the Responses API does.
+  total_tokens: tokenCount,
+  input_tokens: tokenCount,
+  output_tokens: tokenCount,
+  // Cached prompt tokens are a subset of prompt_tokens here, never an addition to it.
+  prompt_tokens_details: cachedDetails,
+  input_tokens_details: cachedDetails,
 });
+type VendorUsage = z.infer<typeof usageSchema>;
 const completionSchema = z.object({
   error: z.unknown().optional(),
   choices: z.array(z.object({
@@ -20,7 +31,21 @@ const completionSchema = z.object({
     finish_reason: z.string().nullable().optional(),
   })).max(1).optional(),
   usage: usageSchema.nullable().optional(),
+  // Groq reports the turn's tokens here on its final streamed chunk, alongside (or
+  // instead of) the standard usage chunk that stream_options asks for.
+  x_groq: z.object({ usage: usageSchema.nullable().optional() }).nullable().optional(),
 });
+/** Reads whichever token fields a vendor actually sent; silence stays null, never zero. */
+function vendorUsage(payload: { usage?: VendorUsage | null; x_groq?: { usage?: VendorUsage | null } | null }): Usage | null {
+  const raw = payload.usage ?? payload.x_groq?.usage;
+  if (!raw) return null;
+  const usage = normalizeUsage({
+    inputTokens: raw.prompt_tokens ?? raw.input_tokens,
+    outputTokens: raw.completion_tokens ?? raw.output_tokens,
+    cachedInputTokens: raw.prompt_tokens_details?.cached_tokens ?? raw.input_tokens_details?.cached_tokens,
+  });
+  return completeFromTotal(usage, raw.total_tokens);
+}
 const modelsSchema = z.object({ data: z.array(z.object({ id: z.string().min(1).max(200) })).max(10000) });
 function parsePayload<T>(schema: z.ZodType<T>, payload: unknown): T {
   const result = schema.safeParse(payload);
@@ -236,8 +261,11 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
             { role: "user", content: input.prompt },
           ],
           stream: this.config.supportsStreaming !== false,
-          ...(this.config.type === "deepseek" &&
-          this.config.supportsStreaming !== false
+          // Every OpenAI-compatible stream withholds token counts unless this is asked
+          // for: without it no chunk carries usage and the request is recorded with
+          // unknown tokens. Requested for all streaming endpoints, not only DeepSeek,
+          // which is why Groq-style providers reported nothing at all.
+          ...(this.config.supportsStreaming !== false
             ? { stream_options: { include_usage: true } }
             : {}),
           ...(this.config.parameters?.temperature !== undefined
@@ -256,8 +284,9 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
       if (payload.error || !choice || (choice.message?.tool_calls?.length ?? 0) > 0)
         throw new ProviderError("Provider returned unsupported output");
       if (choice.finish_reason && choice.finish_reason !== "stop")
-        throw new ProviderError(
-          `Provider stopped with ${choice.finish_reason}`,
+        throw attachUsage(
+          new ProviderError(`Provider stopped with ${choice.finish_reason}`),
+          vendorUsage(payload),
         );
       const output = choice.message?.content;
       if (typeof output !== "string")
@@ -265,13 +294,7 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
       if (output.length > 8_000_000)
         throw new ProviderError("Provider output limit exceeded");
       emit("agent.output", { text: output });
-      return {
-        output,
-        usage: {
-          inputTokens: payload.usage?.prompt_tokens ?? null,
-          outputTokens: payload.usage?.completion_tokens ?? null,
-        },
-      };
+      return { output, usage: vendorUsage(payload) ?? emptyUsage() };
     }
     if (!response.body)
       throw new ProviderError("Provider returned no response stream");
@@ -280,7 +303,7 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
       done = false,
       receivedContent = false,
       receivedBytes = 0;
-    let usage: Usage = { inputTokens: null, outputTokens: null };
+    let usage: Usage = emptyUsage();
     const decoder = new TextDecoder();
     const consume = (frame: string) => {
       const data = frame
@@ -297,6 +320,9 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
       try { json = JSON.parse(data); }
       catch { throw new ProviderError("Provider returned invalid JSON"); }
       const chunk = parsePayload(completionSchema, json);
+      // Counts can arrive before an error or a nonstop finish, and split across the
+      // final chunks: a later chunk that omits a field must not erase a reported one.
+      usage = mergeUsage(usage, vendorUsage(chunk));
       if (chunk.error)
         throw new ProviderError("Provider returned a streaming error");
       for (const choice of chunk.choices ?? []) {
@@ -316,52 +342,53 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
             `Provider stopped with ${choice.finish_reason}`,
           );
       }
-      if (chunk.usage)
-        usage = {
-          inputTokens: chunk.usage.prompt_tokens ?? null,
-          outputTokens: chunk.usage.completion_tokens ?? null,
-        };
     };
     const reader = response.body.getReader();
+    // Tokens a cancelled or broken stream already reported were still spent, so they
+    // leave on the failure instead of vanishing.
     try {
-      while (true) {
-        signal.throwIfAborted();
-        const { value: bytes, done: ended } = await readWithSignal(reader, signal);
-        if (ended) break;
-        receivedBytes += bytes.byteLength;
-        if (receivedBytes > 32_000_000)
-          throw new ProviderError("Provider output limit exceeded");
-        buffer = (buffer + decoder.decode(bytes, { stream: true })).replace(
-          /\r\n/g,
-          "\n",
-        );
-        if (buffer.length > 4_000_000 || output.length > 8_000_000)
-          throw new ProviderError("Provider output limit exceeded");
-        let boundary: number;
-        while ((boundary = buffer.indexOf("\n\n")) >= 0) {
-          consume(buffer.slice(0, boundary));
-          buffer = buffer.slice(boundary + 2);
+      try {
+        while (true) {
+          signal.throwIfAborted();
+          const { value: bytes, done: ended } = await readWithSignal(reader, signal);
+          if (ended) break;
+          receivedBytes += bytes.byteLength;
+          if (receivedBytes > 32_000_000)
+            throw new ProviderError("Provider output limit exceeded");
+          buffer = (buffer + decoder.decode(bytes, { stream: true })).replace(
+            /\r\n/g,
+            "\n",
+          );
+          if (buffer.length > 4_000_000 || output.length > 8_000_000)
+            throw new ProviderError("Provider output limit exceeded");
+          let boundary: number;
+          while ((boundary = buffer.indexOf("\n\n")) >= 0) {
+            consume(buffer.slice(0, boundary));
+            buffer = buffer.slice(boundary + 2);
+            if (done) break;
+          }
+          // The protocol marker completes the response even if the server keeps
+          // the HTTP connection alive. Breaking also cancels the response body.
           if (done) break;
         }
-        // The protocol marker completes the response even if the server keeps
-        // the HTTP connection alive. Breaking also cancels the response body.
-        if (done) break;
+      } finally {
+        // Cleanup must not hide the original failure or invalidate completion.
+        await reader.cancel().catch(() => {});
+        reader.releaseLock();
       }
-    } finally {
-      // Cleanup must not hide the original failure or invalidate completion.
-      await reader.cancel().catch(() => {});
-      reader.releaseLock();
+      if (!done) {
+        buffer += decoder.decode();
+        if (buffer.trim()) consume(buffer);
+      }
+      if (!done)
+        throw new ProviderError(
+          "Provider stream ended before its completion marker",
+        );
+      if (!receivedContent)
+        throw new ProviderError("Provider returned no text result");
+    } catch (error) {
+      throw attachUsage(error, usage);
     }
-    if (!done) {
-      buffer += decoder.decode();
-      if (buffer.trim()) consume(buffer);
-    }
-    if (!done)
-      throw new ProviderError(
-        "Provider stream ended before its completion marker",
-      );
-    if (!receivedContent)
-      throw new ProviderError("Provider returned no text result");
     return { output, usage };
   }
 }

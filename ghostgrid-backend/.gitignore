@@ -1,4 +1,9 @@
 node_modules/
+# This project is pnpm (see `packageManager` in package.json) and tracks pnpm-lock.yaml.
+# Running `npm install` here drops a package-lock.json beside it; committing that gives npm and
+# pnpm two different dependency trees for one project, which is how a build starts passing in one
+# place and failing in another.
+package-lock.json
 dist/
 data/
 .env

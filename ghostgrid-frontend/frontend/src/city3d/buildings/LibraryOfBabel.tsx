@@ -41,7 +41,7 @@ export function LibraryOfBabel() {
   const k = Math.min(footprint.w, footprint.d) / 1.6
 
   // "Book-spine" facade: tall thin lit windows read as rows of shelves.
-  const wall = useFacadeMaterial({ cols: 8, rows: 5, seed: 73, tint: PALETTE.orange })
+  const wall = useFacadeMaterial({ cols: Math.max(6, Math.round(footprint.w * 4.6)), rows: Math.max(4, Math.round(H * 0.62)), seed: 73, tint: PALETTE.orange })
 
   // Per-building animated materials (orb/halo colour mutated in useFrame). Disposed on unmount.
   const fx = useMemo(

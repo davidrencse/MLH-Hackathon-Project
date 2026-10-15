@@ -1,19 +1,17 @@
-// Night mood around the floating city: pixel sky, stars, distant city, flying cars.
-// Stars animate on the GPU; cars mutate instance buffers in useFrame.
+// Night mood around the floating city: pixel sky, distant city, flying cars.
+// Cars mutate instance buffers in useFrame.
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { PALETTE, UNIT_BOX } from './materials'
-import { CAMERA, MAP } from './world'
+import { ISO_Q } from './isoFrame'
+import { MAP } from './world'
 
 const REDUCED =
   typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 // ---------- iso screen frame ----------
-// A group with ISO_Q has local +x = screen right, +y = screen up, +z = toward the camera.
-const ISO_Q = new THREE.Quaternion().setFromRotationMatrix(
-  new THREE.Matrix4().lookAt(new THREE.Vector3(...CAMERA.position), new THREE.Vector3(), new THREE.Vector3(0, 1, 0)),
-)
+// ISO_Q (see world.ts) has local +x = screen right, +y = screen up, +z = toward the camera.
 const SCR_X = new THREE.Vector3(1, 0, 0).applyQuaternion(ISO_Q)
 const SCR_Y = new THREE.Vector3(0, 1, 0).applyQuaternion(ISO_Q)
 const VIEW = new THREE.Vector3(0, 0, 1).applyQuaternion(ISO_Q) // toward the camera
@@ -99,64 +97,6 @@ function Sky() {
 }
 
 // ---------- stars (GPU twinkle) ----------
-const STAR_VS = /* glsl */ `
-uniform float uTime;
-attribute vec3 aColor;
-attribute vec3 aTw; // phase, speed, size(px)
-varying vec3 vColor;
-void main() {
-  float s = 0.5 + 0.5 * sin(uTime * aTw.y + aTw.x);
-  s = floor(s * 3.0 + 0.5) / 3.0; // stepped twinkle
-  vColor = aColor * (0.2 + 0.8 * s);
-  gl_PointSize = aTw.z;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}`
-const FLAT_FS = /* glsl */ `
-varying vec3 vColor;
-void main() {
-  gl_FragColor = vec4(vColor, 1.0);
-  #include <colorspace_fragment>
-}`
-
-function Stars() {
-  const { geo, mat } = useMemo(() => {
-    const N = 320
-    const r = rng(11)
-    const pos = new Float32Array(N * 3)
-    const col = new Float32Array(N * 3)
-    const tw = new Float32Array(N * 3)
-    const palette = [PALETTE.ink, PALETTE.ink, PALETTE.ink, PALETTE.ink, PALETTE.cyan, PALETTE.pink, PALETTE.yellow]
-    const c = new THREE.Color()
-    for (let i = 0; i < N; i++) {
-      pos[i * 3] = -44 + r() * 88
-      pos[i * 3 + 1] = -6 + 36 * Math.sqrt(r()) // denser toward the top
-      pos[i * 3 + 2] = -120 // far behind everything (screen-space group)
-      c.set(palette[Math.floor(r() * palette.length)]).multiplyScalar(r() < 0.08 ? 1.6 : 0.5 + r() * 0.4)
-      col.set([c.r, c.g, c.b], i * 3)
-      tw.set([r() * 6.283, 0.6 + r() * 2.4, r() < 0.15 ? 2 : 1], i * 3)
-    }
-    const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-    geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3))
-    geo.setAttribute('aTw', new THREE.BufferAttribute(tw, 3))
-    const mat = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
-      vertexShader: STAR_VS,
-      fragmentShader: FLAT_FS,
-      toneMapped: false,
-    })
-    return { geo, mat }
-  }, [])
-  useEffect(() => () => {
-    geo.dispose()
-    mat.dispose()
-  }, [geo, mat])
-  useFrame(({ clock }) => {
-    if (!REDUCED) mat.uniforms.uTime.value = clock.elapsedTime % 1000
-  })
-  return <points geometry={geo} material={mat} frustumCulled={false} />
-}
-
 // ---------- distant city (1 instanced mesh, windows via one shared emissive texture) ----------
 const CITY_COLORS = ['#120b2a', '#1a1040', '#24164f']
 
@@ -324,9 +264,6 @@ export function Atmosphere() {
       <Sky />
       <DistantCity />
       <FlyingCars />
-      <group quaternion={ISO_Q}>
-        <Stars />
-      </group>
     </>
   )
 }

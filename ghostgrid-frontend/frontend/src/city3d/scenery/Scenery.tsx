@@ -7,12 +7,13 @@
 // each, and all the fake shadows merge into one quad mesh. The only per-frame work is a stepped
 // window flicker, which writes two material fields.
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { PALETTE, UNIT_BOX } from '../materials'
-import { layoutScenery, NEONS, SCENERY_Y, WALLS, type SceneryBuilding } from './layout'
+import { layoutScenery, NEONS, SCENERY_Y, WALLS, type SceneryBuilding, type SceneryVariant } from './layout'
 import { FACADE_TILE, makeFacadeTextures } from './textures'
+import { CyberSkyline } from './CyberSkyline'
 
 // Moon sits at (-9, 16, 7), so shadows fall toward (+0.79, −0.61). Same value as BuildingShell.
 const SHADOW_YAW = Math.atan2(0.614, 0.789)
@@ -201,10 +202,8 @@ function Boxes({ parts, material }: { parts: Part[]; material: THREE.Material })
 
 // Signs blink on a shared stepped clock: a handful of instance colours are rewritten only when
 // the step changes, not every frame.
-function NeonBoxes({ parts, signRange }: { parts: Part[]; signRange: [number, number][] }) {
+function NeonBoxes({ parts, signRange, mat }: { parts: Part[]; signRange: [number, number][]; mat: THREE.Material }) {
   const ref = useRef<THREE.InstancedMesh>(null)
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), [])
-  useEffect(() => () => mat.dispose(), [mat])
   const step = useRef(-1)
   const base = useMemo(() => parts.map((p) => new THREE.Color(p.c).multiplyScalar(p.k ?? 1)), [parts])
 
@@ -243,36 +242,50 @@ function NeonBoxes({ parts, signRange }: { parts: Part[]; signRange: [number, nu
   return <instancedMesh ref={ref} args={[UNIT_BOX, mat, parts.length]} raycast={() => null} />
 }
 
+// ---------- shared per-variant resources ----------
+// Up to nine <Scenery/> live at once (core island + eight outer plates) and every plate draws
+// the same filler city at a different offset, so the pack, the merged geometries, the facade
+// textures and the materials are built once per variant and shared by every instance.
+// Deliberately never disposed: an instance cannot know whether another plate still draws them,
+// and there are at most two sets for the whole session (vs. one per mounted plate before).
+type Resources = ReturnType<typeof buildResources>
 
-export function Scenery() {
-  const buildings = useMemo(layoutScenery, [])
-  const { lit, glow, signRange } = useMemo(() => buildProps(buildings), [buildings])
+function buildResources(variant: SceneryVariant) {
+  const buildings = layoutScenery(variant)
+  const tex = makeFacadeTextures()
+  return {
+    buildings,
+    ...buildProps(buildings),
+    facades: buildFacades(buildings),
+    shadows: buildShadows(buildings),
+    facadeMat: new THREE.MeshLambertMaterial({
+      map: tex.map,
+      emissiveMap: tex.emissiveMap,
+      emissive: new THREE.Color('#ffffff'),
+      emissiveIntensity: 0.45,
+      vertexColors: true,
+    }),
+    shadowMat: new THREE.MeshBasicMaterial({ color: '#05030f', transparent: true, opacity: 0.5, depthWrite: false }),
+    litMat: new THREE.MeshLambertMaterial({ color: '#ffffff' }),
+    neonMat: new THREE.MeshBasicMaterial({ toneMapped: false }),
+  }
+}
 
-  const r = useMemo(() => {
-    const tex = makeFacadeTextures()
-    return {
-      facades: buildFacades(buildings),
-      shadows: buildShadows(buildings),
-      facadeMat: new THREE.MeshLambertMaterial({
-        map: tex.map,
-        emissiveMap: tex.emissiveMap,
-        emissive: new THREE.Color('#ffffff'),
-        emissiveIntensity: 0.45,
-        vertexColors: true,
-      }),
-      shadowMat: new THREE.MeshBasicMaterial({ color: '#05030f', transparent: true, opacity: 0.5, depthWrite: false }),
-      litMat: new THREE.MeshLambertMaterial({ color: '#ffffff' }),
-    }
-  }, [buildings])
+const cache = new Map<SceneryVariant, Resources>()
 
-  useEffect(
-    () => () => {
-      r.facadeMat.map?.dispose()
-      r.facadeMat.emissiveMap?.dispose()
-      for (const x of [r.facades, r.shadows, r.facadeMat, r.shadowMat, r.litMat]) x.dispose()
-    },
-    [r],
-  )
+function resourcesFor(variant: SceneryVariant): Resources {
+  let r = cache.get(variant)
+  if (!r) {
+    r = buildResources(variant)
+    cache.set(variant, r)
+  }
+  return r
+}
+
+/** `variant` picks which ground the packer had to work around: the core island's landmark lots
+ *  and street furniture, or an outer plate's nine leasable super-blocks. */
+export function Scenery({ variant = 'core' }: { variant?: SceneryVariant }) {
+  const r = useMemo(() => resourcesFor(variant), [variant])
 
   // stepped window flicker (DESIGN.md: idle 2.4s loop, steps(4))
   useFrame(({ clock }) => {
@@ -284,8 +297,9 @@ export function Scenery() {
     <group position={[0, SCENERY_Y, 0]}>
       <mesh geometry={r.facades} material={r.facadeMat} raycast={() => null} receiveShadow />
       <mesh geometry={r.shadows} material={r.shadowMat} position={[0, 0.02, 0]} renderOrder={1} raycast={() => null} />
-      <Boxes parts={lit} material={r.litMat} />
-      <NeonBoxes parts={glow} signRange={signRange} />
+      <Boxes parts={r.lit} material={r.litMat} />
+      <NeonBoxes parts={r.glow} signRange={r.signRange} mat={r.neonMat} />
+      <CyberSkyline buildings={r.buildings} />
     </group>
   )
 }

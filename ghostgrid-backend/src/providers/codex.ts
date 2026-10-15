@@ -8,6 +8,7 @@ import {
   type Emit,
   type Usage,
 } from "./types.js";
+import { attachUsage, emptyUsage, mergeUsage } from "./usage.js";
 interface Item {
   type: string;
   text?: string;
@@ -18,7 +19,13 @@ interface Event {
   type: string;
   thread_id?: string;
   item?: Item;
-  usage?: { input_tokens: number; output_tokens: number };
+  // Codex counts cached_input_tokens inside input_tokens and reasoning tokens inside
+  // output_tokens, so neither is ever added on top of its total.
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cached_input_tokens?: number;
+  };
   error?: { message: string };
   message?: string;
 }
@@ -107,7 +114,7 @@ export class CodexAdapter implements ProviderAdapter {
       sandboxMode: input.agent.permissions.includes("write")
         ? "workspace-write"
         : "read-only",
-      approvalPolicy: "never",
+      approvalPolicy: "untrusted",
       networkAccessEnabled: false,
       webSearchMode: "disabled",
     };
@@ -122,49 +129,53 @@ export class CodexAdapter implements ProviderAdapter {
     let output = "",
       sessionId = input.sessionId,
       completed = false;
-    let usage: Usage = { inputTokens: null, outputTokens: null };
-    for await (const event of events) {
-      if (event.type === "thread.started") {
-        sessionId = event.thread_id;
-        emit("agent.connected", { sessionId });
-      }
-      if (event.type === "turn.completed") {
-        completed = true;
-        if (event.usage)
-          usage = {
-            inputTokens: event.usage.input_tokens,
-            outputTokens: event.usage.output_tokens,
-          };
-      }
-      if (event.type === "turn.failed" || event.type === "error")
-        throw new ProviderError(
-          event.error?.message ?? event.message ?? "Codex execution failed",
-        );
-      if (event.item) {
-        if (
-          event.item.type === "agent_message" &&
-          event.type === "item.completed"
-        ) {
-          output += event.item.text ?? "";
-          emit("agent.output", { text: event.item.text ?? "" });
+    let usage: Usage = emptyUsage();
+    try {
+      for await (const event of events) {
+        if (event.type === "thread.started") {
+          sessionId = event.thread_id;
+          emit("agent.connected", { sessionId });
         }
-        if (event.item.type === "command_execution")
-          emit(
-            event.type === "item.completed"
-              ? "agent.tool.completed"
-              : "agent.tool.started",
-            event.item,
+        // Any turn event that carries counts is recorded, so a turn that fails after the
+        // model ran still reports the tokens it spent.
+        usage = mergeUsage(usage, event.usage && {
+          inputTokens: event.usage.input_tokens,
+          outputTokens: event.usage.output_tokens,
+          cachedInputTokens: event.usage.cached_input_tokens,
+        });
+        if (event.type === "turn.completed") completed = true;
+        if (event.type === "turn.failed" || event.type === "error")
+          throw new ProviderError(
+            event.error?.message ?? event.message ?? "Codex execution failed",
           );
-        if (
-          event.item.type === "file_change" &&
-          event.type === "item.completed"
-        )
-          emit("agent.file.changed", { changes: event.item.changes });
+        if (event.item) {
+          if (
+            event.item.type === "agent_message" &&
+            event.type === "item.completed"
+          ) {
+            output += event.item.text ?? "";
+            emit("agent.output", { text: event.item.text ?? "" });
+          }
+          if (event.item.type === "command_execution")
+            emit(
+              event.type === "item.completed"
+                ? "agent.tool.completed"
+                : "agent.tool.started",
+              event.item,
+            );
+          if (
+            event.item.type === "file_change" &&
+            event.type === "item.completed"
+          )
+            emit("agent.file.changed", { changes: event.item.changes });
+        }
       }
+      signal.throwIfAborted();
+      if (!completed)
+        throw new ProviderError("Codex ended without a completed turn");
+    } catch (error) {
+      throw attachUsage(error, usage);
     }
-    signal.throwIfAborted();
-    if (!completed)
-      throw new ProviderError("Codex ended without a completed turn");
     return { output, ...(sessionId ? { sessionId } : {}), usage };
   }
 }

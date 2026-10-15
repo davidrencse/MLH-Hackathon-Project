@@ -24,7 +24,7 @@ With existing dependencies installed, `npm run start`, `npm test`, `npm run chec
 `pnpm demo` exercises project/provider/agent/session/task/events/metrics integration
 using a mock provider and a temporary database, without credentials or a listening port.
 
-For the read-only Library of Babel shared-context integration, see [LIBRARY.md](LIBRARY.md).
+For the read-only Library of Babel shared-context integration, see [LIBRARY.md](docs/LIBRARY.md).
 
 Each agent/building owns multiple named persistent sessions. Create them through
 `POST /api/v1/agents/:id/sessions` and list them through the same path, or filter
@@ -65,8 +65,8 @@ tasks sharing a configured workspace serialize access. One process owns a file d
 
 Provider credentials stay in environment variables referenced by `apiKeyEnv` or
 `headersEnv`, such as `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, or `ANTHROPIC_API_KEY`.
-The mock provider needs none. See [PROVIDERS.md](PROVIDERS.md) for adapter capabilities
-and [FRONTEND.md](FRONTEND.md) for frontend integration.
+The mock provider needs none. See [PROVIDERS.md](docs/PROVIDERS.md) for adapter capabilities
+and [FRONTEND.md](docs/FRONTEND.md) for frontend integration.
 
 Metrics counts cover all task history. Duration samples are paginated with
 `GET /api/v1/metrics?limit=100&offset=0` (maximum 500); the response includes
@@ -104,19 +104,21 @@ pnpm demo
 pnpm exec tsx scripts/benchmark-storage.ts
 ```
 
-See [TESTING.md](TESTING.md) for feature coverage, real HTTP verification, and
+See [TESTING.md](docs/TESTING.md) for feature coverage, real HTTP verification, and
 the distinction between deterministic SDK fixtures and live provider checks.
 
 Normal tests use mock providers, temporary storage and local HTTP fixtures. Live provider
-smoke tests require `GHOSTGRID_LIVE_TEST=1` and matching credentials; see PROVIDERS.md.
+smoke tests require `GHOSTGRID_LIVE_TEST=1` and matching credentials; see docs/PROVIDERS.md.
 The benchmark compares the previous whole-table scan with indexed filtering against
 10,000 synthetic tasks in memory. It never opens application data.
 
-See [AUDIT.md](AUDIT.md) for audit findings, verified fixes and remaining limits.
+See [AUDIT.md](docs/archive/AUDIT.md) for audit findings, verified fixes and remaining limits.
 See [SECURITY.md](SECURITY.md) for backend validation, credential handling and
 deployment boundaries.
-See [SESSIONS.md](SESSIONS.md) for persistent Codex/Claude conversations, editable
+See [SESSIONS.md](docs/SESSIONS.md) for persistent Codex/Claude conversations, editable
 session notes and recovery when native session files are unavailable.
+See [OFFICE.md](docs/OFFICE.md) for the office layer: editable job roles and the prompt each
+one carries, promotion and reporting lines, and how the org chart is run as a task graph.
 
 ## Continuous integration
 
@@ -135,5 +137,5 @@ provider credentials. Paid provider tests are explicitly disabled in CI.
 A separate CI job runs both Python bridge tests on Python 3.14 against the pinned
 upstream checkout with pinned test dependencies. It verifies read-only HTTP behavior
 and preservation of source metadata. Locally, that test requires the checkout and
-dependencies described in [LIBRARY.md](LIBRARY.md).
-See [CI-AUDIT.md](CI-AUDIT.md) for validation evidence and audit limits.
+dependencies described in [LIBRARY.md](docs/LIBRARY.md).
+See [CI-AUDIT.md](docs/archive/CI-AUDIT.md) for validation evidence and audit limits.

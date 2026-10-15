@@ -1,15 +1,16 @@
 // Holographic "FOR LEASE" pads on empty buildable lots.
 // Always: dim dashed outline. Build mode: pulsing cyan/pink outline + translucent holo volume,
 // hover highlights + label, click places the building. 2 InstancedMeshes (+1 Html label on hover).
-import { Html } from '@react-three/drei'
+import { Html } from '@react-three/drei/web/Html'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { toast } from 'sonner'
 import { CATALOG } from '../../constants'
 import { useGrid, useOccupiedLots } from '../../store/grid'
+import { usePlots } from '../../store/plots'
 import { PALETTE, UNIT_BOX } from '../materials'
-import { BUILDABLE_LOTS, lotCenter, lotFootprint } from '../world'
+import { BUILDABLE_LOTS, leasableLots, lotCenter, lotFootprint } from '../world'
 import { CURB } from './layout'
 
 const DASHES = 4 // dashes per side
@@ -49,7 +50,10 @@ function LeaseLabel({ lot }: { lot: number }) {
 export function LeasePads({ glow }: { glow: THREE.Material }) {
   const buildMode = useGrid((s) => !!s.buildMode)
   const occupied = useOccupiedLots()
-  const empty = useMemo(() => BUILDABLE_LOTS.filter((l) => !occupied.includes(l)), [occupied])
+  // Lots on an unopened outer plate have no ground yet, so they get no pad: leasableLots()
+  // is the core island plus the plates the player has grown (store/plots.ts).
+  const openPlots = usePlots((s) => s.open)
+  const empty = useMemo(() => leasableLots(openPlots).filter((l) => !occupied.includes(l)), [occupied, openPlots])
 
   const dashRef = useRef<THREE.InstancedMesh>(null)
   const holoRef = useRef<THREE.InstancedMesh>(null)

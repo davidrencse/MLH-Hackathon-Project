@@ -25,7 +25,7 @@ function ConsoleRedirect() {
 
 export default function App() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={page(<CityPage />)} />
         <Route path="/office/:buildingId" element={page(<OfficePage />)} />

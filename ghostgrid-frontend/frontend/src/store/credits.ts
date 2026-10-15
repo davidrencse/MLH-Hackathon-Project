@@ -5,14 +5,28 @@ import { create } from 'zustand'
 import { fetchCredits, type CreditRow, type CreditsSnapshot } from '../api/providerCredits'
 
 const TTL_MS = 60_000
+/**
+ * An "offline" snapshot holds no numbers at all, so it is worth almost nothing: cached for a
+ * full minute it left the city showing "backend unavailable" long after the backend answered
+ * again (the health probe re-checks a dead backend every 5s). Matched to that probe instead.
+ */
+const OFFLINE_TTL_MS = 5_000
 let refreshPending = false
+let pendingVendorRefresh = false
+
+/** How long the snapshot in hand stays usable. */
+const ttlFor = (snapshot: CreditsSnapshot | null) => (snapshot?.offline ? OFFLINE_TTL_MS : TTL_MS)
 
 interface CreditsState {
   snapshot: CreditsSnapshot | null
   loading: boolean
   error: string | null
-  /** Fetches unless a fresh-enough snapshot is already cached. `force` ignores the TTL. */
-  load: (force?: boolean) => Promise<void>
+  /**
+   * Fetches unless a fresh-enough snapshot is already cached. `force` ignores the TTL;
+   * `refreshVendors` additionally asks the backend to re-poll the vendor balance APIs, which
+   * only a user pressing refresh should do.
+   */
+  load: (force?: boolean, refreshVendors?: boolean) => Promise<void>
 }
 
 let inflight: Promise<void> | null = null
@@ -21,24 +35,31 @@ export const useCreditsStore = create<CreditsState>()((set, get) => ({
   snapshot: null,
   loading: false,
   error: null,
-  load: async (force = false) => {
+  load: async (force = false, refreshVendors = false) => {
     const { snapshot, loading } = get()
     if (loading) {
-      if (force) refreshPending = true
+      // Only a forced reload is queued, so the vendor flag is only remembered alongside one;
+      // otherwise it would leak into whatever forced reload came next.
+      if (force) {
+        refreshPending = true
+        pendingVendorRefresh ||= refreshVendors
+      }
       return inflight ?? undefined
     }
-    if (!force && snapshot && Date.now() - snapshot.fetchedAt < TTL_MS) return
+    if (!force && snapshot && Date.now() - snapshot.fetchedAt < ttlFor(snapshot)) return
     set({ loading: true, error: null })
     inflight = (async () => {
       try {
-        set({ snapshot: await fetchCredits(force), loading: false })
+        set({ snapshot: await fetchCredits(refreshVendors), loading: false })
       } catch (e) {
         set({ loading: false, error: e instanceof Error ? e.message : 'failed to read credits' })
       } finally {
         inflight = null
         if (refreshPending) {
           refreshPending = false
-          void get().load(true)
+          const vendors = pendingVendorRefresh
+          pendingVendorRefresh = false
+          void get().load(true, vendors)
         }
       }
     })()
@@ -52,6 +73,8 @@ export interface UseCredits {
   error: string | null
   fetchedAt: number | null
   via: CreditsSnapshot['via'] | null
+  /** The backend is unreachable, so no usage could be read. */
+  offline: boolean
   refresh: () => void
 }
 
@@ -61,20 +84,27 @@ export function useCredits(active: boolean): UseCredits {
   const loading = useCreditsStore((s) => s.loading)
   const error = useCreditsStore((s) => s.error)
   const load = useCreditsStore((s) => s.load)
+  // While the backend is unreachable there are no numbers on screen at all, so the tick has to
+  // match the shorter offline TTL — otherwise a backend that comes up a second after page load
+  // stays invisible to the HUD for a full minute.
+  const offline = snapshot?.offline ?? false
 
   useEffect(() => {
     if (!active) return
     void load()
     const refresh = () => { if (!document.hidden) void load() }
-    const timer = setInterval(refresh, 5000)
+    // Matched to the snapshot's TTL: a shorter tick only re-ran the cache check, and usage
+    // events already force a refresh through the live store, so nothing waits on this timer.
+    const timer = setInterval(refresh, offline ? OFFLINE_TTL_MS : TTL_MS)
     document.addEventListener('visibilitychange', refresh)
     return () => {
       clearInterval(timer)
       document.removeEventListener('visibilitychange', refresh)
     }
-  }, [active, load])
+  }, [active, load, offline])
 
-  const refresh = useCallback(() => void load(true), [load])
+  // The button is a user asking the vendors again, so this is the one path that re-polls them.
+  const refresh = useCallback(() => void load(true, true), [load])
 
   return {
     rows: snapshot?.rows ?? [],
@@ -82,6 +112,7 @@ export function useCredits(active: boolean): UseCredits {
     error,
     fetchedAt: snapshot?.fetchedAt ?? null,
     via: snapshot?.via ?? null,
+    offline: snapshot?.offline ?? false,
     refresh,
   }
 }

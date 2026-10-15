@@ -1,12 +1,17 @@
 // Library of Babel building → the backend's read-only `news` integration.
-// Connect the bridge (default http://127.0.0.1:8765, see ghostgrid-backend/LIBRARY.md),
+// Connect the bridge (default http://127.0.0.1:8765, see ghostgrid-backend/docs/LIBRARY.md),
 // browse or search it, and import an article's notes as shared project context.
-import { backend, type ContextEntry, type LibraryConnection } from './backend'
-import { isLive } from './config'
-import { bootstrap } from './live'
+import { backend, type ContextEntry, type LibraryConnection } from './backend.ts'
+import { isLive } from './config.ts'
+import { bootstrap } from './live.ts'
 
-const env = import.meta.env as Record<string, string | undefined>
-export const LIBRARY_BASE_URL = env.VITE_GG_LIBRARY_URL ?? 'http://127.0.0.1:8765'
+// Through env.ts, not `import.meta.env` directly: that object only exists under Vite, so reading
+// it here threw `Cannot read properties of undefined` the moment anything imported this module
+// outside the bundler — a test, a script, any non-browser context. env.ts already falls back to
+// `process.env`, and `LIBRARY_SITE_URL` is the same setting with the same default.
+import { LIBRARY_SITE_URL } from './env.ts'
+
+export const LIBRARY_BASE_URL = LIBRARY_SITE_URL
 export const LIBRARY_BUILDING_ID = 'library'
 
 export interface LibraryArticle {
@@ -33,6 +38,9 @@ async function requireLive(): Promise<string> {
   if (!(await isLive())) throw new Error('The Ghost Grid backend is not reachable; the library needs it')
   return (await bootstrap()).projectId
 }
+
+/** Whatever the bridge sent, as an array. A missing or malformed list is an empty one. */
+const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
 
 export const library = {
   /** Connection record plus a live reachability probe of the bridge. */
@@ -79,25 +87,28 @@ export const library = {
   async catalog(query: { offset?: number; limit?: number; topic_id?: string; subtopic_id?: string; access?: 'all' | 'free' | 'locked' } = {}) {
     const projectId = await requireLive()
     const page = await backend.libraryCatalog(projectId, query)
-    return { articles: page.articles as LibraryArticle[], total: page.total }
+    // The bridge is a separate service: if it answers 200 with anything lacking `articles`, a
+    // bare cast puts `undefined` into component state and the next render throws inside the
+    // component, where its own try/catch cannot reach.
+    return { articles: list<LibraryArticle>(page.articles), total: page.total ?? 0 }
   },
 
   async search(q: string, limit = 20) {
     const projectId = await requireLive()
     const page = await backend.librarySearch(projectId, q, limit)
-    return { items: page.items as LibraryArticle[], total: page.total }
+    return { items: list<LibraryArticle>(page.items), total: page.total ?? 0 }
   },
 
   async papers() {
     const projectId = await requireLive()
     const page = await backend.libraryPapers(projectId)
-    return page.items as LibraryArticle[]
+    return list<LibraryArticle>(page.items)
   },
 
   async notebook() {
     const projectId = await requireLive()
     const page = await backend.libraryNotebook(projectId)
-    return page.entries
+    return list<Record<string, unknown>>(page.entries)
   },
 
   async notes(articleId: string) {

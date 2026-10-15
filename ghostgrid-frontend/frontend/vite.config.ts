@@ -2,7 +2,6 @@ import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import { ggCreditsRelay } from './vite/creditsRelay.js'
 
 // The Ghost Grid backend (ghostgrid-backend, default http://127.0.0.1:3001) is proxied
 // under /gg so the browser talks to it same-origin. The backend rejects any request
@@ -13,8 +12,11 @@ const backendTarget = process.env.GG_BACKEND_URL ?? 'http://127.0.0.1:3001'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // ggCreditsRelay serves GET /gg-dev/credits in dev only — see vite/creditsRelay.ts.
-  plugins: [react(), tailwindcss(), ggCreditsRelay()],
+  // vite/creditsRelay.ts (GET /gg-dev/credits) is deliberately NOT registered: nothing in src/
+  // reads it any more — credits come from the backend's own /api/v1/provider-credits — and while
+  // mounted it served an unauthenticated dev endpoint that read the backend's .env, called three
+  // vendors with live keys (spending a real Groq completion per hit) and echoed the key file path.
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },

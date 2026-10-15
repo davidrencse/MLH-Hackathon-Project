@@ -6,6 +6,7 @@ import { useContext, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import type { BuildingStatus } from '../types'
 import { BuildingCtx } from './BuildingCtx'
+import { makeIndustrialTexture } from './industrialTexture'
 
 export const PALETTE = {
   void: '#070f1c',
@@ -36,11 +37,12 @@ export const STATUS_EMISSIVE: Record<BuildingStatus | 'offline', string> = {
 
 // ---------- shared simple materials (reuse these; do not create per mesh) ----------
 const matCache = new Map<string, THREE.Material>()
+let panelTexture: THREE.CanvasTexture | null = null
 
 // Flat lit material (receives light/shadows). Use for walls, roofs, props.
 export function flatMat(color: string): THREE.MeshLambertMaterial {
   const k = `flat:${color}`
-  if (!matCache.has(k)) matCache.set(k, new THREE.MeshLambertMaterial({ color }))
+  if (!matCache.has(k)) matCache.set(k, new THREE.MeshLambertMaterial({ color, map: panelTexture ??= makeIndustrialTexture() }))
   return matCache.get(k) as THREE.MeshLambertMaterial
 }
 
@@ -132,7 +134,7 @@ export function getGlyphTexture() {
 
 // Small canvas texture with pixel text (signs). Cached by text+color.
 const signCache = new Map<string, THREE.CanvasTexture>()
-export function signTexture(text: string, color: string, bg = '#10272f') {
+export function signTexture(text: string, color: string, bg = '#0b0820') {
   const k = `${text}|${color}|${bg}`
   if (signCache.has(k)) return signCache.get(k)!
   const c = document.createElement('canvas')
@@ -152,6 +154,13 @@ export function signTexture(text: string, color: string, bg = '#10272f') {
   signCache.set(k, t)
   return t
 }
+
+// Window grid density: about one 4-texel window cell per ~0.45 world units, so windows stay
+// 2x2 px however big the building is. Derive cols/rows from the actual wall size with these
+// instead of hard-coding a grid — the massing scales with BUILDING_HEIGHT and a fixed grid
+// stretches the windows into smears on a tall shaft.
+export const facadeCols = (w: number) => Math.max(2, Math.round(w * 2.2))
+export const facadeRows = (h: number) => Math.max(2, Math.round(h * 2.4))
 
 // ---------- facade material that reacts to the building status ----------
 // Use inside a building component (it reads BuildingCtx). Returns ONE material; apply it to the

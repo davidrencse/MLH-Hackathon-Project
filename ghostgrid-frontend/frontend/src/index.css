@@ -3,8 +3,6 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource/press-start-2p";
 @import "@fontsource/vt323";
-@import "./mobile.css";
-@import "./voxel.css";
 @import "./cyberpunk.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -131,6 +129,12 @@
 
 html, body, #root {
   height: 100%;
+}
+/* The app never scrolls the document, so it has to fit the *visible* viewport: with
+   `100%` a phone's URL bar pushes the bottom HUD (command bar, weather, build menu
+   footer) under the browser chrome, where nothing can reach it. */
+#root {
+  height: 100dvh;
 }
 body {
   font-size: 18px;

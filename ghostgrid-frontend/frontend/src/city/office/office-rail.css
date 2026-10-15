@@ -1,0 +1,356 @@
+/* The office as one screen: the room takes the height that is left, and everything that describes
+   the office lives in the right rail as tabs.
+
+   This is a separate file from native-office.css on purpose. It only overrides the handful of
+   rules that made the page 2.8 screens tall (a fixed-height canvas, sections stacked below the
+   room, a rail that grew with its content) and then styles the rail itself, so the pixel look
+   still comes from one place. Load order matters: OfficePage imports native-office.css first. */
+
+.native-office {
+  /* `min-height`, not `height`: the staffing board moved out of the rail and sits below the
+     layout as a full-width section. With a hard 100dvh and `overflow: hidden`, that board's
+     600-odd pixels were taken straight out of the room above it — the 3D office collapsed to a
+     44px strip. The page may now grow past one screen and scroll when the board is on; the room
+     still takes everything left on the first screen. */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+/* `width: 100%` on both of these is load-bearing, not decoration. They are flex items now, and
+   native-office.css still gives them `margin: 0 auto` from when this page was a block column.
+   An auto margin on a flex item's cross axis beats `align-items: stretch`, so each one shrank to
+   its own content and centred: the header came out 975px, this layout 1408px and the staffing
+   board 940px, three different widths stacked down one page. `.native-office-layout` below
+   already carries the same fix. */
+.native-office-header { margin-bottom: 14px; flex: 0 0 auto; width: 100%; }
+.native-office-staffing { width: 100%; flex: 0 0 auto; }
+.native-office-layout {
+  /* Sizes to its tallest column instead of to the space left over. With `flex: 1` the grid was
+     pinned to the leftover height and its 560px floor became a ceiling too: the main column's
+     contents (room card plus the selected person's panel) ran past the grid's bottom edge and
+     painted over the staffing board below. The page scroller takes the extra height. */
+  flex: 0 0 auto;
+  /* The room is the point of this page: never let a sibling squeeze it below a usable size. */
+  min-height: 560px;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 16px;
+  align-items: stretch;
+}
+.native-office-main { min-height: 0; gap: 12px; }
+
+/* The room card sizes to its own contents and the page scrolls, rather than the card being
+ * squeezed into whatever the header, the rail and the staffing board leave behind.
+ *
+ * Measured before this change, on a 900px window: the card was 253px tall while its three
+ * children (toolbar 54 + canvas 240 + selected panel 295) wanted 587, and with `overflow:
+ * visible` they simply painted past its edge and over each other. That is the clipping — the
+ * CRT's own heading sat above the card's top edge and its last line below the bottom one.
+ */
+.native-office .native-room {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Nothing may paint outside the card: the room's 3D labels are portaled into it. */
+  overflow: hidden;
+}
+.native-office .native-room-toolbar { flex: 0 0 auto; flex-wrap: nowrap; }
+.native-office .native-room-toolbar > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* A floor of 360px is the backstop: whatever else lands on this page, the 3D office stays a
+   room and not a letterbox. */
+/* The room labels are drei <Html> nodes portaled into this box (see useHtmlPortal.ts), and they
+   are positioned from their 3D anchor with no knowledge of the panel's edges. At phone width the
+   camera deliberately crops the floorplan rather than shrinking it past readability, so an anchor
+   can sit off-frame: a room nameplate was hanging 68px outside the panel and a speech bubble 60px
+   past the other side, floating over the page with no frame around them. Clip them to the room
+   they belong to. */
+.native-office .native-room-canvas { flex: 0 0 auto; height: clamp(300px, 42vh, 460px); min-height: 0; overflow: hidden; }
+
+/* The selected person's panel — a desk's terminal or an employee's conversation.
+ *
+ * This used to be a fixed 232px box so that opening a desk never resized the room. The content
+ * it holds is taller than that: a CRT with its 40-line tail, or a chat with a transcript. With
+ * `align-items: center` above, the overflow was split between the two ends, so the panel's own
+ * heading was scrolled off the top while the last line was cut off the bottom — a transcript
+ * that looked chopped at both ends however far you scrolled the page.
+ *
+ * It now takes the height its content needs, up to a share of the window, and the room gives up
+ * height while it is open (see `[data-compact]` in native-office.css). Everything inside it
+ * scrolls on its own, so this box never needs to.
+ */
+.native-office .native-selected-worker {
+  flex: 0 0 auto;
+  min-height: 0;
+  /* A share of the window, and everything inside scrolls on its own, so this box never does. */
+  max-height: min(58vh, 680px);
+  overflow: hidden;
+  margin: 0;
+}
+.native-office .native-room-footer { flex: 0 0 auto; }
+
+/* ---- the rail --------------------------------------------------------------------------------- */
+.native-rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 10px;
+  overflow: hidden;
+}
+/* The tabs are keys on a console, not pills: the one that is down sinks to the page's darkest
+   surface and lights a 4px bar in the building's colour along its top edge. A solid accent fill
+   on the active key was the loudest thing on the page — louder than a terminal going red — and
+   six of them wrapped into two rows of shouting. */
+.native-rail-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 2px solid var(--gg-haze);
+  padding-bottom: 8px;
+}
+.native-rail-tabs button {
+  flex: 1 0 auto;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 2px solid var(--gg-dusk);
+  background: var(--gg-night);
+  color: var(--gg-mute);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.native-rail-tabs button:hover { color: var(--gg-ink); border-color: var(--gg-haze); }
+.native-rail-tabs button[aria-pressed='true'] {
+  color: var(--gg-ink);
+  background: var(--gg-void);
+  border-color: var(--gg-haze);
+  box-shadow: inset 0 4px 0 0 var(--office-accent);
+}
+.native-rail-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
+}
+/* The board, the chart and the skills deck were built to sit full-width under the room; in the
+   rail they are a column, so their own frames stop fighting for horizontal space. */
+.native-rail-body > * { min-width: 0; }
+.native-rail-body .gg-sb, .native-rail-body .gg-sd, .native-rail-body .gg-oc, .native-rail-body .gg-orc {
+  width: 100%;
+  margin: 0;
+}
+
+/* ---- roster ----------------------------------------------------------------------------------- */
+.native-roster-list, .gg-orgedit-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.native-roster-list > li > button, .gg-orgedit-tree > li > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-night);
+  color: var(--gg-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.native-roster-list > li > button:hover, .gg-orgedit-tree > li > button:hover { border-color: var(--office-accent); }
+.native-roster-list > li > button[aria-pressed='true'], .gg-orgedit-tree > li > button[aria-pressed='true'] {
+  border-color: var(--office-accent);
+  background: var(--gg-dusk);
+}
+.native-roster-list b, .gg-orgedit-tree b { font-size: 18px; font-weight: 400; }
+.native-roster-list em, .gg-orgedit-tree em {
+  grid-column: 2;
+  font-style: normal;
+  font-size: 16px;
+  color: var(--gg-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The roster carries one column the org tree does not: a full-height bar in the colour of the
+   kind of person the row is. Down the list it makes a strip you can read without reading a
+   word — green for the terminals already running, cyan for desks, pink for employees. */
+.native-roster-list > li > button {
+  grid-template-columns: 4px auto minmax(0, 1fr) auto;
+  padding-left: 0;
+}
+.native-roster-list em { grid-column: 3; }
+.native-roster-pip {
+  grid-row: 1 / -1;
+  align-self: stretch;
+  width: 4px;
+  background: var(--gg-grey);
+}
+.native-roster-pip[data-source='live'] { background: var(--office-live); }
+.native-roster-pip[data-source='desk'] { background: var(--office-desk); }
+.native-roster-pip[data-source='agent'] { background: var(--office-agent); }
+.native-roster-source {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--gg-grey);
+}
+.native-roster-source[data-source='live'] { color: var(--office-live); }
+.native-roster-source[data-source='agent'] { color: var(--office-agent); }
+
+/* ---- the rail's panels ------------------------------------------------------------------------
+   Roster, hire, roles and the org editor are the same furniture as the decks that were built
+   full-width (the board, the chart, the skills rack): a framed panel on the rail's darker
+   surface, opening with the band in native-office.css. */
+.gg-roles, .gg-orgedit, .native-roster, .native-hire {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-night);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.6);
+  padding: 12px;
+}
+/* A row inside a panel is sunken, which is the same ladder the rest of the office uses:
+   rail (darkest) → panel → row. Roster rows were panel-coloured inside a panel. */
+.native-roster-list > li > button { background: var(--gg-void); border-color: var(--gg-dusk); }
+.gg-roles-head { display: flex; align-items: flex-start; gap: 10px; }
+.gg-roles-head > div { flex: 1; min-width: 0; }
+.gg-roles-head p { margin: 4px 0 0; font-size: 16px; line-height: 1.3; color: var(--gg-mute); }
+.gg-roles-empty { margin: 0; font-size: 18px; color: var(--gg-mute); }
+.gg-roles-hint { margin: -4px 0 0; font-size: 14px; line-height: 1.35; color: var(--gg-grey); }
+.gg-roles-note {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--office-accent);
+  background: var(--gg-dusk);
+  font-size: 16px;
+  color: var(--gg-ink);
+}
+.gg-roles-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.gg-roles-list button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 7px 9px;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.gg-roles-list button:hover { border-color: var(--office-accent); }
+.gg-roles-list button[aria-pressed='true'] { border-color: var(--office-accent); background: var(--gg-dusk); }
+.gg-roles-list b { font-size: 18px; font-weight: 400; }
+.gg-roles-list em { grid-column: 1 / -1; font-style: normal; font-size: 14px; color: var(--gg-mute); }
+.gg-roles-kind {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border: 2px solid var(--gg-haze);
+  color: var(--gg-mute);
+  white-space: nowrap;
+}
+.gg-roles-kind[data-kind='manage'] { color: var(--gg-amber, #f0b429); border-color: currentColor; }
+.gg-roles-kind[data-kind='lead'] { color: var(--gg-cyan); border-color: currentColor; }
+.gg-roles-kind[data-kind='build'] { color: var(--gg-mute); }
+.gg-roles-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.gg-roles-form, .gg-orgedit-detail, .gg-orgedit-hire { display: flex; flex-direction: column; gap: 8px; }
+.gg-roles-form label, .gg-orgedit-detail label, .gg-orgedit-hire label, .gg-roles-form legend {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--gg-mute);
+  margin-bottom: -4px;
+}
+.gg-roles :is(input, select, textarea), .gg-orgedit :is(input, select, textarea) {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-family: var(--font-mono, var(--font-body, monospace));
+  font-size: 16px;
+}
+.gg-roles textarea, .gg-orgedit textarea { line-height: 1.4; resize: vertical; }
+.gg-roles :is(input, select, textarea):focus, .gg-orgedit :is(input, select, textarea):focus {
+  border-color: var(--office-accent);
+  outline: none;
+}
+.gg-roles-kinds { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.gg-roles-kinds label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+  margin: 0;
+  padding: 6px 8px;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-void);
+  cursor: pointer;
+}
+.gg-roles-kinds label[data-selected='true'] { border-color: var(--office-accent); background: var(--gg-dusk); }
+.gg-roles-kinds input { width: auto; min-height: 0; margin: 0; }
+.gg-roles-kinds b { font-size: 16px; font-weight: 400; color: var(--gg-ink); }
+.gg-roles-kinds em { grid-column: 2; font-style: normal; font-size: 14px; color: var(--gg-mute); }
+.gg-roles-actions, .gg-orgedit-ladder { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.gg-roles-reassign { display: flex; align-items: center; gap: 6px; }
+.gg-roles-reassign select { width: auto; }
+
+.gg-orgedit-detail { border-top: 2px solid var(--gg-haze); padding-top: 10px; }
+.gg-orgedit-brief summary {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--gg-mute);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.gg-orgedit-brief pre {
+  max-height: 260px;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding: 8px;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-void);
+  color: var(--gg-mute);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Narrow screens keep the old behaviour: one column that scrolls, because a 400px rail beside a
+   room does not fit a phone. */
+@media (max-width: 900px) {
+  /* `height: auto` here let the page grow to its content — 2342px on a phone — and then nothing
+     scrolled: a scroll container needs a bounded height, `body` is `overflow: hidden`, and the
+     route wrapper is exactly one viewport tall, so it simply clipped. The rail started at y=840
+     in an 844px viewport, which put the roster, the org chart, the roles, the runs and the hire
+     form permanently out of reach on a phone. Bounded to the viewport, it scrolls as intended.
+     `min-height` has to be cleared with it, or it wins over the height and we are back to auto. */
+  .native-office { height: 100%; min-height: 0; overflow-y: auto; }
+  .native-office-layout { grid-template-columns: minmax(0, 1fr); }
+  .native-office .native-room-canvas { height: 420px; flex: 0 0 auto; }
+  .native-office .native-selected-worker { height: auto; }
+  .native-rail { overflow: visible; }
+  .native-rail-body { overflow: visible; }
+}

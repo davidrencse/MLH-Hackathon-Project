@@ -1,21 +1,62 @@
 export interface CreditRow {
-  demoTokens?: number
-  demo?: boolean
-  provider: string
-  status: 'ok' | 'nokey' | 'unsupported' | 'error'
+  /** Provider record id when the row came from recorded usage, else the vendor key. */
+  id?: string;
+  /** Provider record name when known, else the vendor label. */
+  name?: string;
+  provider: string;
+  status: 'ok' | 'nokey' | 'unsupported' | 'error';
   /** USD remaining, when the provider exposes a real balance. */
-  balanceUsd?: number
+  balanceUsd?: number;
   /** Request/token quota for the current window, when the provider exposes one. */
   quota?: {
-    limitTokens: number
-    remainingTokens: number
-    limitRequests: number
-    remainingRequests: number
-    resetTokens: string
-    resetRequests: string
-  }
-  currency?: string
-  detail?: string
+    limitTokens: number;
+    remainingTokens: number;
+    limitRequests: number;
+    remainingRequests: number;
+    resetTokens: string;
+    resetRequests: string;
+  };
+  currency?: string;
+  detail?: string;
+  /** Durable token usage recorded by the backend for this vendor. */
+  tokensUsed?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  requests?: number;
+  reportedCostUsd?: number;
+  estimatedCostUsd?: number;
+  unknownCostRequests?: number;
+  unknownTokenRequests?: number;
+  /** 'vendor' = read from a provider API; 'local-cli' = read from a coding CLI's transcripts. */
+  source?: 'vendor' | 'local-cli';
+  /** Cached prompt tokens, split out because they dominate agent traffic and are priced apart. */
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
+  /** Rolling plan windows a subscription CLI reports, as a used percentage each. */
+  windows?: { label: string; usedPercent: number; resetsAt?: string }[];
+  /** Subscription plan name, when the CLI reports one ('plus', 'max', …). */
+  plan?: string;
+  /** Transcripts/sessions the row was summed from. */
+  sessions?: number;
+  /** ISO timestamp of the newest response counted. */
+  lastActivity?: string;
+  /** Biggest models by tokens, for the row's tooltip. */
+  models?: { model: string; tokens: number; requests: number }[];
+}
+
+/** One row of `store.usageSummary().providers` — real usage records, grouped by provider. */
+export interface UsageProviderRow {
+  providerId: string | null;
+  name: string | null;
+  type: string | null;
+  baseUrl?: string | null;
+  requests: number;
+  inputTokens: number;
+  outputTokens: number;
+  reportedCostUsd: number;
+  estimatedCostUsd: number;
+  unknownCostRequests: number;
+  unknownTokenRequests: number;
 }
 
 const failed = (provider: string, e: unknown): CreditRow => ({
@@ -112,11 +153,93 @@ export class ProviderCredits {
       groqCredit(process.env.GROQ_API_KEY ?? ''),
       Promise.resolve(anthropicCredit(process.env.ANTHROPIC_API_KEY ?? '')),
     ]).then(rows => {
-      this.snapshot = { fetchedAt: Date.now(), rows: rows.map(row => row.status === 'ok' ? row : {
-        ...row, demo: true, demoTokens: 100_000, detail: `${row.detail ?? 'Provider balance unavailable'}. Demo allowance; not a live provider balance.`,
-      }) };
+      this.snapshot = { fetchedAt: Date.now(), rows };
       return this.snapshot;
     }).finally(() => { this.inflight = null });
     return this.inflight;
   }
+}
+
+/** Vendor key for a provider record, from its base URL first and its type second. */
+export function vendorOf(type?: string | null, baseUrl?: string | null): string | null {
+  const host = (() => {
+    try { return baseUrl ? new URL(baseUrl).hostname : '' } catch { return '' }
+  })();
+  if (host.includes('deepseek')) return 'deepseek';
+  if (host.includes('groq')) return 'groq';
+  if (host.includes('anthropic')) return 'anthropic';
+  if (host.includes('openai.com')) return 'openai';
+  switch (type) {
+    case 'deepseek':
+    case 'deepseek-browser':
+      return 'deepseek';
+    case 'claude':
+    case 'claude-browser':
+      return 'anthropic';
+    case 'codex':
+    case 'chatgpt-browser':
+      return 'openai';
+    default:
+      return null;
+  }
+}
+
+const zeroUsage = () => ({
+  requests: 0, inputTokens: 0, outputTokens: 0, reportedCostUsd: 0,
+  estimatedCostUsd: 0, unknownCostRequests: 0, unknownTokenRequests: 0,
+});
+
+const addUsage = (into: ReturnType<typeof zeroUsage>, row: UsageProviderRow) => {
+  for (const key of Object.keys(into) as (keyof ReturnType<typeof zeroUsage>)[]) into[key] += Number(row[key] ?? 0);
+  return into;
+};
+
+/**
+ * Attaches the backend's own usage records to the balance rows, so a provider without a
+ * balance API still reports what it really spent. Usage that maps to no known vendor
+ * (custom OpenAI-compatible endpoints, the mock provider) is appended as its own row.
+ */
+export function withRecordedUsage(rows: CreditRow[], providers: UsageProviderRow[] = []): CreditRow[] {
+  const byVendor = new Map<string, ReturnType<typeof zeroUsage>>();
+  const extra: CreditRow[] = [];
+  for (const row of providers) {
+    const vendor = vendorOf(row.type, row.baseUrl);
+    if (vendor) {
+      addUsage(byVendor.get(vendor) ?? byVendor.set(vendor, zeroUsage()).get(vendor)!, row);
+      continue;
+    }
+    const totals = addUsage(zeroUsage(), row);
+    extra.push({
+      id: row.providerId ?? undefined,
+      name: row.name ?? row.type ?? 'Unknown provider',
+      provider: row.type ?? 'unknown',
+      status: 'unsupported',
+      detail: 'Usage recorded by the backend; this provider publishes no balance endpoint',
+      ...totals,
+      tokensUsed: totals.inputTokens + totals.outputTokens,
+    });
+  }
+  const merged = rows.map(row => {
+    const totals = byVendor.get(row.provider);
+    byVendor.delete(row.provider);
+    if (!totals) return { ...row, id: row.provider, tokensUsed: 0, ...zeroUsage() };
+    return {
+      ...row,
+      id: row.provider,
+      ...totals,
+      tokensUsed: totals.inputTokens + totals.outputTokens,
+    };
+  });
+  // A vendor we spent tokens on but hold no key for still gets a row, so the usage shows up.
+  for (const [vendor, totals] of byVendor) {
+    merged.push({
+      id: vendor,
+      provider: vendor,
+      status: 'unsupported',
+      detail: 'Usage recorded by the backend; no balance endpoint read for this vendor',
+      ...totals,
+      tokensUsed: totals.inputTokens + totals.outputTokens,
+    });
+  }
+  return [...merged, ...extra];
 }

@@ -1,9 +1,7 @@
 /* CREDITS hover panel (gg-cred-*). Matches the HUD: 2px borders, pixel font, hard shadows. */
 
 .gg-cred-anchor {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
+  display: contents;
 }
 
 .gg-cred-panel {
@@ -70,6 +68,41 @@
   }
 }
 
+/* The city's one currency, stated once: the same figure the HUD's CREDITS chip shows, in the
+   chip's own colour. The vendor rows below are a filtered list and never sum to it. */
+.gg-cred-total {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 3px 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--gg-haze);
+}
+
+.gg-cred-total-label {
+  font-size: 8px;
+  line-height: 1;
+  color: var(--gg-mute);
+}
+
+.gg-cred-total-value {
+  justify-self: end;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--gg-yellow);
+  white-space: nowrap;
+}
+
+.gg-cred-total-sub {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.1;
+  color: var(--gg-mute);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .gg-cred-list {
   display: flex;
   flex-direction: column;
@@ -108,9 +141,12 @@
 
 .gg-cred-name {
   grid-area: name;
+  overflow: hidden;
   font-size: 9px;
   line-height: 1;
   color: var(--gg-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gg-cred-value {
@@ -143,6 +179,15 @@
   flex: 1;
 }
 
+/* Section label above the subscription-CLI rows, so their numbers are not read as credits. */
+.gg-cred-group {
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--gg-haze);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--gg-mute);
+}
+
 .gg-cred-err {
   margin: 0;
   font-size: 13px;
@@ -164,11 +209,4 @@
   .gg-cred-spin {
     animation: none;
   }
-}
-
-.gg-cred-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: auto; border: 2px solid var(--gg-haze); color: var(--gg-ink); background: var(--gg-night); }
-@media (width < 900px) {
-  .gg-cred-anchor { min-height: 44px; }
-  .gg-cred-panel { width: min(320px, calc(100vw - 16px)); max-height: calc(100dvh - var(--mobile-header-height) - var(--mobile-nav-height) - 16px); overflow-y: auto; }
-  .gg-cred-panel :is(.gg-cred-close, .gg-cred-refresh) { min-width: 44px; min-height: 44px; }
 }

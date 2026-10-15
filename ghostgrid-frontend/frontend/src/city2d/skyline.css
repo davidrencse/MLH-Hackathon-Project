@@ -10,17 +10,6 @@
   display: block;
 }
 
-/* ---------- stars ---------- */
-.gg-sky-tw-a { animation: gg-sky-twinkle 2.8s steps(1, end) infinite; }
-.gg-sky-tw-b { animation: gg-sky-twinkle 4.2s steps(1, end) -1.7s infinite; }
-.gg-sky-tw-c { animation: gg-sky-twinkle 6.4s steps(1, end) -3.1s infinite; }
-@keyframes gg-sky-twinkle {
-  0%, 100% { opacity: 1; }
-  25% { opacity: 0.25; }
-  50% { opacity: 0.8; }
-  75% { opacity: 0.1; }
-}
-
 /* ---------- distant windows + beacons ---------- */
 .gg-sky-win-a { animation: gg-sky-win 3.7s steps(1, end) infinite; }
 .gg-sky-win-b { animation: gg-sky-win 5.3s steps(1, end) -2.2s infinite; }

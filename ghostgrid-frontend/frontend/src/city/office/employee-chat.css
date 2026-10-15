@@ -1,0 +1,183 @@
+/* The selected employee's conversation. Same 8-bit furniture as the desk CRT (crew-terminal.css)
+   so the two panels under the room read as one system: hard borders, pixel headings, no curves.
+   Its own file for the same reason that one has one — the office stylesheet is about the room. */
+
+.gg-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Fills the panel; the log inside it is the part that scrolls. */
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  border: 3px solid var(--gg-haze);
+  background: var(--gg-void);
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.6);
+  padding: 8px;
+}
+
+.gg-chat-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid var(--gg-haze);
+  padding-bottom: 6px;
+}
+.gg-chat-dot { width: 8px; height: 8px; background: var(--gg-grey); }
+/* Working is the one state worth a colour: it is the only one that changes on its own. */
+.gg-chat-dot[data-working='true'] { background: var(--gg-cyan); animation: gg-chat-pulse 1s steps(2) infinite; }
+@keyframes gg-chat-pulse { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .gg-chat-dot[data-working='true'] { animation: none; } }
+
+.gg-chat-name { flex: 1; min-width: 0; font-size: 9px; color: var(--gg-ink); letter-spacing: 0.04em; overflow-wrap: anywhere; }
+.gg-chat-role { font-size: 8px; color: var(--gg-mute); }
+.gg-chat-status { font-size: 8px; border: 2px solid currentcolor; padding: 2px 4px; color: var(--gg-grey); }
+.gg-chat-status[data-working='true'] { color: var(--gg-cyan); }
+.gg-chat-icon {
+  display: inline-flex;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-night);
+  color: var(--gg-mute);
+  padding: 3px;
+  cursor: pointer;
+}
+.gg-chat-icon:hover { border-color: var(--office-accent); color: var(--gg-ink); }
+.gg-chat-meta { margin: 0; font-size: 15px; color: var(--gg-grey); overflow-wrap: anywhere; }
+
+/* The screen: the same bezel the desk terminal has (crew-terminal.css), so a conversation and a
+   transcript are the same instrument in two states rather than two different panels. */
+.gg-chat-screen {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 2px solid var(--gg-night);
+  background: #04080f;
+}
+
+/* The log is the only thing that scrolls, so the composer stays reachable while a turn runs.
+   Its cap is a share of the window rather than a fixed 340px: the panel already sits under a
+   540px room, and a hard cap that short made every real transcript look cut off. The header's
+   expand button raises the cap for a long one. */
+.gg-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 160px;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gg-haze) transparent;
+  font-size: 16px;
+  line-height: 1.45;
+}
+/* Expanding is the panel's job, not the log's: the panel is what bounds the height here, so
+   raising the log's own cap did nothing visible. */
+.native-office .native-selected-worker:has(.gg-chat[data-tall='true']) { max-height: min(84vh, 1100px); }
+.gg-chat-icon[aria-pressed='true'] { border-color: var(--office-accent); color: var(--gg-ink); }
+.gg-chat-note { margin: 0; color: var(--gg-grey); }
+
+.gg-chat-turn { display: flex; flex-direction: column; gap: 4px; border-left: 3px solid var(--gg-dusk); padding-left: 8px; }
+.gg-chat-turn[data-status='running'] { border-left-color: var(--gg-cyan); }
+.gg-chat-turn[data-status='awaiting_approval'] { border-left-color: var(--gg-yellow); }
+.gg-chat-turn[data-status='failed'] { border-left-color: var(--gg-red); }
+.gg-chat-turn[data-status='completed'] { border-left-color: var(--gg-green); }
+.gg-chat-turn > header { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 14px; color: var(--gg-grey); }
+.gg-chat-time { color: var(--gg-mute); }
+.gg-chat-title { flex: 1; min-width: 0; color: var(--gg-ink); overflow-wrap: anywhere; }
+.gg-chat-turn-status { font-family: var(--font-pixel); font-size: 8px; color: var(--gg-grey); }
+.gg-chat-turn-status[data-status='running'] { color: var(--gg-cyan); }
+.gg-chat-turn-status[data-status='awaiting_approval'] { color: var(--gg-yellow); }
+.gg-chat-turn-status[data-status='failed'] { color: var(--gg-red); }
+.gg-chat-turn-status[data-status='completed'] { color: var(--gg-green); }
+.gg-chat-side { color: var(--gg-grey); font-variant-numeric: tabular-nums; }
+
+/* Who said it, in the margin: the operator's turns sit against the frame, the employee's are
+   indented, so a long run of orchestrated turns still reads as a conversation. */
+.gg-chat-said { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 6px; align-items: start; }
+.gg-chat-glyph { font-family: var(--font-mono); font-size: 16px; line-height: 1.45; color: var(--gg-haze); }
+.gg-chat-said[data-who='employee'] .gg-chat-glyph { color: var(--office-accent); }
+.gg-chat-said pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--gg-ink);
+  font-family: var(--font-mono);
+  font-size: 16px;
+}
+.gg-chat-said[data-who='operator'] pre { color: var(--gg-mute); }
+/* A brief the orchestrator wrote runs to hundreds of lines; it is there to open, not to wade. */
+.gg-chat-said pre[data-clamped='true'] {
+  display: -webkit-box;
+  -webkit-line-clamp: 10;
+  line-clamp: 10;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gg-chat-more {
+  grid-column: 2;
+  justify-self: start;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--gg-cyan);
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.gg-chat-error { color: var(--gg-red); }
+.gg-chat-waiting { margin: 0; color: var(--gg-cyan); }
+.gg-chat-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 13px;
+  margin-left: 4px;
+  background: var(--gg-cyan);
+  vertical-align: text-bottom;
+  animation: gg-chat-blink 1s steps(2) infinite;
+}
+@keyframes gg-chat-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gg-chat-cursor { animation: none; } }
+.gg-chat-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.gg-chat-composer { display: flex; align-items: flex-end; gap: 6px; }
+.gg-chat-composer textarea {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-night);
+  color: var(--gg-ink);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 1.35;
+}
+.gg-chat-composer textarea:focus { border-color: var(--office-accent); outline: none; }
+/* One line, never two: the label wrapped under its own icon. Needs `.native-office` to outrank
+   the shared pixel-button rule, which sets no display and lets the icon and the word wrap. */
+.native-office .gg-chat-send {
+  flex: 0 0 auto;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding-inline: 12px;
+}
+.gg-chat-alert { margin: 0; color: var(--gg-red); font-size: 15px; overflow-wrap: anywhere; }
+
+
+/* Shown in place of the composer for someone the operator may not brief — an intern, who answers
+   to the engineer who hired them. The transcript above it stays readable. */
+.gg-chat-readonly {
+  margin: 0;
+  border: 2px dashed var(--gg-haze);
+  background: var(--gg-night);
+  padding: 6px;
+  font-size: 8px;
+  color: var(--gg-mute);
+  overflow-wrap: anywhere;
+}

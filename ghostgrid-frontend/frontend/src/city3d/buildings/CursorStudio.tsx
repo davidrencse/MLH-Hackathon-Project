@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import { useContext, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { BuildingCtx } from '../BuildingCtx'
-import { flatMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
+import { facadeCols, facadeRows, flatMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
 
 const PLANE = new THREE.PlaneGeometry(1, 1)
 const POINTER = ['#.....', '##....', '###...', '####..', '#####.', '###...', '#.##..', '..##..']
@@ -14,7 +14,7 @@ export function CursorStudio() {
   const { footprint, height: H, statusRef, offlineRef } = useContext(BuildingCtx)
   const W = footprint.w
   const D = footprint.d
-  const facade = useFacadeMaterial({ cols: 5, rows: 8, seed: 81, tint: PALETTE.cyan })
+  const facade = useFacadeMaterial({ cols: facadeCols(W * 0.7), rows: facadeRows(H - 0.36), seed: 81, tint: PALETTE.cyan })
   const { glow, sign } = useMemo(() => ({
     glow: new THREE.MeshBasicMaterial({ color: PALETTE.cyan, toneMapped: false }),
     sign: new THREE.MeshBasicMaterial({ map: signTexture('CURSOR', PALETTE.ink), toneMapped: false }),

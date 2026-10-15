@@ -11,7 +11,6 @@ import './skyline.css'
 const W = 1024 // logical width of the scenery strip
 const CX = W / 2 // strip x of the stage centre (stage spans 320..704 in strip coords)
 const SKY_H = 150 // logical height of the skyline strip, above the street top edge
-const STAR_H = 104 // logical height of the star field (about the top 40% of the viewport)
 const STREET_H = 24 // logical street height (STAGE.h - STAGE.ground)
 
 const S = 'var(--stage-scale, 3)'
@@ -99,45 +98,6 @@ function text3(str: string, x0: number, y0: number) {
     if (g) d += glyph(g, x0 + i * 4, y0)
   }
   return d
-}
-
-/* ------------------------------------------------------------------ stars */
-
-function buildStars() {
-  const rnd = mulberry32(1337)
-  const g = { dim: '', a: '', b: '', cyan: '', pink: '', big: '' }
-  for (let i = 0; i < 120; i++) {
-    const x = Math.floor(rnd() * W)
-    const y = Math.floor(rnd() ** 1.3 * STAR_H)
-    const r = rnd()
-    const k: keyof typeof g = r < 0.5 ? 'dim' : r < 0.7 ? 'a' : r < 0.84 ? 'b' : r < 0.93 ? 'cyan' : 'pink'
-    g[k] += rect(x, y, 1, 1)
-  }
-  for (let i = 0; i < 7; i++) {
-    const x = 2 + Math.floor(rnd() * (W - 4))
-    const y = 2 + Math.floor(rnd() * STAR_H * 0.6)
-    g.big += rect(x - 1, y, 3, 1) + rect(x, y - 1, 1, 3)
-  }
-  return g
-}
-const STARS = buildStars()
-
-function Stars() {
-  return (
-    <svg
-      className="gg-sky-abs"
-      viewBox={`0 0 ${W} ${STAR_H}`}
-      shapeRendering="crispEdges"
-      style={{ ...strip(STAR_H), top: 0 }}
-    >
-      <P d={STARS.dim} fill={T.ink} a={0.28} />
-      <P d={STARS.a} fill={T.ink} a={0.55} className="gg-sky-tw-a" />
-      <P d={STARS.b} fill={T.ink} a={0.5} className="gg-sky-tw-b" />
-      <P d={STARS.cyan} fill={T.cyan} a={0.45} className="gg-sky-tw-c" />
-      <P d={STARS.pink} fill={T.pink} a={0.4} className="gg-sky-tw-a" />
-      <P d={STARS.big} fill={T.ink} a={0.6} className="gg-sky-tw-c" />
-    </svg>
-  )
 }
 
 /* ------------------------------------------------------------------ skyline layers */
@@ -245,7 +205,7 @@ function buildLayer(spec: LayerSpec): LayerArt {
 
 // Billboard mounts (strip coords). Stage buildings occupy 376..440, 488..536, 576..656.
 const MOUNT_MAIN: Tower = { x: 320, w: 54, h: 62 } // left of Codex Tower
-const MOUNT_SIGN: Tower = { x: 444, w: 16, h: 96 } // alley between Codex and Router
+const MOUNT_SIGN: Tower = { x: 444, w: 16, h: 96 } // alley east of Codex
 const MOUNT_CHART: Tower = { x: 658, w: 44, h: 46 } // right of Security Checkpoint
 
 const FAR = buildLayer({ seed: 11, minW: 8, maxW: 22, minH: 34, maxH: 124, lit: 0.07, antennas: true })
@@ -353,7 +313,7 @@ function scanlines(x: number, w: number, h: number) {
 // GHOST GRID marquee with an AGENTS ONLINE ticker.
 const MAIN_W = 53
 const MAIN_H = 17
-const TICKER = 'AGENTS ONLINE 3/3 > ROUTER > CODEX > SECURITY > '
+const TICKER = 'AGENTS ONLINE 2/2 > CODEX > SECURITY > '
 const TICK_W = TICKER.length * 4
 const MAIN_ART = {
   frame: frame(MAIN_W, MAIN_H),
@@ -580,7 +540,6 @@ function Street() {
 export function Skyline() {
   return (
     <div className="gg-sky-root pointer-events-none absolute inset-0 z-10 overflow-hidden" aria-hidden="true">
-      <Stars />
       <SkylineStrip />
       <Cars />
       <BoardMain />

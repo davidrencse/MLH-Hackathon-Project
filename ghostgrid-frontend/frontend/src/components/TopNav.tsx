@@ -2,12 +2,20 @@
 // Logo · resource bar (game resources + separated real-money COST) · tabs · key button · clock. Fixed, 64px, z-40.
 import { memo, useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { Building2, LayoutDashboard, Users, Activity, KeyRound } from 'lucide-react'
+import { KeyRound } from 'lucide-react'
 import { CreditsHover } from './CreditsDropdown'
 import { useKeys } from '../store/keys'
 import { useResources } from '../store/resources'
 import type { Resource, ResourceLevel } from '../store/resources'
 import './TopNav.css'
+
+// 8x8 ghost. P = pink body, W = ink eye, C = cyan pupil. Drawn as box-shadow pixels (3px each).
+const GHOST_MAP = ['..PPPP..', '.PPPPPP.', 'PPPPPPPP', 'PWWPPWWP', 'PWCPPWCP', 'PPPPPPPP', 'PPPPPPPP', 'PP.PP.PP']
+const GHOST_COLOR: Record<string, string> = { P: 'var(--gg-pink)', W: 'var(--gg-ink)', C: 'var(--gg-cyan)' }
+const PX = 3
+const GHOST_SHADOW = GHOST_MAP.flatMap((row, y) =>
+  [...row].flatMap((ch, x) => (GHOST_COLOR[ch] ? [`${x * PX}px ${y * PX}px 0 0 ${GHOST_COLOR[ch]}`] : [])),
+).join(', ')
 
 // ---- Resource icons: 8x8 maps, 2px pixels, one DOM node each (box-shadow), built once ----
 // X = resource color (currentColor, so blink/level colors apply), o = void cut-out, W = ink highlight.
@@ -15,7 +23,6 @@ type ResKey = Resource['key']
 const ICON_MAPS: Record<ResKey, string[]> = {
   energy: ['....XXX.', '...XXX..', '..XXX...', '.XXXXXX.', '....XX..', '...XX...', '..XX....', '.X......'],
   credits: ['..XXXX..', '.XWXXXX.', 'XXXooXXX', 'XXoXXXXX', 'XXoXXXXX', 'XXXooXXX', '.XXXXXX.', '..XXXX..'],
-  cost: ['...XX...', '.XXXXXX.', 'XX.XX...', '.XXXXXX.', '...XX.XX', '.XXXXXX.', '...XX...', '........'],
 }
 const ICON_PAL: Record<string, string> = { X: 'currentColor', o: 'var(--gg-void)', W: 'var(--gg-ink)' }
 const IPX = 2
@@ -34,7 +41,6 @@ const ICON_SHADOW = Object.fromEntries(
 const OWN_COLOR: Record<ResKey, string> = {
   energy: 'var(--gg-cyan)',
   credits: 'var(--gg-yellow)',
-  cost: 'var(--gg-ink)',
 }
 
 function resColor(kind: ResKey, level: ResourceLevel) {
@@ -104,7 +110,7 @@ function ResourceBar() {
     <div role="group" aria-label="City resources" className="gg-hud self-stretch">
       <div className="gg-hud-game">
         {resources.map(({ key, ...r }) =>
-          key === 'cost' ? null : key === 'credits' ? (
+          key === 'credits' ? (
             <CreditsHover key={key}>
               <ResourceChip kind={key} {...r} />
             </CreditsHover>
@@ -113,15 +119,6 @@ function ResourceBar() {
           ),
         )}
       </div>
-      <span aria-hidden className="gg-hud-divider" />
-      {resources.map(({ key, ...r }) =>
-        key === 'cost' ? (
-          <div key={key} className="gg-hud-real">
-            <span className="gg-hud-real-tag font-pixel">REAL $</span>
-            <ResourceChip kind={key} {...r} />
-          </div>
-        ) : null,
-      )}
     </div>
   )
 }
@@ -138,12 +135,9 @@ function tabClass({ isActive }: { isActive: boolean }) {
 function Logo() {
   return (
     <Link to="/" aria-label="Ghost Grid home" className={`gg-nav-logo flex items-center gap-3 ${focusRing}`}>
-      <svg className="gg-voxel-mark" viewBox="0 0 32 36" width="32" height="36" aria-hidden>
-        <path d="M16 1 31 9 16 17 1 9Z" fill="#e4ebdd" />
-        <path d="M1 9 16 17 16 35 1 27Z" fill="#6faaa5" />
-        <path d="M16 17 31 9 31 27 16 35Z" fill="#3e7477" />
-        <path d="M6 13 10 15 10 20 6 18ZM20 16 24 14 24 19 20 21Z" fill="#10272f" />
-      </svg>
+      <span className="gg-nav-ghost" aria-hidden>
+        <span style={{ boxShadow: GHOST_SHADOW }} />
+      </span>
       <span className="gg-nav-word font-pixel text-[16px] leading-none text-gg-cyan max-[1250px]:hidden">GHOST GRID</span>
     </Link>
   )
@@ -197,9 +191,8 @@ const Divider = ({ className = '' }: { className?: string }) => (
 
 export function TopNav() {
   return (
-    <>
-    <header className="gg-top-nav fixed inset-x-0 top-0 z-40 h-16 border-b-2 border-gg-haze" style={{ background: 'var(--gg-void)' }}>
-      <div className="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4">
+    <header data-hud-panel className="fixed inset-x-0 top-0 z-40 h-16 border-b-2 border-gg-haze" style={{ background: 'rgba(11,8,32,0.82)' }}>
+      <div className="gg-nav-frame grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4">
         <div className="justify-self-start">
           <Logo />
         </div>
@@ -207,12 +200,14 @@ export function TopNav() {
         <ResourceBar />
 
         <div className="flex items-center gap-3 justify-self-end">
-          <nav aria-label="Main" className="flex">
+          <nav aria-label="Main" className="gg-nav-tabs flex">
             <NavLink to="/" end className={tabClass}>
               CITY
             </NavLink>
-            <NavLink to="/dashboard" className={tabClass}>
-              DASHBOARD
+            {/* "DASH" on phones: the full word squeezed the resource bar until it clipped. */}
+            <NavLink to="/dashboard" aria-label="Dashboard" className={tabClass}>
+              <span className="max-[760px]:hidden">DASHBOARD</span>
+              <span className="hidden max-[760px]:inline">DASH</span>
             </NavLink>
           </nav>
           <KeyButton />
@@ -228,15 +223,5 @@ export function TopNav() {
         <span className="w-2 bg-gg-cyan" />
       </span>
     </header>
-    <MobileNav />
-    </>
   )
-}
-
-export function MobileNav() {
-  return <nav className="gg-mobile-nav" aria-label="Mobile navigation">
-    {[{ to: "/", label: "City", icon: Building2, end: true }, { to: "/dashboard", label: "Stats", icon: LayoutDashboard, end: true }, { to: "/dashboard/agents", label: "Agents", icon: Users }, { to: "/dashboard/activity", label: "Activity", icon: Activity }].map(({ to, label, icon: Icon, end }) =>
-      <NavLink key={to} to={to} end={end} className={({ isActive }) => isActive ? "is-active" : ""}><Icon size={20} strokeWidth={2} aria-hidden /><span>{label}</span></NavLink>
-    )}
-  </nav>
 }

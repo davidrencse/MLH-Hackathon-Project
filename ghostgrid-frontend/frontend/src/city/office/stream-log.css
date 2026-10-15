@@ -1,0 +1,116 @@
+/* The work stream's log: the roster on top, the feed underneath. Same 8-bit furniture as the
+   chat and the desk CRT so the panels under the room read as one system. Its own file because
+   the office stylesheet is about the room, not the panels. */
+
+.gg-slog {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  min-height: 0;
+  border: 3px solid var(--gg-haze);
+  background: var(--gg-void);
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.6);
+  padding: 8px;
+}
+
+.gg-slog-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--gg-haze);
+  padding-bottom: 6px;
+}
+.gg-slog-head h3 {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gg-ink);
+  overflow-wrap: anywhere;
+}
+.gg-slog-count { flex: 1; min-width: 0; font-size: 8px; color: var(--gg-mute); }
+
+/* ---- roster ---------------------------------------------------------------------------------- */
+
+.gg-slog-roster { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.gg-slog-roster > li {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 0.9fr);
+  align-items: baseline;
+  gap: 6px;
+  border: 2px solid var(--gg-dusk);
+  background: var(--gg-night);
+  padding: 4px 6px;
+}
+/* Indented one step, because an intern sits under the engineer above them rather than beside. */
+.gg-slog-roster > li[data-kind='intern'] { margin-left: 14px; border-style: dashed; }
+
+.gg-slog-dot { width: 8px; height: 8px; background: var(--gg-grey); align-self: center; }
+.gg-slog-roster > li[data-busy='true'] .gg-slog-dot {
+  background: var(--gg-cyan);
+  animation: gg-slog-pulse 1s steps(2) infinite;
+}
+@keyframes gg-slog-pulse { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) {
+  .gg-slog-roster > li[data-busy='true'] .gg-slog-dot { animation: none; }
+}
+
+.gg-slog-person { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gg-slog-person b { font-size: 9px; color: var(--gg-ink); overflow-wrap: anywhere; }
+.gg-slog-badge { font-size: 7px; color: var(--gg-mute); letter-spacing: 0.04em; }
+.gg-slog-badge[data-kind='manage'] { color: var(--gg-pink); }
+.gg-slog-badge[data-kind='lead'] { color: var(--gg-yellow); }
+.gg-slog-badge[data-kind='build'] { color: var(--gg-cyan); }
+.gg-slog-badge[data-kind='intern'] { color: var(--gg-grey); }
+.gg-slog-doing { font-size: 8px; color: var(--gg-ink); min-width: 0; overflow-wrap: anywhere; }
+.gg-slog-chain { font-size: 7px; color: var(--gg-grey); min-width: 0; overflow-wrap: anywhere; }
+
+/* ---- feed ------------------------------------------------------------------------------------ */
+
+.gg-slog-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* The feed is the part that scrolls; the roster above it stays put. */
+  overflow-y: auto;
+  max-height: 30vh;
+  border-top: 2px solid var(--gg-dusk);
+  padding-top: 5px;
+}
+.gg-slog-entry {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 0.7fr) minmax(0, 2.4fr) minmax(0, 0.7fr);
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 0;
+}
+.gg-slog-at { font-size: 7px; color: var(--gg-grey); }
+.gg-slog-who { font-size: 8px; color: var(--gg-mute); overflow-wrap: anywhere; }
+.gg-slog-what { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gg-slog-what b { font-size: 8px; color: var(--gg-ink); overflow-wrap: anywhere; }
+.gg-slog-what em { font-size: 7px; color: var(--gg-mute); font-style: normal; overflow-wrap: anywhere; }
+.gg-slog-error { font-size: 7px; color: var(--gg-red); font-weight: normal; overflow-wrap: anywhere; }
+.gg-slog-status { font-size: 7px; color: var(--gg-grey); text-align: right; }
+.gg-slog-status[data-working='true'] { color: var(--gg-cyan); }
+.gg-slog-entry[data-status='failed'] .gg-slog-status { color: var(--gg-red); }
+.gg-slog-entry[data-status='completed'] .gg-slog-status { color: var(--gg-green); }
+.gg-slog-entry[data-status='awaiting_approval'] .gg-slog-status { color: var(--gg-yellow); }
+
+.gg-slog-empty { font-size: 8px; color: var(--gg-mute); padding: 4px 0; }
+.gg-slog-more { margin: 0; font-size: 7px; color: var(--gg-grey); }
+.gg-slog-note { margin: 0; font-size: 8px; color: var(--gg-green); }
+/* Not an error: the work still runs, the room just cannot seat it. */
+.gg-slog-warn { margin: 0; font-size: 8px; color: var(--gg-yellow); }
+
+/* One column on a phone: four columns of 8px type is unreadable before it is narrow. */
+@media (max-width: 720px) {
+  .gg-slog-roster > li,
+  .gg-slog-entry { grid-template-columns: 1fr; }
+  .gg-slog-dot { display: none; }
+  .gg-slog-status { text-align: left; }
+}

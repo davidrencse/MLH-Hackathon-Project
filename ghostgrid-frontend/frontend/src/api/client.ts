@@ -1,18 +1,18 @@
-// Single entry point for all backend calls. UI and stores call `api.*`, never mock.ts
-// or live.ts directly.
+// Single entry point for all backend calls. UI and stores call `api.*`, never live.ts
+// or liveOps.ts directly.
 //
-// Each call runs against the real Ghost Grid backend when it is reachable (see
-// config.ts) and falls back to the mock backend otherwise, so the demo still works
-// with no server running. Calls the backend cannot serve at all stay on the mock:
-//   · platform keys  — the backend authenticates with one static GHOSTGRID_API_TOKEN
-//   · seeded request-log/usage history before the city has produced any
-import { BUILDINGS } from '../constants'
-import { resolveBuildingKey, useKeys } from '../store/keys'
-import type { BuildingId, PlaygroundParams, Provider, ProviderKey, RequestLog, RuntimeId, SessionMode } from '../types'
-import { backendStatus, isLive, type BackendStatus } from './config'
-import * as live from './live'
-import * as liveOps from './liveOps'
-import * as mock from './mock'
+// Every call runs against the real Ghost Grid backend. There is no offline substitute:
+// a call the backend cannot serve rejects, and the caller shows the failure. The mock
+// backend that used to stand in here is gone — it had already been emptied of invented
+// data, so all it still did was turn "the backend is not answering" into a panel that
+// looked like a healthy, empty city.
+import { BUILDINGS } from '../constants.ts'
+import { resolveBuildingKey, useKeys } from '../store/keys.ts'
+import type { BuildingId, PlaygroundParams, Provider, ProviderKey } from '../types'
+import { backendStatus, isLive, markBackendUnavailable, type BackendStatus } from './config.ts'
+import { isBackendError, offlineError, shouldDegrade, type BackendError } from './http.ts'
+import * as live from './live.ts'
+import * as liveOps from './liveOps.ts'
 
 export interface ApiConfig {
   provider: Provider | null
@@ -32,178 +32,139 @@ export function getApiConfig(buildingId: BuildingId): ApiConfig {
   }
 }
 
-// Adds a row to Request Logs so the console mirrors what happened in the city.
-function record(agentId: BuildingId, method: RequestLog['method'], path: string, status: number, started: number, request: unknown, response: unknown, tokensIn = 0, tokensOut = 0) {
-  mock.recordRequest({
-    id: mock.uid('req'),
-    ts: Date.now(),
-    agentId,
-    method,
-    path,
-    status,
-    latencyMs: Date.now() - started,
-    tokensIn,
-    tokensOut,
-    request,
-    response,
-  })
+// ---------- pipeline faults ----------
+//
+// Every failure reaches the caller, but they do not all mean the same thing, and
+// http.ts classifies them:
+//
+//   unreachable / timed out / 5xx → the connection having a bad moment; logged as a
+//                                   warning, and the connection badge already says so
+//   401 or 403                    → the backend will not serve this app; the badge
+//                                   reports the rejection
+//   malformed, or any other 4xx   → a contract break (a stale id, a schema mismatch, a
+//                                   proxy serving HTML); logged as an error and
+//                                   published to `onPipelineFault`
+//
+// The classification is for reporting only. In every case the promise rejects, so no
+// screen can show a rejected read as data.
+
+export interface PipelineFault {
+  label: string
+  message: string
+  status: number
+  code?: string
+  requestId?: string
+  at: number
+}
+
+let faultListeners: ((fault: PipelineFault) => void)[] = []
+let lastFault: PipelineFault | null = null
+
+/** Subscribe to contract faults (the backend answered, and said no). */
+export function onPipelineFault(listener: (fault: PipelineFault) => void): () => void {
+  faultListeners.push(listener)
+  if (lastFault) listener(lastFault)
+  return () => {
+    faultListeners = faultListeners.filter((candidate) => candidate !== listener)
+  }
+}
+
+/** The most recent contract fault, for a panel that mounts after it happened. */
+export function getLastPipelineFault(): PipelineFault | null {
+  return lastFault
+}
+
+function publishFault(label: string, error: BackendError) {
+  lastFault = {
+    label,
+    message: error.message,
+    status: error.status,
+    code: error.code,
+    requestId: error.requestId,
+    at: Date.now(),
+  }
+  console.error(
+    `[ghostgrid] backend rejected ${label}: ${error.status} ${error.code ?? ''} ${error.message}`.trimEnd(),
+    error.requestId ? `(requestId ${error.requestId})` : '',
+  )
+  for (const listener of faultListeners) listener(lastFault)
 }
 
 /**
- * Runs `liveCall` against the backend, falling back to `mockCall` when the backend
- * is absent or the call fails. Failures are logged once, never thrown at the UI.
+ * Runs `liveCall` against the backend, reporting the failure by the policy above and
+ * then rethrowing it. Nothing is substituted for an answer the backend did not give.
+ *
+ * The reachability probe is checked first so that a backend known to be down fails
+ * immediately instead of every panel paying for a round trip and its retries.
  */
-async function withBackend<T>(label: string, liveCall: () => Promise<T>, mockCall: () => Promise<T>): Promise<T> {
-  if (!(await isLive())) return mockCall()
+async function call<T>(label: string, liveCall: () => Promise<T>): Promise<T> {
+  if (!(await isLive())) throw offlineError(label, (await backendStatus()).message)
   try {
     return await liveCall()
   } catch (error) {
-    console.warn(`[ghostgrid] live ${label} failed, using mock data:`, error)
-    return mockCall()
+    if (isBackendError(error) && error.kind !== 'aborted') {
+      if (error.kind !== 'malformed' && shouldDegrade(error)) {
+        console.warn(`[ghostgrid] live ${label} unavailable:`, error)
+      } else if (error.status === 401 || error.status === 403) {
+        markBackendUnavailable(`backend rejected the app: ${error.status} ${error.code ?? error.message}`)
+      } else {
+        // Reachable, answering, answering wrongly — a proxy serving an HTML error page, a
+        // stale id, a route that regressed. A contract break, not a bad connection.
+        publishFault(label, error)
+      }
+    }
+    throw error
   }
+}
+
+export interface RequestFilter {
+  agentId?: BuildingId | 'all'
+  status?: 'all' | '2xx' | '4xx' | '5xx'
+  q?: string
 }
 
 export const api = {
   /** Which backend the app is talking to; drives the connection badge. */
   status: (): Promise<BackendStatus> => backendStatus(),
 
-  getLogs: (buildingId: BuildingId, limit = 5) =>
-    withBackend(
-      'getLogs',
-      async () => {
-        const entries = await live.getLogs(buildingId, limit)
-        // A brand-new building has no events yet: seeded lines read better than nothing.
-        return entries.length ? entries : mock.getLogs(buildingId, limit)
-      },
-      () => mock.getLogs(buildingId, limit),
-    ),
+  // A building with no events shows none. Seeded lines read better, and that was the
+  // problem: "workspace mounted · tests 24/24 passed" under a building that had never run.
+  getLogs: (buildingId: BuildingId, limit = 5) => call('getLogs', () => live.getLogs(buildingId, limit)),
 
-  async submitCommand(command: string) {
-    const started = Date.now()
-    const cfg = getApiConfig('router')
-    const res = await withBackend(
-      'submitCommand',
-      () => live.submitCommand(command),
-      () => mock.submitCommand(command),
-    )
-    record('router', 'POST', '/api/v1/sessions/:id/messages', 202, started, { command, model: cfg.model }, res, Math.ceil(command.length / 4), 0)
-    return res
-  },
+  // An empty answer is a real answer; a rejected one is not an answer at all. Substituting
+  // rows for either put invented 24h request counts and error rates on the dashboard beside
+  // the real ledger, with the badge green.
+  listAgents: () => call('listAgents', () => live.listAgents()),
 
-  async approve(taskId: string) {
-    const started = Date.now()
-    const res = await withBackend(
-      'approve',
-      () => liveOps.approve(taskId),
-      () => mock.approve(taskId),
-    )
-    record('security', 'POST', `/api/v1/tasks/${taskId}`, 200, started, { taskId }, res, 0, res.tokens)
-    return res
-  },
+  // "The backend recorded nothing" is a real answer, not a missing one: substituting demo
+  // rows here used to put invented request counts and usage charts next to the ledger's real
+  // token numbers, on the same screen, with no way to tell which was which.
+  listRequests: (filter?: RequestFilter) => call('listRequests', () => live.listRequests(filter)),
 
-  async reject(taskId: string) {
-    const started = Date.now()
-    const res = await withBackend(
-      'reject',
-      () => liveOps.reject(taskId),
-      () => mock.reject(taskId),
-    )
-    record('security', 'POST', `/api/v1/tasks/${taskId}/cancel`, 200, started, { taskId }, res)
-    return res
-  },
-
-  listAgents: () =>
-    withBackend(
-      'listAgents',
-      async () => {
-        const agents = await live.listAgents()
-        return agents.length ? agents : mock.listAgents()
-      },
-      () => mock.listAgents(),
-    ),
-
-  listRequests: (filter?: Parameters<typeof mock.listRequests>[0]) =>
-    withBackend(
-      'listRequests',
-      async () => {
-        const rows = await live.listRequests(filter)
-        return rows.length ? rows : mock.listRequests(filter)
-      },
-      () => mock.listRequests(filter),
-    ),
-
-  getUsage: (days: 7 | 30) =>
-    withBackend(
-      'getUsage',
-      async () => {
-        const usage = await live.getUsage(days)
-        return usage.totals.requests ? usage : mock.getUsage(days)
-      },
-      () => mock.getUsage(days),
-    ),
+  getUsage: (days: 7 | 30) => call('getUsage', () => live.getUsage(days)),
 
   /** Sessions a building actually has on the backend (empty when it has none). */
-  listSessions: (buildingId: BuildingId) =>
-    withBackend(
-      'listSessions',
-      () => liveOps.listBuildingSessions(buildingId),
-      async () => [],
-    ),
+  listSessions: (buildingId: BuildingId) => call('listSessions', () => liveOps.listBuildingSessions(buildingId)),
 
-  // The backend issues no per-client keys: it authenticates with one static
-  // GHOSTGRID_API_TOKEN. These stay local to the browser.
-  listPlatformKeys: mock.listPlatformKeys,
-  createPlatformKey: mock.createPlatformKey,
-  revokePlatformKey: mock.revokePlatformKey,
-
+  // Only the backend can reach a vendor, so with the backend down the honest answer is that
+  // the key was not tested — never a verdict derived from the key's own shape.
   testConnection: (key: Pick<ProviderKey, 'provider' | 'baseUrl' | 'key'>) =>
-    withBackend(
-      'testConnection',
-      () => liveOps.testConnection(key),
-      () => mock.testConnection(key),
-    ),
+    call('testConnection', () => liveOps.testConnection(key)),
 
-  /**
-   * Opens one office desk (src/city/office). `runtime` says where the work runs: a 'local'
-   * runtime stays on this machine, a 'connected' one calls that provider's API.
-   * Mock-only for now: the backend binds a provider to the agent, not to the session, so it
-   * has nowhere to put the runtime choice yet.
-   */
-  async startSession(agentId: BuildingId, input: { title: string; runtime: RuntimeId; mode: SessionMode; model: string }) {
-    const started = Date.now()
-    const res = await mock.startSession(agentId, input)
-    record(
-      agentId,
-      'POST',
-      `/api/v1/agents/${agentId}/sessions`,
-      201,
-      started,
-      { name: input.title, runtime: input.runtime, mode: input.mode, model: input.model },
-      res,
-      Math.ceil(input.title.length / 4),
-      0,
-    )
-    return res
-  },
+  // A desk is opened by hiring a backend employee (api/backend.ts, the office panel). The
+  // runtime-picker version of this never reached the backend — it slept, flipped a status and
+  // logged a host it had not connected to — so it is gone rather than kept as scaffolding.
 
-  async stopSession(agentId: BuildingId, sessionId: string) {
-    const started = Date.now()
-    const res = await mock.stopSession(agentId, sessionId)
-    record(agentId, 'POST', `/api/v1/sessions/${sessionId}/cancel`, 200, started, { sessionId }, res)
-    return res
-  },
-
-  async runPlayground(agentId: BuildingId, prompt: string, params: PlaygroundParams, onToken: (chunk: string) => void, signal?: AbortSignal) {
-    const started = Date.now()
-    const cfg = getApiConfig(agentId)
-    const res = await withBackend(
-      'runPlayground',
-      () => live.runPlayground(agentId, prompt, params, onToken, signal),
-      () => mock.runPlayground(agentId, prompt, params, onToken, signal),
-    )
-    record(agentId, 'POST', `/api/v1/sessions/:id/messages`, 200, started, { model: cfg.model, input: prompt, ...params }, { output: res.text }, res.tokensIn, res.tokensOut)
-    return res
-  },
+  // There is no honest offline answer to "what did the model say". A failure throws, and the
+  // caller (city/panel/AgentAskSection) shows it. The run shows up in Request Logs through the
+  // backend's own events, which is the only place that record is real.
+  runPlayground: (
+    agentId: BuildingId,
+    prompt: string,
+    params: PlaygroundParams,
+    onToken: (chunk: string) => void,
+    signal?: AbortSignal,
+  ) => call('runPlayground', () => live.runPlayground(agentId, prompt, params, onToken, signal)),
 }
 
-export { library } from './library'
+export { library } from './library.ts'

@@ -1,9 +1,10 @@
-// API Keys: provider keys (localStorage, per-building assignment) and Ghost Grid platform keys (mock API).
-import { Ghost, KeyRound } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+// API Keys: provider keys, stored in localStorage and assigned per building.
+//
+// There was a second tab here, "Ghost Grid Keys", which minted and revoked platform keys for
+// this app. No such key exists: the backend authenticates with one static GHOSTGRID_API_TOKEN,
+// so every key on that screen was a browser-local prop. The tab is gone.
 import { resolveBuildingKey, useKeys } from '@/store/keys'
 import { KEY_BUILDINGS } from '../keys/format'
-import { PlatformKeysTab } from '../keys/PlatformKeysTab'
 import { ProviderKeysTab } from '../keys/ProviderKeysTab'
 import { PageHeader } from '../PageHeader'
 
@@ -15,24 +16,7 @@ export function ApiKeysPage() {
         description="Connect model providers. Each building uses one key and model."
         actions={<CityOnline />}
       />
-      <Tabs defaultValue="provider" className="gap-6">
-        <TabsList>
-          <TabsTrigger value="provider" className="px-4">
-            <KeyRound size={16} strokeWidth={2.5} />
-            Provider Keys
-          </TabsTrigger>
-          <TabsTrigger value="platform" className="px-4">
-            <Ghost size={16} strokeWidth={2.5} />
-            Ghost Grid Keys
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="provider">
-          <ProviderKeysTab />
-        </TabsContent>
-        <TabsContent value="platform">
-          <PlatformKeysTab />
-        </TabsContent>
-      </Tabs>
+      <ProviderKeysTab />
     </div>
   )
 }

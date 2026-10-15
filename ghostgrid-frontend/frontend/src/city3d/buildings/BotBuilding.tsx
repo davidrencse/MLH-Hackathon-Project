@@ -13,7 +13,7 @@ import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { BotKind } from '../../types'
 import { BuildingCtx } from '../BuildingCtx'
-import { flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
+import { facadeCols, facadeRows, flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
 
 type V3 = [number, number, number]
 interface Box {
@@ -373,8 +373,8 @@ export function BotBuilding() {
   const L = layout(W, D, H)
 
   const { flats, neons } = useMemo(() => staticBoxes(W, D, H, kind, accent), [W, D, H, kind, accent])
-  const facadeA = useFacadeMaterial({ cols: 3, rows: 3, seed, tint: accent })
-  const facadeB = useFacadeMaterial({ cols: 2, rows: 3, seed: seed + 1, tint: accent })
+  const facadeA = useFacadeMaterial({ cols: facadeCols(W * 0.875), rows: facadeRows(H * 0.5 - 0.16), seed, tint: accent })
+  const facadeB = useFacadeMaterial({ cols: facadeCols(W * 0.69), rows: facadeRows(H * 0.5 - 0.24), seed: seed + 1, tint: accent })
 
   // shop sign on the +z face: the bot's own short name, falling back to its kind
   // (texture is cached in materials.ts; only the material is ours)

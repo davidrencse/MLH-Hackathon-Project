@@ -13,7 +13,7 @@ export interface OfficeFlavor {
 }
 
 // Office types the player can walk into. Everything else has no interior.
-export const OFFICE_TYPES: BuildingType[] = ['codex', 'cursor', 'claude', 'deepseek', 'groq', 'router', 'security']
+export const OFFICE_TYPES: BuildingType[] = ['codex', 'cursor', 'claude', 'deepseek', 'groq', 'security']
 
 export const OFFICE: Record<string, OfficeFlavor> = {
   security: {
@@ -57,13 +57,6 @@ export const OFFICE: Record<string, OfficeFlavor> = {
     prop: 'rail',
     deskWord: 'PIT STALL',
     notes: ['first token < 100ms', 'stream everything', 'keep prompts short'],
-  },
-  router: {
-    floor: 'SPIRE TOP · DISPATCH',
-    tagline: 'Plans the work and hands it to the other floors.',
-    prop: 'switchboard',
-    deskWord: 'DISPATCH DESK',
-    notes: ['check the budget', 'route by cost', 'escalate risky ops'],
   },
 }
 

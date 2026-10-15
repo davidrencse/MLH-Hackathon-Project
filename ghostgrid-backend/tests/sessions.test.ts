@@ -22,10 +22,13 @@ async function fixture() {
     store,
     {
       get: () => ({
-        executeTask: async (input: any) => ({
-          output: input.prompt,
-          sessionId: input.sessionId ?? `native-${input.prompt}`,
-        }),
+        // The engine prepends the session's role brief to every prompt, so the operator's own
+        // text is the last paragraph. Read it back out: a native session id derived from the
+        // whole prompt would carry the ~2KB brief and trip the engine's 1024-character guard.
+        executeTask: async (input: any) => {
+          const prompt = String(input.prompt).split("\n\n").pop();
+          return { output: prompt, sessionId: input.sessionId ?? `native-${prompt}` };
+        },
       }),
     },
     { concurrency: 2, artifactsDir: dir, allowedWorkspaces: [] },

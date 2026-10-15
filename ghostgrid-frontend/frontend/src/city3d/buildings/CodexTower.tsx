@@ -9,7 +9,7 @@ import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { Session } from '../../types'
 import { BuildingCtx } from '../BuildingCtx'
-import { flatMat, neonMat, PALETTE, UNIT_BOX, useFacadeMaterial } from '../materials'
+import { facadeCols, facadeRows, flatMat, neonMat, PALETTE, UNIT_BOX, useFacadeMaterial } from '../materials'
 
 interface Part {
   p: [number, number, number]
@@ -66,12 +66,12 @@ function applyParts(mesh: THREE.InstancedMesh, parts: Part[], withColor: boolean
   mesh.computeBoundingSphere()
 }
 
-function setBlades(mesh: THREE.InstancedMesh, fans: [number, number][], y: number, angle: number) {
+function setBlades(mesh: THREE.InstancedMesh, fans: [number, number][], y: number, angle: number, rs = 1) {
   for (let f = 0; f < fans.length; f++) {
     for (let b = 0; b < 2; b++) {
       tmp.position.set(fans[f][0], y, fans[f][1])
       tmp.rotation.set(0, angle + b * (Math.PI / 2) + f * 0.4, 0)
-      tmp.scale.set(0.5, 0.04, 0.1)
+      tmp.scale.set(0.5 * rs, 0.04, 0.1 * rs)
       tmp.updateMatrix()
       mesh.setMatrixAt(f * 2 + b, tmp.matrix)
     }
@@ -107,6 +107,8 @@ export function CodexTower() {
 
   // ---- layout (pure numbers; recomputed only if the lot or height changes) ----
   const L = useMemo(() => {
+    // authored for a 2.6 x 5 tower; the roof cluster and the blade sign scale with the real one
+    const rs = Math.sqrt(Math.max(1, W / 2.6))
     const podH = 0.4
     const lw = W * 0.84
     const ld = D * 0.84
@@ -151,10 +153,11 @@ export function CodexTower() {
     const bx = -lw / 2 - off
     const bz = ld / 2 + off
     const toW = (lx: number, ly: number, lz: number): [number, number, number] => [bx + (lx + lz) * S, ly, bz + (lz - lx) * S]
-    const px = 0.1 // one font pixel
     const rows = 5 * 5 + 4 // 5 letters, 1-row gaps
+    // one font pixel: the blade fills the lower shaft (clamped so small lots stay readable)
+    const px = Math.max(0.08, Math.min(0.26, (lowTop - 1.1) / rows))
     const plateH = rows * px + 2 * px
-    const plateW = 0.56
+    const plateW = Math.max(0.56, px * 5.6)
     const y0 = 0.6
     const yc = y0 + plateH / 2
     const cornerX = 2 * off * S // corner position along the blade's local x
@@ -175,27 +178,30 @@ export function CodexTower() {
     })
 
     // ---- roof: server racks (LED faces on +x), cooling fans, antenna ----
-    const rackX = -uw / 2 + 0.3
+    const rackX = -uw / 2 + 0.3 * rs
     for (const rz of [-0.3, 0.06, 0.42]) {
-      box(props, [rackX, H + 0.25, rz], [0.3, 0.5, 0.32], PALETTE.night)
-      box(leds, [rackX + 0.165, H + 0.36, rz], [0.03, 0.08, 0.24], '#fff')
-      box(leds, [rackX + 0.165, H + 0.18, rz], [0.03, 0.08, 0.24], '#fff')
+      const z = rz * rs
+      box(props, [rackX, H + 0.25 * rs, z], [0.3 * rs, 0.5 * rs, 0.32 * rs], PALETTE.night)
+      box(leds, [rackX + 0.165 * rs, H + 0.36 * rs, z], [0.03, 0.08 * rs, 0.24 * rs], '#fff')
+      box(leds, [rackX + 0.165 * rs, H + 0.18 * rs, z], [0.03, 0.08 * rs, 0.24 * rs], '#fff')
     }
     const fans: [number, number][] = [
-      [uw / 2 - 0.5, -0.38],
-      [uw / 2 - 0.5, 0.36],
+      [uw / 2 - 0.5 * rs, -0.38 * rs],
+      [uw / 2 - 0.5 * rs, 0.36 * rs],
     ]
-    for (const [fx, fz] of fans) box(props, [fx, H + 0.07, fz], [0.6, 0.14, 0.6], PALETTE.steel)
-    const ant: [number, number] = [-uw / 2 + 0.2, -ud / 2 + 0.2]
-    box(props, [ant[0], H + 0.75, ant[1]], [0.1, 1.5, 0.1], PALETTE.steel)
-    box(props, [ant[0], H + 1.1, ant[1]], [0.4, 0.08, 0.08], PALETTE.steel)
-    box(leds, [ant[0], H + 1.58, ant[1]], [0.16, 0.16, 0.16], '#fff')
+    for (const [fx, fz] of fans) box(props, [fx, H + 0.07 * rs, fz], [0.6 * rs, 0.14 * rs, 0.6 * rs], PALETTE.steel)
+    const ant: [number, number] = [-uw / 2 + 0.2 * rs, -ud / 2 + 0.2 * rs]
+    const antH = 1.5 * Math.sqrt(Math.max(1, H / 5))
+    box(props, [ant[0], H + antH / 2, ant[1]], [0.1 * rs, antH, 0.1 * rs], PALETTE.steel)
+    box(props, [ant[0], H + antH * 0.73, ant[1]], [0.4 * rs, 0.08, 0.08], PALETTE.steel)
+    box(leds, [ant[0], H + antH + 0.08, ant[1]], [0.16 * rs, 0.16 * rs, 0.16 * rs], '#fff')
 
     // ---- AC units on the two visible terraces of the ledge ----
     const tr = (uw / 2 + edW / 2) / 2
     for (const v of [-0.35, 0.35]) {
-      box(props, [tr, upB + 0.09, v], [0.26, 0.18, 0.32], PALETTE.grey)
-      box(props, [v, upB + 0.09, tr], [0.32, 0.18, 0.26], PALETTE.grey)
+      const o = v * rs
+      box(props, [tr, upB + 0.09 * rs, o], [0.26 * rs, 0.18 * rs, 0.32 * rs], PALETTE.grey)
+      box(props, [o, upB + 0.09 * rs, tr], [0.32 * rs, 0.18 * rs, 0.26 * rs], PALETTE.grey)
     }
 
     // ---- holo projector beside the screen-right (+x,-z) corner ----
@@ -205,12 +211,12 @@ export function CodexTower() {
     box(props, [hx, 0.07, hz], [0.5, 0.14, 0.3], PALETTE.steel, Q)
     box(trims, [hx, 0.15, hz], [0.4, 0.04, 0.2], PALETTE.cyan, Q, 0.8)
 
-    return { podH, lw, ld, lh, lowTop, edW, edD, edH, upB, uw, ud, uh, trims, props, leds, fans, hx, hz }
+    return { podH, lw, ld, lh, lowTop, edW, edD, edH, upB, uw, ud, uh, trims, props, leds, fans, hx, hz, rs }
   }, [W, D, H])
 
   // ---- materials ----
-  const lowFacade = useFacadeMaterial({ cols: 7, rows: 9, seed: 21, tint: PALETTE.green })
-  const upFacade = useFacadeMaterial({ cols: 6, rows: 6, seed: 22, tint: PALETTE.green })
+  const lowFacade = useFacadeMaterial({ cols: facadeCols(L.lw), rows: facadeRows(L.lh), seed: 21, tint: PALETTE.green })
+  const upFacade = useFacadeMaterial({ cols: facadeCols(L.uw), rows: facadeRows(L.uh), seed: 22, tint: PALETTE.green })
 
   const ledMat = useMemo(() => new THREE.MeshBasicMaterial({ color: PALETTE.cyan, toneMapped: false }), [])
   const holo = useMemo(() => {
@@ -249,7 +255,7 @@ export function CodexTower() {
     if (propRef.current) applyParts(propRef.current, L.props, true)
     if (ledRef.current) applyParts(ledRef.current, L.leds, false)
     if (bladeRef.current) {
-      setBlades(bladeRef.current, L.fans, H + 0.16, fanAngle.current)
+      setBlades(bladeRef.current, L.fans, H + 0.16 * L.rs, fanAngle.current, L.rs)
       bladeRef.current.computeBoundingSphere()
     }
   }, [L, H])
@@ -274,7 +280,7 @@ export function CodexTower() {
             : 4
     if (speed > 0 && bladeRef.current) {
       fanAngle.current += speed * Math.min(dt, 0.1)
-      setBlades(bladeRef.current, L.fans, H + 0.16, fanAngle.current)
+      setBlades(bladeRef.current, L.fans, H + 0.16 * L.rs, fanAngle.current, L.rs)
     }
 
     // rack LEDs + antenna tip follow the building status
@@ -305,7 +311,8 @@ export function CodexTower() {
   // panel set re-renders only when building.sessions changes
   const sessions = (building?.sessions ?? []).slice(0, MAX_PANELS)
   const n = sessions.length
-  const holoMid = 2.3
+  const holoScale = Math.sqrt(Math.max(1, H / 5))
+  const holoMid = 2.3 * holoScale
 
   return (
     <group>
@@ -354,8 +361,8 @@ export function CodexTower() {
               key={s.id}
               geometry={UNIT_BOX}
               material={holo.mats[s.status]}
-              position={[0, holoMid + ((n - 1) / 2 - i) * PANEL_STEP, (i % 2) * 0.14]}
-              scale={[0.6, 0.4, 0.04]}
+              position={[0, holoMid + ((n - 1) / 2 - i) * PANEL_STEP * holoScale, (i % 2) * 0.14]}
+              scale={[0.6 * holoScale, 0.4 * holoScale, 0.04]}
             />
           ))}
         </group>

@@ -5,8 +5,8 @@
 // — including work started outside the browser (CLI, another tab, a workflow).
 //
 // Imported once from main.tsx; it is a no-op when the backend is unreachable.
-import { backendStatus, type BackendStatus } from '../api/config'
-import { subscribeEvents, tailEventCursor, type BackendEvent } from '../api/backend'
+import { backendStatus, resetBackendStatus, type BackendStatus } from '../api/config'
+import { isBackendError, subscribeEvents, tailEventCursor, type BackendEvent } from '../api/backend'
 import { bootstrap } from '../api/live'
 import { describeEvent } from '../api/liveOps'
 import type { BuildingId, BuildingStatus } from '../types'
@@ -16,7 +16,7 @@ import { useCreditsStore } from './credits'
 // ---------- backend status, for the connection badge ----------
 
 let statusListeners: ((status: BackendStatus) => void)[] = []
-let currentStatus: BackendStatus = { live: false, message: 'probing' }
+let currentStatus: BackendStatus = { live: false, message: 'probing', checkedAt: 0 }
 
 export function getBackendStatus(): BackendStatus {
   return currentStatus
@@ -69,7 +69,6 @@ function handleEvent(event: BackendEvent) {
     void refreshAgentMap()
     return
   }
-  if (buildingId === 'router') return
   const grid = useGrid.getState()
   if (!grid.buildings[buildingId]) buildingId = event.agentId // agent with no building in this city
   const described = describeEvent(event)
@@ -83,6 +82,16 @@ function handleEvent(event: BackendEvent) {
 let stop: (() => void) | null = null
 let retryTimer: ReturnType<typeof setTimeout> | null = null
 
+function scheduleRestart(delayMs = 10_000) {
+  stop?.()
+  stop = null
+  if (retryTimer) return
+  retryTimer = setTimeout(() => {
+    retryTimer = null
+    void startLiveBridge()
+  }, delayMs)
+}
+
 /** Starts the bridge. Safe to call repeatedly; later calls are ignored. */
 export async function startLiveBridge(): Promise<void> {
   if (stop) return
@@ -94,11 +103,26 @@ export async function startLiveBridge(): Promise<void> {
   }
 
   await refreshAgentMap()
+  // The backend is answering now, which may be the first time this page load. Any credits
+  // snapshot taken before this moment is an empty "offline" one, so re-read it rather than
+  // leaving the HUD's CREDITS blank until its own timer comes round.
+  void useCreditsStore.getState().load(true)
   // Start from the current tail so the city does not replay its whole history.
   const cursor = await tailEventCursor().catch(() => 0)
 
-  stop = subscribeEvents({ after: cursor }, handleEvent, (error) =>
-    setStatus({ ...currentStatus, message: error instanceof Error ? error.message : 'stream interrupted' }),
+  stop = subscribeEvents(
+    { after: cursor },
+    handleEvent,
+    (error) => {
+      // The stream is the first thing to notice a backend that went away: let the
+      // badge say so and re-probe, rather than keeping a stale green light.
+      setStatus({ ...currentStatus, live: false, message: error instanceof Error ? error.message : 'stream interrupted' })
+      resetBackendStatus()
+      // A rejected stream (bad token, unknown filter) ends the subscription for
+      // good, so the bridge has to be rebuilt rather than waited on.
+      if (isBackendError(error) && error.kind === 'rejected') scheduleRestart()
+    },
+    () => setStatus({ ...currentStatus, live: true, message: undefined, checkedAt: Date.now() }),
   )
 }
 

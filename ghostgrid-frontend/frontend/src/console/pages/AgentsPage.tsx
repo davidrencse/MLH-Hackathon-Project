@@ -1,15 +1,16 @@
 // Agents list. Every building in the city is an agent, including the bots the player builds.
 // Status, key, model, sessions and last activity come from the live stores, so this table mirrors
 // the city in real time. api.listAgents() only fills in last activity until the city logs something.
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useVisibleInterval } from '@/lib/useVisibleInterval'
 import { Activity, ChevronRight, Plug, ShieldAlert } from 'lucide-react'
 import { api } from '@/api/client'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CATALOG, PROVIDERS, STATUS_COLOR, botLabel } from '@/constants'
-import { useAgentBuildingList, useGrid } from '@/store/grid'
+import { useBuildingList, useGrid } from '@/store/grid'
 import { maskKey, resolveBuildingKey, useKeys } from '@/store/keys'
 import type { AgentSummary, Building, BuildingId, BuildingStatus, BuildingType } from '@/types'
 import { PageHeader } from '../PageHeader'
@@ -74,7 +75,10 @@ export function AccentSquare({ color, size = 16, dim = false }: { color: string;
 
 // 8x8 pixel building per building type. A = bright accent tip, B = tinted body, W = windows lit by status.
 const GLYPH: Record<BuildingType, string[]> = {
-  router: ['...AA...', '...BB...', '..BBBB..', '..BWBB..', '..BBWB..', '..BWBB..', '..BBWB..', '..BBBB..'],
+  // Agent Row house: stepped roof over a lit avatar board.
+  agent: ['........', '..AAAA..', '.BBBBBB.', '.BWWWWB.', '.BWBBWB.', '.BWWWWB.', '.BBBBBB.', '.B.BB.B.'],
+  // Wall Street: stepped pediment over a colonnade, lit board in the middle of the shaft.
+  quant: ['...A....', '..BBBB..', '.BBBBBB.', '.BWBBWB.', '.BBWWBB.', '.BWBBWB.', '.BBBBBB.', 'BBBBBBBB'],
   codex: ['.AAAAAA.', '.BBBBBB.', '.BWBBWB.', '.BBBBBB.', '.BWBBWB.', '.BBBBBB.', '.BWBBWB.', '.BBBBBB.'],
   cursor: ['.A......', '.AA.....', '.ABA....', '.ABBA...', '.ABBBA..', '.ABAAA..', '.A.AB...', '...AA...'],
   claude: ['...AA...', '..BBBB..', '..BWWB..', '.BBBBBB.', '.BWBBWB.', 'BBBBBBBB', 'BWBWWBWB', 'BBBBBBBB'],
@@ -123,10 +127,7 @@ export function AgentGlyph({
 
 export function useNow(ms: number) {
   const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), ms)
-    return () => clearInterval(t)
-  }, [ms])
+  useVisibleInterval(useCallback(() => setNow(Date.now()), []), ms)
   return now
 }
 
@@ -206,7 +207,7 @@ function Kpi({
 
 export function AgentsPage() {
   const navigate = useNavigate()
-  const buildings = useAgentBuildingList()
+  const buildings = useBuildingList()
   const logs = useGrid((s) => s.logs)
   const keys = useKeys((s) => s.keys)
   const buildingConfig = useKeys((s) => s.buildingConfig)
@@ -215,9 +216,14 @@ export function AgentsPage() {
 
   useEffect(() => {
     let alive = true
-    api.listAgents().then((list) => {
-      if (alive) setSummaries(Object.fromEntries(list.map((a) => [a.id, a])))
-    })
+    api
+      .listAgents()
+      .then((list) => {
+        if (alive) setSummaries(Object.fromEntries(list.map((a) => [a.id, a])))
+      })
+      // No summaries is the honest state when the backend cannot answer: the rows below are
+      // built from local keys and city logs, and simply carry no backend-measured figures.
+      .catch(() => alive && setSummaries({}))
     // Seed the city logs when the dashboard is the first page opened (same guard as CityPage).
     if (useGrid.getState().logs.length === 0) void useGrid.getState().loadInitialLogs()
     return () => {
@@ -288,7 +294,7 @@ export function AgentsPage() {
       </div>
 
       <div className={PANEL}>
-        <Table className="gg-agents-table text-lg">
+        <Table className="text-lg">
           <TableHeader className="[&_tr]:border-b-2 [&_tr]:border-gg-haze">
             <TableRow className="hover:bg-transparent">
               <TableHead className={HEAD}>NAME</TableHead>
@@ -329,13 +335,13 @@ export function AgentsPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell data-label="TYPE" className="px-4">
+                  <TableCell className="px-4">
                     <span className="font-pixel text-[8px] leading-none whitespace-nowrap" style={{ color: accent }}>
                       {typeLabel(b)}
                     </span>
                   </TableCell>
-                  <TableCell data-label="MODEL" className="px-4 text-gg-ink">{model}</TableCell>
-                  <TableCell data-label="PROVIDER" className="px-4 leading-none">
+                  <TableCell className="px-4 text-gg-ink">{model}</TableCell>
+                  <TableCell className="px-4 leading-none">
                     {key ? (
                       <>
                         <div className="text-gg-ink">{PROVIDERS[key.provider].label}</div>
@@ -352,14 +358,14 @@ export function AgentsPage() {
                       </>
                     )}
                   </TableCell>
-                  <TableCell data-label="STATUS" className="px-4">
+                  <TableCell className="px-4">
                     <StatusBadge status={status} />
                   </TableCell>
-                  <TableCell data-label="SESSIONS" className="px-4 text-right whitespace-nowrap">
+                  <TableCell className="px-4 text-right whitespace-nowrap">
                     <span className={running ? 'text-gg-green' : 'text-gg-mute'}>{running}</span>
                     <span className="text-gg-mute"> / {b.sessions.length}</span>
                   </TableCell>
-                  <TableCell data-label="LAST ACTIVITY" className={`px-4 whitespace-nowrap ${fresh ? 'text-gg-green' : 'text-gg-mute'}`}>
+                  <TableCell className={`px-4 whitespace-nowrap ${fresh ? 'text-gg-green' : 'text-gg-mute'}`}>
                     <span title={new Date(ts).toLocaleString('en-US')}>{ago(ts, now)}</span>
                   </TableCell>
                   <TableCell className="w-8 pr-4">

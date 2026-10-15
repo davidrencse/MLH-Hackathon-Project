@@ -30,8 +30,15 @@ export interface ExecutionInput {
   agent: AgentConfig;
 }
 export interface Usage {
+  /** Prompt tokens the vendor billed, including any served from its prompt cache. */
   inputTokens: number | null;
   outputTokens: number | null;
+  /**
+   * The part of inputTokens the vendor served from its prompt cache. Informational and
+   * already counted inside inputTokens, so it is never added to it again.
+   */
+  cachedInputTokens?: number | null;
+  /** Only a figure the vendor itself returned. Never an estimate. */
   costUsd?: number | null;
 }
 export interface ExecutionResult {
@@ -59,6 +66,12 @@ export interface ProviderAdapter {
   getCapabilities(): Capabilities;
 }
 export class ProviderError extends Error {
+  /**
+   * Tokens already spent when the attempt failed, when the adapter knows them. Set
+   * through attachUsage() so it stays off serialized error payloads; the execution
+   * engine records it rather than losing the spend. Non-enumerable, hence declared.
+   */
+  declare readonly usage?: Usage;
   constructor(
     message: string,
     public readonly transient = false,

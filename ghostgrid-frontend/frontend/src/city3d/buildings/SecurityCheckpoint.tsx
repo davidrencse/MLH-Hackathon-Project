@@ -9,7 +9,7 @@ import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { BuildingStatus } from '../../types'
 import { BuildingCtx } from '../BuildingCtx'
-import { flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
+import { facadeCols, facadeRows, flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
 
 // ---------- module-level shared geometry (created once) ----------
 
@@ -119,7 +119,7 @@ const TEETH: [number, number][] = [
 export function SecurityCheckpoint() {
   const { footprint, height: H, statusRef, offlineRef } = useContext(BuildingCtx)
   const k = Math.min(footprint.w, footprint.d) / 2.6
-  const wall = useFacadeMaterial({ cols: 7, rows: 4, seed: 41, tint: PALETTE.cyan })
+  const wall = useFacadeMaterial({ cols: facadeCols(FR.w * k), rows: facadeRows(H - BASE_H), seed: 41, tint: PALETTE.cyan })
   const cabWall = useFacadeMaterial({ cols: 4, rows: 1, seed: 47, tint: PALETTE.cyan })
 
   const mats = useMemo(() => {

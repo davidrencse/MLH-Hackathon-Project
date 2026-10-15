@@ -127,7 +127,7 @@
   30% { opacity: 1; }
 }
 
-/* Router switchboard: one plug lights at a time */
+/* Switchboard: one plug lights at a time */
 .gg-of-plug {
   animation: gg-of-chase 1.5s steps(5) infinite;
 }

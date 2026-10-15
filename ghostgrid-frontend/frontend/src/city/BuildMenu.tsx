@@ -2,11 +2,12 @@
 // DOM only. Selectors return primitives / stable values, so this re-renders only when credits, buildMode or lots change.
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Hammer, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { BOT_KINDS, CATALOG } from '@/constants'
-import { BUILDABLE_LOTS } from '@/city3d/world'
+import { leasableLots, PLOT_OFFSETS } from '@/city3d/world'
+import { requestWideView } from '@/city3d/cameraMotion'
+import { usePlots } from '@/store/plots'
 import { useGrid, useOccupiedLots } from '@/store/grid'
 import type { BuildMode } from '@/store/grid'
 import type { BotKind, BuildingType } from '@/types'
@@ -58,13 +59,17 @@ const activeToolId = (m: BuildMode | null): IconName | null => {
 
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gg-cyan focus-visible:outline-solid'
 
-export function BuildMenu({ expanded, onToggle, onClose }: { expanded: boolean; onToggle: () => void; onClose: () => void }) {
+export function BuildMenu() {
   const credits = useGrid((s) => s.credits)
   const buildMode = useGrid((s) => s.buildMode)
   const occupied = useOccupiedLots()
+  const openPlots = usePlots((s) => s.open)
   const [botKind, setBotKind] = useState<BotKind | null>(null)
 
-  const free = BUILDABLE_LOTS.filter((l) => !occupied.includes(l)).length
+  // Counts the core island plus the outer plates the player has opened, so the total grows with
+  // the city instead of reading 0 free while eight plates sit empty.
+  const leasable = leasableLots(openPlots)
+  const free = leasable.filter((l) => !occupied.includes(l)).length
   const active = activeToolId(buildMode)
   const placing = buildMode !== null
 
@@ -73,10 +78,8 @@ export function BuildMenu({ expanded, onToggle, onClose }: { expanded: boolean; 
     if (!placing) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing) return
-      const s = useGrid.getState()
-      if (s.task?.phase === 'approval') return // approval dialog owns Esc
       e.preventDefault()
-      s.setBuildMode(null)
+      useGrid.getState().setBuildMode(null)
     }
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
@@ -93,7 +96,6 @@ export function BuildMenu({ expanded, onToggle, onClose }: { expanded: boolean; 
 
   const pick = (t: Tool) => {
     if (credits < t.cost || free === 0) return
-    onClose()
     const s = useGrid.getState()
     if (t.botKind) {
       if (s.buildMode) s.setBuildMode(null)
@@ -105,12 +107,10 @@ export function BuildMenu({ expanded, onToggle, onClose }: { expanded: boolean; 
 
   return (
     <>
-      <button type="button" className="gg-mobile-build-toggle" aria-label={expanded ? "Close build menu" : "Build a building"} aria-expanded={expanded} aria-controls="city-build-menu" onClick={onToggle}>{expanded ? <X size={20} /> : <Hammer size={20} />}<span>Build</span></button>
       <nav
-        id="city-build-menu"
-        data-expanded={expanded}
+        data-hud-panel
         aria-label="Build menu"
-        className="gg-build-menu absolute top-24 left-4 z-40 flex w-14 flex-col border-2 border-gg-haze bg-gg-night/90 shadow-[4px_4px_0_0_rgba(0,0,0,0.6)] min-[900px]:w-48"
+        className="absolute top-24 left-4 z-40 flex w-14 flex-col border-2 border-gg-haze bg-gg-night/90 shadow-[4px_4px_0_0_rgba(0,0,0,0.6)] min-[900px]:w-48"
       >
         <div className="flex items-center justify-between gap-2 border-b-2 border-gg-haze px-2 py-2">
           <span className="font-pixel text-[8px] leading-none text-gg-ink min-[900px]:text-[10px]">BUILD</span>
@@ -176,9 +176,32 @@ export function BuildMenu({ expanded, onToggle, onClose }: { expanded: boolean; 
         >
           <span className="hidden text-gg-mute min-[900px]:inline">LOTS FREE: </span>
           <span className={free === 0 ? 'text-gg-red' : 'text-gg-green'}>
-            {free}/{BUILDABLE_LOTS.length}
+            {free}/{leasable.length}
           </span>
         </div>
+
+        {/* The eight outer plates are off-frame at the default zoom, so the city needs one
+            control that says they exist: this pulls the camera back to the whole 3x3 grid,
+            where each locked plate carries its own OPEN PLOT button. */}
+        <Tooltip>
+          <TooltipTrigger
+            type="button"
+            onClick={requestWideView}
+            className={`flex items-center justify-between gap-2 border-t-2 border-gg-haze px-2 py-2 font-pixel text-[8px] leading-none text-gg-ink hover:bg-gg-dusk active:translate-x-0.5 active:translate-y-0.5 ${FOCUS}`}
+          >
+            <span className="hidden min-[900px]:inline">VIEW ALL</span>
+            <span aria-hidden className="min-[900px]:hidden">
+              ⤢
+            </span>
+            <span className={openPlots.length === PLOT_OFFSETS.length ? 'text-gg-green' : 'text-gg-cyan'}>
+              {openPlots.length}/{PLOT_OFFSETS.length}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            Zoom out to the whole grid. Click a locked plate out there to grow a new district with
+            nine more lots.
+          </TooltipContent>
+        </Tooltip>
       </nav>
 
       {buildMode && <PlacingBanner mode={buildMode} />}
@@ -195,9 +218,10 @@ function PlacingBanner({ mode }: { mode: BuildMode }) {
   // When the side panel (380px, right-4) is open, center the banner in the space left of it.
   return (
     <div
-      className={`gg-placing-banner pointer-events-none absolute inset-x-0 top-20 z-40 flex justify-center px-4 ${panelOpen ? 'min-[900px]:right-[396px]' : ''}`}
+      className={`pointer-events-none absolute inset-x-0 top-20 z-40 flex justify-center px-4 ${panelOpen ? 'min-[900px]:right-[396px]' : ''}`}
     >
       <div
+        data-hud-panel
         role="status"
         className="pointer-events-auto flex max-w-full items-center gap-3 border-2 bg-gg-night/95 py-1.5 pr-1.5 pl-3 shadow-[4px_4px_0_0_rgba(0,0,0,0.6)] duration-150 ease-[steps(3)] animate-in fade-in-0 slide-in-from-top-2"
         style={{ borderColor: accent }}

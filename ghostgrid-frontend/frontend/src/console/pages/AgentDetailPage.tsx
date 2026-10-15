@@ -24,7 +24,7 @@ export function AgentDetailPage() {
   const { agentId } = useParams()
   // hasOwn: ids like "constructor" must not resolve to Object.prototype members.
   const b = useGrid((s) => (agentId && Object.hasOwn(s.buildings, agentId) ? s.buildings[agentId] : undefined))
-  if (!b || b.type === 'router') return <NotFound agentId={agentId} />
+  if (!b) return <NotFound agentId={agentId} />
   return <AgentDetail key={b.id} b={b} />
 }
 
@@ -414,9 +414,14 @@ function RequestsCard({ id }: { id: BuildingId }) {
   useEffect(() => {
     let alive = true
     const load = () =>
-      api.listRequests({ agentId: id }).then((r) => {
-        if (alive) setRows(r.slice(0, 10))
-      })
+      api
+        .listRequests({ agentId: id })
+        .then((r) => {
+          if (alive) setRows(r.slice(0, 10))
+        })
+        // A read the backend refused is not an empty request log; the panel stays on its
+        // loading state rather than claiming this building has made no calls.
+        .catch(() => undefined)
     void load()
     const t = setInterval(load, 5000)
     return () => {

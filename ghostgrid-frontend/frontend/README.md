@@ -49,11 +49,77 @@ React 19 · Vite · TypeScript · Tailwind v4 · shadcn/ui (Base UI) · zustand 
 |---|---|
 | `src/store/grid.ts` | City state machine: `runCommand → dispatch → working → approval → done/rejected` |
 | `src/store/keys.ts` | Provider keys + per-building key/model (localStorage, demo only) |
-| `src/api/client.ts` | **Only** entry point for backend calls. Swap mock calls for `fetch` here. |
+| `src/api/client.ts` | **Only** entry point for backend calls; decides live vs mock per call |
+| `src/api/http.ts` | The transport: timeouts, retries, failure classes, SSE reading |
+| `src/api/backend.ts` | Typed REST + SSE surface of the backend (`/api/v1`) |
 | `src/api/mock.ts` | Mock backend (`submitCommand`, `approve`, `reject`, `getLogs`, `listAgents`, `listRequests`, `getUsage`, keys, `runPlayground`) |
+| `src/weather/nyc.ts` | Live NYC weather → is it raining, and how hard (severity 0–4) |
+| `src/city3d/Rain.tsx` · `src/city2d/Rain2D.tsx` | The rain itself, 3D and DOM fallback |
 | `src/city/*` | City page: sky shader, skyline, buildings, drones, command bar, approval dialog, side panel |
 | `src/console/*` | Console layout and pages |
 | `DESIGN.md` | Palette, type, pixel grid, motion rules |
+
+## Weather
+
+The sky over the city is the sky over New York. `src/weather/nyc.ts` reads
+Open-Meteo for 40.71 N, 74.01 W (no key, cached ten minutes) and turns the reading
+into a rain severity:
+
+| severity | what it means | the city |
+|---|---|---|
+| 0 | not raining | nothing renders at all |
+| 1 light | drizzle, slight rain, < 0.5 mm/h | thin sparse streaks |
+| 2 moderate | moderate rain, 0.5–2.5 mm/h | denser, faster, more lean |
+| 3 heavy | heavy rain, 2.5–7.6 mm/h | long streaks, hard lean |
+| 4 storm | thunderstorm, violent showers, ≥ 7.6 mm/h | downpour, and the sky flashes |
+
+Severity is the worse of two signals — the WMO weather code and the measured
+millimetres — so rain shows up whether the code or the gauge notices it first. The
+real wind speed adds to the lean. Snow is not rain: the city stays dry under it.
+If the request fails the city falls back to a dry, partly-cloudy stand-in and the
+HUD badge reads `DEMO` instead of `LIVE`.
+
+Both renderers read the same store: `city3d/Rain.tsx` (one instanced draw call,
+animated entirely in the vertex shader) and `city2d/Rain2D.tsx` (CSS sheets, for
+the no-WebGL fallback). Both stop animating under `prefers-reduced-motion`.
+
+To see rain on a clear day, pin the severity: **`/?rain=4`** (0–4, or `VITE_GG_RAIN`).
+The widget still reports the real temperature and wind.
+
+## Backend pipeline
+
+Every call to the Ghost Grid backend goes through one transport, `src/api/http.ts`.
+It owns the behaviour the rest of the app no longer has to think about: per-attempt
+timeouts plus an overall deadline, retries with jittered backoff for idempotent
+calls (honouring `Retry-After`), the backend's `{ error: { code, message,
+requestId } }` envelope, strict body checking, encoded query strings, and shared
+in-flight GETs.
+
+Failures are classified, and the class decides what happens next:
+
+| `BackendError.kind` | Means | The city then |
+|---|---|---|
+| `offline`, `timeout`, `server`, `malformed` | the backend never answered, or answered broken | serves mock data, logs a warning |
+| `rejected` (4xx) | the backend answered and said no | serves mock data **and** reports it: 401/403 flips the connection badge, anything else publishes a fault through `onPipelineFault` |
+| `aborted` | the caller cancelled | propagates |
+
+That split is the point: mock data for a missing backend is honest, mock data for a
+rejected token is a bug that looks like a working city.
+
+The event stream (`subscribeEvents`) resumes from the last delivered `seq` with
+`Last-Event-ID`, drops events it has already seen, treats silence past the 15s
+heartbeat as a dropped connection, and stops retrying a request the backend
+rejected outright.
+
+```bash
+npm test                                    # transport contract, no server needed
+GG_BACKEND_URL=http://127.0.0.1:3001 \
+  node scripts/pipeline-e2e.mjs             # live backend: tail cursor, SSE, replay
+```
+
+`VITE_GG_API_TOKEN` is inlined into the bundle by Vite, so it is for local
+development only — in a hosted deployment leave it unset and let a server-side
+proxy attach the bearer token.
 
 ## For the backend team
 

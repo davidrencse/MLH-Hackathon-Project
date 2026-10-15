@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildApp } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
+import { Store } from "../src/db/store.js";
 
 const cleanup: Array<() => Promise<void>> = [];
 it("summarizes all persisted usage, separates estimates and unknowns, and scopes projects", async () => {
@@ -24,8 +25,14 @@ it("summarizes all persisted usage, separates estimates and unknowns, and scopes
   const response = await f.request("GET", `/api/v1/usage/summary?projectId=${f.project.id}`);
   expect(response.statusCode).toBe(200);
   const summary = response.json();
-  expect(summary.totals).toEqual({ requests: 505, inputTokens: 5040, outputTokens: 2520,
+  expect(summary.totals).toEqual({ requests: 505, inputTokens: 5040, outputTokens: 2520, cachedInputTokens: 0,
     reportedCostUsd: 3, estimatedCostUsd: 0.5, unknownCostRequests: 1, unknownTokenRequests: 1 });
+  // Cache reads ride inside inputTokens; the summary reports them alongside so a caller can say
+  // how much of the input was not fresh, and must not add them a second time.
+  record({ inputTokens: 40, outputTokens: 1, cachedInputTokens: 30, costUsd: 0 });
+  const withCache = (await f.request("GET", `/api/v1/usage/summary?projectId=${f.project.id}`)).json();
+  expect(withCache.totals.cachedInputTokens).toBe(30);
+  expect(withCache.totals.inputTokens).toBe(5080);
   expect(summary.today.requests).toBe(504);
   expect(summary.today.reportedCostUsd).toBe(2);
   expect(summary.tokensLastMinute).toBe(7545);
@@ -36,6 +43,96 @@ it("summarizes all persisted usage, separates estimates and unknowns, and scopes
   expect(empty.providers).toEqual([]);
   expect((await f.request("GET", "/api/v1/usage/summary?projectId=invalid")).statusCode).toBe(400);
   expect((await f.request("GET", `/api/v1/usage/summary?projectId=${randomUUID()}`)).statusCode).toBe(404);
+});
+it("groups usage by agent and carries each agent's building, so the city can attribute spend", async () => {
+  const f = await fixture(false);
+  const house = await f.create("/api/v1/agents", {
+    name: "Muse", buildingId: "agent_muse", projectId: f.project.id, providerId: f.provider.id,
+  });
+  const record = (agentId: string, usage: Record<string, unknown>) => {
+    const task = f.store.insert("tasks", { projectId: f.project.id, agentId, status: "completed" });
+    f.store.insert("usage_records", {
+      taskId: task.id, projectId: f.project.id, agentId, providerId: f.provider.id,
+      createdAt: new Date().toISOString(), costUsd: null, estimatedCostUsd: null, ...usage,
+    });
+  };
+  record(f.agent.id, { inputTokens: 100, outputTokens: 20, costUsd: 0.5 });
+  record(house.id, { inputTokens: 7, outputTokens: 3, costUsd: 0.25 });
+  record(house.id, { inputTokens: 1, outputTokens: 1, costUsd: null });
+  const summary = (await f.request("GET", `/api/v1/usage/summary?projectId=${f.project.id}`)).json();
+  const byBuilding = new Map(summary.agents.map((row: Record<string, unknown>) => [row.buildingId, row]));
+  expect(byBuilding.get("tower")).toMatchObject({ agentId: f.agent.id, name: "Tower", requests: 1, inputTokens: 100, outputTokens: 20, reportedCostUsd: 0.5 });
+  expect(byBuilding.get("agent_muse")).toMatchObject({ agentId: house.id, name: "Muse", requests: 2, inputTokens: 8, outputTokens: 4, reportedCostUsd: 0.25, unknownCostRequests: 1 });
+  // The per-agent rows must add up to the same traffic the totals report.
+  const agentRequests = summary.agents.reduce((sum: number, row: { requests: number }) => sum + row.requests, 0);
+  expect(agentRequests).toBe(summary.totals.requests);
+  const other = f.store.insert("projects", { name: "Empty district" });
+  expect((await f.request("GET", `/api/v1/usage/summary?projectId=${other.id}`)).json().agents).toEqual([]);
+});
+it("carries a building's id from agent creation into the usage summary, and still names building-less spend", async () => {
+  const f = await fixture(false);
+  const housed = await f.create("/api/v1/agents", {
+    name: "SignalBot", buildingId: "signal", projectId: f.project.id, providerId: f.provider.id,
+  });
+  expect(housed.buildingId).toBe("signal");
+  // The city looks its agent up by the building id it owns, so that lookup must agree.
+  expect((await f.request("GET", `/api/v1/agents?projectId=${f.project.id}&buildingId=signal`))
+    .json().items.map((agent: { id: string }) => agent.id)).toEqual([housed.id]);
+  // An API client's own agent belongs to no building: null is recorded, not a missing field.
+  const unhoused = await f.create("/api/v1/agents", {
+    name: "Script runner", projectId: f.project.id, providerId: f.provider.id,
+  });
+  expect(unhoused.buildingId).toBeNull();
+  const record = (agentId: string, usage: Record<string, unknown>) => {
+    const task = f.store.insert("tasks", { projectId: f.project.id, agentId, status: "completed" });
+    f.store.insert("usage_records", {
+      taskId: task.id, projectId: f.project.id, agentId, providerId: f.provider.id,
+      createdAt: new Date().toISOString(), costUsd: null, estimatedCostUsd: null, ...usage,
+    });
+  };
+  record(housed.id, { inputTokens: 40, outputTokens: 7, costUsd: 0.5 });
+  record(unhoused.id, { inputTokens: 5, outputTokens: 2, costUsd: 0.25 });
+  record(unhoused.id, { inputTokens: 1, outputTokens: 1, costUsd: 0.25 });
+  const summary = (await f.request("GET", `/api/v1/usage/summary?projectId=${f.project.id}`)).json();
+  const byAgent = new Map(summary.agents.map((row: { agentId: string }) => [row.agentId, row]));
+  expect(byAgent.get(housed.id)).toMatchObject({
+    buildingId: "signal", name: "SignalBot", requests: 1, inputTokens: 40, outputTokens: 7,
+  });
+  // Unattributed spend keeps its identity instead of vanishing from the report.
+  expect(byAgent.get(unhoused.id)).toMatchObject({
+    buildingId: null, name: "Script runner", requests: 2, inputTokens: 6, outputTokens: 3,
+  });
+  expect(summary.agents.reduce((sum: number, row: { requests: number }) => sum + row.requests, 0))
+    .toBe(summary.totals.requests);
+});
+it("backfills an explicit null building onto agents stored before the field was normalised", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "ghostgrid-building-id-"));
+  cleanup.push(async () => {
+    await rm(directory, { recursive: true, force: true });
+  });
+  const path = join(directory, "ghostgrid.sqlite");
+  const before = new Store(path);
+  const project = before.insert("projects", { name: "District" });
+  const provider = before.insert("providers", { name: "Mock", type: "mock" });
+  // The pre-0004 shape: the key is absent, so "no building" is indistinguishable from lost data.
+  const orphan = before.insert("agents", {
+    name: "SignalBot", projectId: project.id, providerId: provider.id, permissions: ["read"],
+  });
+  const housed = before.insert("agents", {
+    name: "Signal Lab", buildingId: "signal", projectId: project.id, providerId: provider.id, permissions: ["read"],
+  });
+  expect(Object.hasOwn(before.get("agents", orphan.id)!, "buildingId")).toBe(false);
+  before.db.exec("DELETE FROM schema_migrations WHERE version=4");
+  before.close();
+  const after = new Store(path);
+  cleanup.push(async () => after.close());
+  const migrated = after.get("agents", orphan.id)!;
+  expect(Object.hasOwn(migrated, "buildingId")).toBe(true);
+  expect(migrated.buildingId).toBeNull();
+  // An explicit building is untouched, and each agent still resolves to exactly one building.
+  expect(after.get("agents", housed.id)!.buildingId).toBe("signal");
+  expect(after.agentsForBuilding(project.id, "signal").map((agent) => agent.id)).toEqual([housed.id]);
+  expect(after.agentsForBuilding(project.id, orphan.id).map((agent) => agent.id)).toEqual([orphan.id]);
 });
 afterEach(async () => {
   for (const close of cleanup.splice(0).reverse()) await close();

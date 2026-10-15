@@ -10,12 +10,16 @@ import { useFrame } from '@react-three/fiber'
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { BuildingCtx } from '../BuildingCtx'
-import { flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
+import { facadeCols, facadeRows, flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
 
-// ---- design space: a 2.6 × 2.6 footprint (3×3 lot); the model scales in x/z to the real footprint ----
+// ---- design space: a 2.6 × 2.6 footprint, roof at 3.5; the model scales in x/z to the real
+// footprint and in y by BuildingCtx.height / BASE_H, so the hall, the stacks and the sawtooth
+// all grow together. Ground-level clutter (belt, crates, doors, yard) keeps its authored size —
+// stretching a conveyor with the roof would look wrong. ----
 const DESIGN = 2.6
-const WALL_H = 2.56 // hall walls; the roof slab sits on top
-const SLAB_TOP = 2.68 // the sawtooth teeth rise from here to the roof height (BuildingCtx.height)
+const BASE_H = 3.5 // roof height this model was authored for
+const WALL_H = 2.56 // hall walls (design); the roof slab sits on top
+const SLAB_TOP = 2.68 // design roof slab top; the sawtooth teeth rise from here to the roof height
 
 // hall bounds (the camera sees the +x and +z faces)
 const HX0 = -1.25
@@ -30,10 +34,19 @@ const HCZ = (HZ0 + HZ1) / 2
 const TEETH = 3
 const TOOTH_D = 0.55 // teeth cover z ∈ [HZ0, 0.4]; the flat strip in front carries the roof clutter
 
-const STACKS = [
-  { x: 0.88, z: -0.95, top: 4.6 },
-  { x: 0.88, z: -0.42, top: 4.1 },
+interface Stack {
+  x: number
+  z: number
+  top: number
+}
+const STACK_TOPS = [4.6, 4.1] // design heights; scaled by the vertical factor
+const STACK_XZ: [number, number][] = [
+  [0.88, -0.95],
+  [0.88, -0.42],
 ]
+// Stacks thicken with sqrt(v): a chimney scaled only in y turns into a wire.
+const stackWidth = (v: number) => 0.28 * Math.sqrt(v)
+const stacksFor = (v: number): Stack[] => STACK_XZ.map(([x, z], i) => ({ x, z, top: STACK_TOPS[i] * v }))
 
 // conveyor path: out of the hall door along +x, then a 90° turn toward +z into the output bin
 const BELT_X0 = 0.15 // starts inside the hall (hidden by the wall)
@@ -47,7 +60,7 @@ const CRATE_Y = 0.32 + CRATE / 2
 const MAX_CRATES = 6
 
 const PUFFS = 4 // smoke puffs per stack
-const SMOKE_N = PUFFS * STACKS.length
+const SMOKE_N = PUFFS * STACK_TOPS.length
 
 // ---- shared (module-level) geometry + materials: created once for every Forge ----
 // Unit right-triangle prism: x ∈ [-0.5, 0.5], z ∈ [-0.5, 0.5], y ∈ [0, 1]. The slope rises toward +z.
@@ -96,26 +109,32 @@ type Box = [x: number, y: number, z: number, sx: number, sy: number, sz: number]
 type Prop = [x: number, y: number, z: number, sx: number, sy: number, sz: number, color: string, rotX?: number]
 
 const C = PALETTE
-// lit props (one InstancedMesh, per-instance color)
-const PROPS: Prop[] = [
+// lit props (one InstancedMesh, per-instance color). `v` = vertical factor; `rf` lifts a roof
+// prop from the design slab top to the real one so the clutter always sits on the roof.
+function propsFor(v: number, stacks: Stack[]): Prop[] {
+  const slabTop = SLAB_TOP * v
+  const rf = (y: number) => y - SLAB_TOP + slabTop
+  const antH = 1.9 * v
+  const sw = Math.sqrt(v) // cross-section factor for the thin vertical props
+  return [
   [0, 0.03, 0, 2.6, 0.06, 2.6, C.concrete], // yard slab
-  [HCX, 1.0, HCZ, HW + 0.16, 0.12, HD + 0.16, C.dusk], // ledge band (overhang)
-  [HCX, 2.62, HCZ, HW + 0.12, 0.12, HD + 0.12, C.steel], // roof slab (overhang)
+  [HCX, 1.0 * v, HCZ, HW + 0.16, 0.12, HD + 0.16, C.dusk], // ledge band (overhang)
+  [HCX, slabTop - 0.06, HCZ, HW + 0.12, 0.12, HD + 0.12, C.steel], // roof slab (overhang)
   [HX1 + 0.01, 0.34, BELT_Z, 0.04, 0.6, 0.5, C.void], // loading door (+x), the belt runs through it
   [-1.0, 0.3, HZ1 + 0.01, 0.3, 0.56, 0.04, C.void], // side door (+z)
-  [0, 3.25, 0, 0.1, 0.7, 0.1, C.steel], // mast under the shell's roof beacon
-  [-0.1, 2.81, 0.58, 0.3, 0.26, 0.24, C.grey], // AC units
-  [0.22, 2.78, 0.6, 0.2, 0.2, 0.2, C.grey],
-  [-1.0, 2.8, 0.55, 0.3, 0.24, 0.26, C.dusk], // water tank stand, tank, cap
-  [-1.0, 3.1, 0.55, 0.32, 0.36, 0.3, C.haze],
-  [-1.0, 3.31, 0.55, 0.2, 0.06, 0.18, C.steel],
-  [-0.6, 2.78, 0.6, 0.1, 0.2, 0.1, C.steel], // dish post + dish (tilted toward the street)
-  [-0.6, 2.92, 0.62, 0.32, 0.06, 0.32, C.grey, 0.6],
-  [-1.12, 3.6, -1.1, 0.08, 1.9, 0.08, C.steel], // antenna
-  [STACKS[0].x, 0.22, STACKS[0].z, 0.44, 0.44, 0.44, C.dusk], // stack bases + rims
-  [STACKS[1].x, 0.22, STACKS[1].z, 0.44, 0.44, 0.44, C.dusk],
-  [STACKS[0].x, STACKS[0].top - 0.05, STACKS[0].z, 0.36, 0.1, 0.36, C.dusk],
-  [STACKS[1].x, STACKS[1].top - 0.05, STACKS[1].z, 0.36, 0.1, 0.36, C.dusk],
+  [0, rf(3.25) + 0.35 * (v - 1), 0, 0.1, 0.7 * v, 0.1, C.steel], // mast under the shell's roof beacon
+  [-0.1, rf(2.81), 0.58, 0.3, 0.26, 0.24, C.grey], // AC units
+  [0.22, rf(2.78), 0.6, 0.2, 0.2, 0.2, C.grey],
+  [-1.0, rf(2.8), 0.55, 0.3, 0.24, 0.26, C.dusk], // water tank stand, tank, cap
+  [-1.0, rf(3.1), 0.55, 0.32, 0.36, 0.3, C.haze],
+  [-1.0, rf(3.31), 0.55, 0.2, 0.06, 0.18, C.steel],
+  [-0.6, rf(2.78), 0.6, 0.1, 0.2, 0.1, C.steel], // dish post + dish (tilted toward the street)
+  [-0.6, rf(2.92), 0.62, 0.32, 0.06, 0.32, C.grey, 0.6],
+  [-1.12, slabTop + antH / 2 - 0.03, -1.1, 0.08 * sw, antH, 0.08 * sw, C.steel], // antenna
+  [stacks[0].x, 0.22 * sw, stacks[0].z, 0.44 * sw, 0.44 * sw, 0.44 * sw, C.dusk], // stack bases + rims
+  [stacks[1].x, 0.22 * sw, stacks[1].z, 0.44 * sw, 0.44 * sw, 0.44 * sw, C.dusk],
+  [stacks[0].x, stacks[0].top - 0.05 * sw, stacks[0].z, 0.36 * sw, 0.1 * sw, 0.36 * sw, C.dusk],
+  [stacks[1].x, stacks[1].top - 0.05 * sw, stacks[1].z, 0.36 * sw, 0.1 * sw, 0.36 * sw, C.dusk],
   [(BELT_X0 + TURN_X + 0.16) / 2, 0.27, BELT_Z, TURN_X + 0.16 - BELT_X0, 0.1, 0.32, C.night], // belt along +x
   [TURN_X, 0.27, (BELT_Z - 0.16 + END_Z) / 2, 0.32, 0.1, END_Z - BELT_Z + 0.16, C.night], // belt along +z
   [0.7, 0.12, BELT_Z, 0.08, 0.22, 0.26, C.dusk], // belt legs
@@ -124,28 +143,35 @@ const PROPS: Prop[] = [
   [-0.55, 0.16, 1.05, 0.32, 0.3, 0.3, C.haze], // finished crates in the front yard
   [-0.55, 0.41, 1.05, 0.22, 0.2, 0.22, C.haze],
   [-0.2, 0.13, 1.08, 0.24, 0.24, 0.24, C.steel],
-]
+  ]
+}
 
 // blue neon trims (one InstancedMesh, one cached unlit material → bloom)
-const NEON: Box[] = [
-  [HX1, WALL_H / 2, HZ1, 0.1, WALL_H, 0.1], // vertical corner strips (the 3 corners the camera sees)
-  [HX1, WALL_H / 2, HZ0, 0.1, WALL_H, 0.1],
-  [HX0, WALL_H / 2, HZ1, 0.1, WALL_H, 0.1],
-  [HCX, 2.62, HZ1 + 0.07, HW + 0.14, 0.1, 0.02], // roof slab edge
-  [HX1 + 0.07, 2.62, HCZ, 0.02, 0.1, HD + 0.14],
-  [HCX, 1.0, HZ1 + 0.09, HW + 0.18, 0.1, 0.02], // ledge edge
-  [HX1 + 0.09, 1.0, HCZ, 0.02, 0.1, HD + 0.18],
+function neonFor(v: number, stacks: Stack[]): Box[] {
+  const wallH = WALL_H * v
+  const slabTop = SLAB_TOP * v
+  const antTip = slabTop + 1.9 * v
+  const sw = Math.sqrt(v)
+  return [
+  [HX1, wallH / 2, HZ1, 0.1, wallH, 0.1], // vertical corner strips (the 3 corners the camera sees)
+  [HX1, wallH / 2, HZ0, 0.1, wallH, 0.1],
+  [HX0, wallH / 2, HZ1, 0.1, wallH, 0.1],
+  [HCX, slabTop - 0.06, HZ1 + 0.07, HW + 0.14, 0.1, 0.02], // roof slab edge
+  [HX1 + 0.07, slabTop - 0.06, HCZ, 0.02, 0.1, HD + 0.14],
+  [HCX, 1.0 * v, HZ1 + 0.09, HW + 0.18, 0.1, 0.02], // ledge edge
+  [HX1 + 0.09, 1.0 * v, HCZ, 0.02, 0.1, HD + 0.18],
   [HX1 + 0.03, 0.68, BELT_Z, 0.04, 0.08, 0.6], // loading door header
-  [STACKS[0].x, 4.0, STACKS[0].z, 0.34, 0.1, 0.34], // stack bands
-  [STACKS[0].x, 3.0, STACKS[0].z, 0.34, 0.1, 0.34],
-  [STACKS[1].x, 3.5, STACKS[1].z, 0.34, 0.1, 0.34],
+  [stacks[0].x, stacks[0].top * 0.87, stacks[0].z, 0.34 * sw, 0.1, 0.34 * sw], // stack bands
+  [stacks[0].x, stacks[0].top * 0.65, stacks[0].z, 0.34 * sw, 0.1, 0.34 * sw],
+  [stacks[1].x, stacks[1].top * 0.85, stacks[1].z, 0.34 * sw, 0.1, 0.34 * sw],
   [(HX1 + TURN_X - 0.16) / 2, 0.27, BELT_Z + 0.17, TURN_X - 0.16 - HX1, 0.1, 0.02], // belt side strips
   [TURN_X + 0.17, 0.27, (BELT_Z - 0.16 + 0.95) / 2, 0.02, 0.1, 0.95 - BELT_Z + 0.16],
-  [-1.12, 4.6, -1.1, 0.14, 0.14, 0.14], // antenna tip
+  [-1.12, antTip, -1.1, 0.14 * sw, 0.14 * sw, 0.14 * sw], // antenna tip
   [HCX, 1.95, HZ1 + 0.02, 1.52, 0.08, 0.03], // sign frame
   [HCX, 1.53, HZ1 + 0.02, 1.52, 0.08, 0.03],
   [TURN_X, 0.66, 1.3, 0.42, 0.08, 0.02], // bin rim
-]
+  ]
+}
 
 function setBox(m: THREE.InstancedMesh, i: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, rx = 0) {
   tmp.position.set(x, y, z)
@@ -158,6 +184,14 @@ function setBox(m: THREE.InstancedMesh, i: number, x: number, y: number, z: numb
 export function DeepSeekForge() {
   const { building, footprint, height, statusRef, offlineRef } = useContext(BuildingCtx)
   const s = Math.min(footprint.w, footprint.d) / DESIGN
+  // vertical factor: hall, stacks and sawtooth all grow with the roof height
+  const v = height / BASE_H
+  const wallH = WALL_H * v
+  const slabTop = SLAB_TOP * v
+  const stacks = useMemo(() => stacksFor(v), [v])
+  const stackW = stackWidth(v)
+  const propBoxes = useMemo(() => propsFor(v, stacks), [v, stacks])
+  const neonBoxes = useMemo(() => neonFor(v, stacks), [v, stacks])
 
   // batch jobs = running sessions (read in useFrame through a ref, never per-frame state)
   let running = 0
@@ -167,7 +201,7 @@ export function DeepSeekForge() {
     runningRef.current = running
   }, [running])
 
-  const facade = useFacadeMaterial({ cols: 6, rows: 8, seed: 4, tint: PALETTE.blue })
+  const facade = useFacadeMaterial({ cols: facadeCols(HW * s), rows: facadeRows(wallH), seed: 4, tint: PALETTE.blue })
   const hallMats = useMemo(() => {
     const roof = flatMat(PALETTE.dusk)
     return [facade, facade, roof, roof, facade, facade] // [+x, -x, +y, -y, +z, -z]
@@ -205,7 +239,7 @@ export function DeepSeekForge() {
   useLayoutEffect(() => {
     const p = props.current
     if (p) {
-      PROPS.forEach((b, i) => {
+      propBoxes.forEach((b, i) => {
         setBox(p, i, b[0], b[1], b[2], b[3], b[4], b[5], b[7])
         p.setColorAt(i, tmpColor.set(b[6]))
       })
@@ -215,7 +249,7 @@ export function DeepSeekForge() {
     }
     const n = neon.current
     if (n) {
-      NEON.forEach((b, i) => setBox(n, i, b[0], b[1], b[2], b[3], b[4], b[5]))
+      neonBoxes.forEach((b, i) => setBox(n, i, b[0], b[1], b[2], b[3], b[4], b[5]))
       n.instanceMatrix.needsUpdate = true
       n.computeBoundingSphere()
     }
@@ -227,17 +261,17 @@ export function DeepSeekForge() {
     }
     const cm = crates.current
     if (cm) cm.count = 0
-  }, [])
+  }, [propBoxes, neonBoxes])
 
   // sawtooth teeth: peaks land exactly on the roof height so drones and the beacon line up
   useLayoutEffect(() => {
     const m = teeth.current
     if (!m) return
-    const rise = Math.max(0.2, height - SLAB_TOP)
-    for (let i = 0; i < TEETH; i++) setBox(m, i, HCX, SLAB_TOP, HZ0 + TOOTH_D * (i + 0.5), HW, rise, TOOTH_D)
+    const rise = Math.max(0.2, height - slabTop)
+    for (let i = 0; i < TEETH; i++) setBox(m, i, HCX, slabTop, HZ0 + TOOTH_D * (i + 0.5), HW, rise, TOOTH_D)
     m.instanceMatrix.needsUpdate = true
     m.computeBoundingSphere()
-  }, [height])
+  }, [height, slabTop])
 
   useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime
@@ -293,11 +327,11 @@ export function DeepSeekForge() {
         a.smoke = (a.smoke + (status === 'working' ? 0.45 : 0.2) * dt) % 1
         const tint = status === 'error' ? C_SMOKE_ERR : status === 'working' ? C_SMOKE_HOT : C_GREY
         for (let i = 0; i < SMOKE_N; i++) {
-          const si = i % STACKS.length
-          const st = STACKS[si]
-          const life = (a.smoke + (Math.floor(i / STACKS.length) + si * 0.5) / PUFFS) % 1
-          const size = (0.16 + 0.24 * life) * (life > 0.8 ? (1 - life) / 0.2 : 1)
-          setBox(sm, i, st.x - life * 0.35, st.top + 0.12 + Math.floor(life * 10) * 0.12, st.z - life * 0.2, size, size, size)
+          const si = i % stacks.length
+          const st = stacks[si]
+          const life = (a.smoke + (Math.floor(i / stacks.length) + si * 0.5) / PUFFS) % 1
+          const size = (0.16 + 0.24 * life) * (life > 0.8 ? (1 - life) / 0.2 : 1) * Math.sqrt(v)
+          setBox(sm, i, st.x - life * 0.35, st.top + 0.12 + Math.floor(life * 14) * 0.12, st.z - life * 0.2, size, size, size)
           sm.setColorAt(i, tmpColor.copy(tint).lerp(C_NIGHT, life))
         }
         sm.instanceMatrix.needsUpdate = true
@@ -309,21 +343,21 @@ export function DeepSeekForge() {
   return (
     <group scale={[s, 1, s]}>
       {/* factory hall: facade on the walls, flat roof on top */}
-      <mesh geometry={UNIT_BOX} material={hallMats} position={[HCX, WALL_H / 2, HCZ]} scale={[HW, WALL_H, HD]} castShadow receiveShadow />
+      <mesh geometry={UNIT_BOX} material={hallMats} position={[HCX, wallH / 2, HCZ]} scale={[HW, wallH, HD]} castShadow receiveShadow />
       {/* sawtooth roof: 3 prisms, one draw call per material */}
       <instancedMesh ref={teeth} args={[TOOTH_GEO, teethMats, TEETH]} castShadow receiveShadow />
       {/* smokestacks */}
-      {STACKS.map((st) => (
-        <mesh key={st.z} geometry={UNIT_BOX} material={STACK_MAT} position={[st.x, st.top / 2, st.z]} scale={[0.28, st.top, 0.28]} castShadow />
+      {stacks.map((st) => (
+        <mesh key={st.z} geometry={UNIT_BOX} material={STACK_MAT} position={[st.x, st.top / 2, st.z]} scale={[stackW, st.top, stackW]} castShadow />
       ))}
       {/* static clutter + trims */}
-      <instancedMesh ref={props} args={[UNIT_BOX, PROP_MAT, PROPS.length]} receiveShadow />
-      <instancedMesh ref={neon} args={[UNIT_BOX, NEON_MAT, NEON.length]} />
+      <instancedMesh ref={props} args={[UNIT_BOX, PROP_MAT, propBoxes.length]} receiveShadow />
+      <instancedMesh ref={neon} args={[UNIT_BOX, NEON_MAT, neonBoxes.length]} />
       {/* sign on the +z wall */}
       <mesh geometry={PLANE} material={signMat} position={[HCX, 1.74, HZ1 + 0.015]} scale={[1.44, 0.32, 1]} />
       {/* aviation lights */}
       <group ref={lights}>
-        {STACKS.map((st) => (
+        {stacks.map((st) => (
           <mesh key={st.z} geometry={UNIT_BOX} material={AVIATION_MAT} position={[st.x, st.top + 0.08, st.z]} scale={0.14} raycast={noRaycast} />
         ))}
       </group>

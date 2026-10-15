@@ -1,5 +1,5 @@
 // Codex Tower — 64x112 logical px. Office tower, three bays of dense windows, rooftop helipad
-// (drone dock), signal mast, neon "CODEX" sign. Lit edge faces the Router Spire (right).
+// (drone dock), signal mast, neon "CODEX" sign. Lit edge faces the centre plaza (right).
 import { B, PixelText, WindowGrid } from './parts'
 
 const N = 'var(--gg-night)'

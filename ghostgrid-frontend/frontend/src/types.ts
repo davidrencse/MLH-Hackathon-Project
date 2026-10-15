@@ -1,29 +1,48 @@
 // Shared contracts for Ghost Grid. City, console, store and api all import from here.
 
-// Default buildings use these ids: 'router' | 'codex' | 'claude' | 'deepseek' | 'security'.
+// Default buildings use these ids: 'codex' | 'claude' | 'deepseek' | 'security'.
 // Player-built buildings get generated ids ("b_xxx"), so the id type is string.
 export type BuildingId = string
 
-export type BuildingType = 'router' | 'codex' | 'cursor' | 'claude' | 'deepseek' | 'groq' | 'security' | 'bot' | 'library'
+export type BuildingType = 'codex' | 'cursor' | 'claude' | 'deepseek' | 'groq' | 'security' | 'bot' | 'library' | 'quant' | 'agent'
 
 export type BuildingStatus = 'idle' | 'working' | 'error' | 'needs_approval'
 
 // A custom bot the player builds. The backend team connects it later via `endpoint`.
 export type BotKind = 'trading' | 'webhook' | 'scraper' | 'custom'
 
-// Where a bot came from when it was seeded out of the backend's demo catalog
-// (ghostgrid-backend/examples/bots/catalog.json) instead of the NEW BOT dialog.
-export interface BotSource {
-  botId: string // catalog id, e.g. "paper-trader"
-  catalogKind: string // the catalog's own kind: trading | security | monitoring | automation
-  runtime: 'python' | 'node'
-  entry: string // script path inside ghostgrid-backend/examples/bots
-  args: string[]
-  district: string
-  paperMode: boolean
-  networkRequired: boolean
-  emits: string[] // NDJSON event types the script writes to stdout
-  inspiredBy: { name: string; url: string }
+// ---- Wall Street ----
+// Each Wall Street tower is one open-source quant trading project on GitHub. The static half
+// (ticker, strategy, lot, accent) is city layout; `stats` is live repository metadata served by
+// the backend's /api/v1/wallstreet. Nothing is cloned or executed — this is read-only metadata.
+export interface QuantRepoStats {
+  description: string | null
+  language: string | null
+  stars: number
+  forks: number
+  openIssues: number
+  watchers: number
+  topics: string[]
+  license: string | null
+  pushedAt: string | null // ISO
+  homepage: string | null
+}
+
+export interface QuantRepo {
+  slug: string // 'freqtrade'
+  name: string // building name, "Freqtrade Exchange"
+  short: string // pixel label, <= 10 chars
+  lot: number
+  accent: string
+  ticker: string // exchange ticker on the building's band
+  strategy: string
+  asset: string
+  url: string // https://github.com/<owner>/<name>
+  repo: { owner: string; name: string }
+  status: 'live' | 'cached' | 'static' // where `stats` came from
+  stats: QuantRepoStats | null
+  checkedAt: string | null
+  error?: string
 }
 
 export interface BotConfig {
@@ -32,7 +51,6 @@ export interface BotConfig {
   schedule: string // e.g. "every 5m", "on event"
   notes: string
   color: string // neon accent, one of the palette hexes
-  source?: BotSource // set for catalog-seeded bots, absent for player-built ones
 }
 
 // Where a session's work actually happens: on this machine, or against a hosted provider.
@@ -42,7 +60,7 @@ export type SessionMode = 'local' | 'connected'
 // 'local-*' run on the player's machine; the rest call a provider API with that provider's key.
 export type RuntimeId = 'local-cli' | 'local-ollama' | 'openai' | 'anthropic' | 'deepseek' | 'groq'
 
-// A working session inside an agent building (Codex / Claude / DeepSeek / Groq / Router).
+// A working session inside an agent building (Codex / Claude / DeepSeek / Groq).
 // Sessions are the desks in the building's office (src/city/office).
 export interface Session {
   id: string
@@ -58,14 +76,15 @@ export interface Session {
 export interface Building {
   id: BuildingId
   type: BuildingType
-  name: string // "Router Spire"
-  short: string // "ROUTER"
+  name: string // "Codex Tower"
+  short: string // "CODEX"
   role: string // one line, shown in panels
   model: string // default model id, e.g. "gpt-5-codex"
   status: BuildingStatus
   lot: number // index into LOTS (src/city3d/world.ts)
   sessions: Session[]
   bot?: BotConfig // only for type 'bot'
+  repo?: QuantRepo // only for type 'quant' (Wall Street)
   builtAt: number
 }
 
@@ -79,7 +98,7 @@ export interface LogEntry {
   text: string
 }
 
-// Task phases for the main demo flow (CommandBar → drone → work → approval → result)
+// Task phases for the main demo flow (dispatch → drone → work → approval → result)
 export type TaskPhase = 'dispatch' | 'working' | 'approval' | 'done' | 'rejected'
 
 export interface TaskResult {
@@ -110,6 +129,14 @@ export interface Flight {
   to: BuildingId
   durationMs: number
   startedAt: number
+  /**
+   * A drone sent home because its approval was rejected; it trails grey smoke.
+   *
+   * This used to be read from a single global `task.phase === 'rejected'`, which made every
+   * drone in the air smoke at once and, since nothing ever set that task, meant none ever did.
+   * It belongs to the one flight it describes.
+   */
+  rejected?: boolean
 }
 
 // ---- Console ----
@@ -169,14 +196,6 @@ export interface ProviderKey {
 }
 
 // Ghost Grid platform keys (issued by "our" API, mock). Full secret shown once on create.
-export interface PlatformKey {
-  id: string
-  name: string
-  masked: string // "gg-…a1b2"
-  createdAt: number
-  lastUsed: number | null
-  revoked: boolean
-}
 
 // Per-building choice of which provider key + model to use
 export interface BuildingConfig {

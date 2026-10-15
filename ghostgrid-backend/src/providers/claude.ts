@@ -10,7 +10,16 @@ import {
   type ExecutionInput,
   type Emit,
   type ExecutionResult,
+  type Usage,
 } from "./types.js";
+import { attachUsage, emptyUsage, knownCount, normalizeUsage, sumUsage } from "./usage.js";
+/** Anthropic's usage block, as both assistant frames and the final result carry it. */
+interface AnthropicUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+}
 interface Message {
   type: string;
   subtype?: string;
@@ -18,9 +27,10 @@ interface Message {
   result?: string;
   is_error?: boolean;
   errors?: string[];
-  usage?: { input_tokens?: number; output_tokens?: number };
+  usage?: AnthropicUsage;
   total_cost_usd?: number;
   message?: {
+    usage?: AnthropicUsage;
     content: {
       type: string;
       text?: string;
@@ -29,6 +39,26 @@ interface Message {
       input?: unknown;
     }[];
   };
+}
+/**
+ * Anthropic reports cached prompt tokens *outside* input_tokens, so the prompt the model
+ * actually read is input_tokens + cache_read + cache_creation. Reading input_tokens alone
+ * undercounts a cached agent turn by orders of magnitude (a 20k-token cached prompt
+ * reports as single digits).
+ */
+function anthropicUsage(raw: AnthropicUsage | undefined): Usage | null {
+  if (!raw) return null;
+  const read = knownCount(raw.cache_read_input_tokens) ? raw.cache_read_input_tokens : 0;
+  const created = knownCount(raw.cache_creation_input_tokens) ? raw.cache_creation_input_tokens : 0;
+  const usage = normalizeUsage({
+    inputTokens: knownCount(raw.input_tokens) ? raw.input_tokens + read + created : null,
+    outputTokens: raw.output_tokens,
+    cachedInputTokens: knownCount(raw.cache_read_input_tokens) ? read : null,
+    // SDK total_cost_usd is an estimated cumulative session total, including prior
+    // resumed turns. It is neither billed nor task-local, so no cost is reported here.
+    costUsd: null,
+  });
+  return usage.inputTokens === null && usage.outputTokens === null ? null : usage;
 }
 interface SDK {
   getSessionInfo?(id: string, options: { dir?: string }): Promise<unknown | undefined>;
@@ -274,6 +304,9 @@ export class ClaudeAdapter implements ProviderAdapter {
       return decision;
     };
     let result: ExecutionResult | undefined;
+    // Per-model-call tokens seen so far. The final result's own usage is authoritative
+    // for a completed turn; this is what a cancelled or failed turn can still report.
+    let streamed: Usage = emptyUsage();
     signal.addEventListener("abort", abort, { once: true });
     if (signal.aborted) abort();
     try {
@@ -356,30 +389,42 @@ export class ClaudeAdapter implements ProviderAdapter {
       })) {
         if (message.type === "system" && message.subtype === "init")
           emit("agent.connected", { sessionId: message.session_id });
-        if (message.type === "assistant")
+        if (message.type === "assistant") {
+          streamed = sumUsage(streamed, anthropicUsage(message.message?.usage));
           for (const block of message.message?.content ?? []) {
             if (block.type === "text")
               emit("agent.output", { text: block.text });
             if (block.type === "tool_use")
               emit("agent.tool.started", { id: block.id, name: block.name });
           }
+        }
         if (message.type === "result") {
+          // A failed or abandoned turn still spent its tokens; the result block reports
+          // them, so they leave with the error instead of being dropped.
+          const reported = anthropicUsage(message.usage) ?? streamed;
           if (input.sessionId && message.is_error && isMissingSession(new Error([message.result, ...(message.errors ?? [])].filter(Boolean).join("\n"))))
             throw new ProviderError("Native session not found");
-          if (message.is_error || message.subtype !== "success")
-            throw new ProviderError(
-              `Claude execution failed: ${message.subtype ?? "unknown"}`,
+          if (message.is_error || message.subtype !== "success") {
+            // `is_error` can be set on a turn whose subtype is still "success", and reporting
+            // only the subtype produced "Claude execution failed: success" — a message that
+            // tells the operator nothing and hides the reason, which the result text carries.
+            const reason = [message.result, ...(message.errors ?? [])]
+              .filter(Boolean)
+              .join("\n")
+              .trim();
+            throw attachUsage(
+              new ProviderError(
+                reason
+                  ? `Claude execution failed (${message.subtype ?? "unknown"}): ${reason.slice(0, 500)}`
+                  : `Claude execution failed: ${message.subtype ?? "unknown"}`,
+              ),
+              reported,
             );
+          }
           result = {
             output: message.result ?? "",
             ...(message.session_id ? { sessionId: message.session_id } : {}),
-            usage: {
-              inputTokens: message.usage?.input_tokens ?? null,
-              outputTokens: message.usage?.output_tokens ?? null,
-              // SDK total_cost_usd is an estimated cumulative session total,
-              // including prior resumed turns. It is neither billed nor task-local.
-              costUsd: null,
-            },
+            usage: reported,
           };
         }
       }
@@ -387,6 +432,9 @@ export class ClaudeAdapter implements ProviderAdapter {
       if (!result)
         throw new ProviderError("Claude ended without a final result");
       return result;
+    } catch (error) {
+      // Cancellation mid-turn keeps whatever the assistant frames already accounted for.
+      throw attachUsage(error, streamed);
     } finally {
       signal.removeEventListener("abort", abort);
     }

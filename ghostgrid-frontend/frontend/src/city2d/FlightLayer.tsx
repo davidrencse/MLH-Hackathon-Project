@@ -78,7 +78,6 @@ let puffSeq = 0
 
 function FlightSprite({ flight }: { flight: StageFlight }) {
   const reduced = useReducedMotion()
-  const rejected = useGrid((s) => s.task?.phase === 'rejected')
   const from = dockPt(flight.from)
   const to = dockPt(flight.to)
   const path = useMemo(
@@ -101,7 +100,7 @@ function FlightSprite({ flight }: { flight: StageFlight }) {
   }, [p, flight.durationMs, flight.startedAt])
 
   // A drone flying home after a rejected approval trails grey smoke.
-  const damaged = flight.kind === 'drone' && rejected
+  const damaged = flight.kind === 'drone' && flight.rejected === true
   const smoky = damaged && !reduced
   const [puffs, setPuffs] = useState<{ id: number; x: number; y: number }[]>([])
   useEffect(() => {
@@ -162,7 +161,7 @@ export function FlightLayer() {
   // Filter outside the selector: a new array from the selector would re-render forever (zustand v5).
   const flights = useGrid((s) => s.flights).filter(onStage)
   const droneOut = flights.some((f) => f.kind !== 'packet')
-  const home = dockPt('router')
+  const home = dockPt('codex')
 
   return (
     <div className="pointer-events-none absolute inset-0 z-30" aria-hidden>

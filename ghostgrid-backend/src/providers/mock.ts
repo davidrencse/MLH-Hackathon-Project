@@ -37,7 +37,10 @@ export class MockAdapter implements ProviderAdapter {
     return {
       output,
       sessionId: input.sessionId ?? randomUUID(),
-      usage: { inputTokens: null, outputTokens: null },
+      // No model ran, so there is nothing to count. Null (not 0) by design: the mock
+      // never invents token counts, and its requests are honestly reported as
+      // unknownTokenRequests rather than as free ones.
+      usage: { inputTokens: null, outputTokens: null, cachedInputTokens: null },
     };
   }
 }

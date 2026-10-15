@@ -11,7 +11,7 @@ import { useFrame } from '@react-three/fiber'
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { BuildingCtx } from '../BuildingCtx'
-import { flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
+import { facadeCols, facadeRows, flatMat, neonMat, PALETTE, signTexture, UNIT_BOX, useFacadeMaterial } from '../materials'
 
 // ---- design space: a 1.6 × 1.6 footprint (2×2 lot); the model scales in x/z to the real footprint ----
 const DESIGN = 1.6
@@ -127,7 +127,7 @@ export function GroqSpeedway() {
   const upperY = hallH + 0.12
   const upperH = Math.max(0.3, height - 0.12 - upperY)
 
-  const facade = useFacadeMaterial({ cols: 5, rows: 6, seed: 11, tint: VIOLET })
+  const facade = useFacadeMaterial({ cols: facadeCols(HW * s), rows: facadeRows(hallH), seed: 11, tint: VIOLET })
   const hallMats = useMemo(() => {
     const roof = flatMat(PALETTE.dusk)
     return [facade, facade, roof, roof, facade, facade] // [+x, -x, +y, -y, +z, -z]

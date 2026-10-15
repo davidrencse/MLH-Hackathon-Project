@@ -353,6 +353,44 @@ describe("execution engine", () => {
       await cleanup();
     }
   });
+  it("keeps a session's stored history bounded as turns accumulate", async () => {
+    // A session's whole history lives in one JSON column that is rewritten every turn, and an
+    // adapter may return up to 8,000,000 characters per reply, so an uncapped history makes the
+    // row grow without limit and the rewrites quadratic. The newest turn always survives.
+    const reply = "x".repeat(600_000);
+    const { engine, store, cleanup } = await setup(async () => ({ output: reply }));
+    try {
+      const session = store.insert("sessions", {
+        projectId: "project",
+        agentId: "agent",
+        status: "active",
+        messages: [{ role: "user", content: "oldest turn" }],
+      });
+      engine.start();
+      for (let turn = 0; turn < 3; turn++) {
+        const task = engine.submitTask({
+          projectId: "project",
+          agentId: "agent",
+          sessionId: session.id,
+          prompt: `turn ${turn}`,
+        });
+        await waitFor(() => store.get("tasks", task.id)?.status === "completed");
+      }
+      const messages = store.get("sessions", session.id)!.messages as {
+        role: string;
+        content: string;
+      }[];
+      const characters = messages.reduce((total, m) => total + m.content.length, 0);
+      expect(characters).toBeLessThanOrEqual(1_000_000);
+      expect(messages.length).toBeLessThanOrEqual(200);
+      // The last exchange is intact and the first turn has aged out.
+      expect(messages.at(-2)).toEqual({ role: "user", content: "turn 2" });
+      expect(messages.at(-1)).toEqual({ role: "assistant", content: reply });
+      expect(messages.some((m) => m.content === "oldest turn")).toBe(false);
+    } finally {
+      await cleanup();
+    }
+  });
   it("preserves explicit workflow sessions, context and execution controls", async () => {
     let received: any;
     const { engine, store, cleanup } = await setup(async (input: any) => {
@@ -1003,9 +1041,11 @@ describe("execution engine", () => {
       expect(store.get("tasks", missing.id)?.usage).toEqual({
         inputTokens: null,
         outputTokens: null,
+        cachedInputTokens: null,
         costUsd: null,
         estimatedCostUsd: null,
         costSource: "unknown",
+        pricingSource: "provider",
       });
       expect(store.list("usage_records")).toHaveLength(2);
     } finally {

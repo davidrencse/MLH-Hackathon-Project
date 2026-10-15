@@ -1,32 +1,50 @@
+// Why: clicking someone inside the 3D room opens this over the canvas. It is the same assignment
+// control as the staffing board and the org chart, so it must resolve a person's project the same
+// way they do — an explicit assignment first, otherwise the folder their terminal is really open
+// in. It used to read `assign` on its own, so anyone standing in a real project was reported here
+// as unassigned, and the lane they were in was not even offered in the list.
 import { useState } from 'react'
-import { useOrg } from './org'
+import { X } from 'lucide-react'
+import { shortRole, useOrg } from './org'
+import { BENCH, laneForId, laneLabel, type Lane, type Staffed } from './lanes'
 
-const BADGE: Record<string, string> = { Manager: '#ff004d', 'Team Lead': '#ffa300', Engineer: '#29adff' }
 
-export function OrgPanel({ nameOf }: { nameOf: (id?: string) => string }) {
-  const { picked, pick, projects, assign, assignTo, addProject } = useOrg()
+export function OrgPanel({ nameOf, lanes, crew }: {
+  nameOf: (id?: string) => string
+  lanes: Lane[]
+  crew?: Map<string, Staffed>
+}) {
+  const { picked, pick, assign, assignTo, addProject } = useOrg()
   const [draft, setDraft] = useState('')
   if (!picked) return null
-  const current = assign[picked.id] ?? ''
-  const box = { position: 'absolute' as const, right: 12, top: 12, zIndex: 50, width: 260, background: '#fffbe8', color: '#111', border: '3px solid #111', boxShadow: '5px 5px 0 #111', padding: 12, font: "10px/1.6 'Press Start 2P', monospace" }
+  const current = laneForId(picked.id, crew, assign, lanes)
+  const name = laneLabel(current, lanes)
   return (
-    <div style={box} onPointerDown={(e) => e.stopPropagation()}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <b style={{ fontSize: 11 }}>{picked.name}</b>
-        <button onClick={() => pick(null)} style={{ font: 'inherit', background: 'none', border: 0, cursor: 'pointer' }}>✕</button>
-      </div>
-      <div style={{ display: 'inline-block', margin: '6px 0', padding: '2px 6px', background: BADGE[picked.role], color: '#fff' }}>{picked.role}</div>
-      <div>Reports to: {picked.reportsTo ? nameOf(picked.reportsTo) : 'CEO (you)'}</div>
-      <div style={{ marginTop: 8 }}>Project:</div>
-      <select value={current} onChange={(e) => assignTo(picked.id, e.target.value)} style={{ width: '100%', font: 'inherit', padding: 4, border: '2px solid #111', background: '#fff' }}>
-        <option value="">— Unassigned (bench) —</option>
-        {projects.map((p) => <option key={p} value={p}>{p}</option>)}
+    <div className="gg-room-panel" onPointerDown={(event) => event.stopPropagation()}>
+      <header>
+        <h3>{picked.name}</h3>
+        <button type="button" aria-label="Close" onClick={() => pick(null)}><X size={14} strokeWidth={2.5} /></button>
+      </header>
+      <p><span className="gg-role" data-role={picked.role}>{shortRole(picked.role)}</span> reports to {picked.reportsTo ? nameOf(picked.reportsTo) : 'CEO (you)'}</p>
+      <label htmlFor="room-panel-project" className="native-label">Project</label>
+      <select id="room-panel-project" value={current} onChange={(event) => assignTo(picked.id, event.target.value)}>
+        <option value={BENCH}>— Bench —</option>
+        {lanes.map((lane) => <option key={lane.id} value={lane.id}>{lane.name}</option>)}
       </select>
-      <form onSubmit={(e) => { e.preventDefault(); addProject(draft); if (draft.trim()) assignTo(picked.id, draft.trim()); setDraft('') }} style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="New project…" style={{ flex: 1, minWidth: 0, font: 'inherit', padding: 4, border: '2px solid #111' }} />
-        <button style={{ font: 'inherit', border: '2px solid #111', background: '#ffec27', cursor: 'pointer' }}>＋</button>
+      <form onSubmit={(event) => {
+        event.preventDefault()
+        const typed = draft.trim()
+        if (!typed) return
+        addProject(typed)
+        assignTo(picked.id, typed)
+        setDraft('')
+      }}>
+        <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="New project…" aria-label="New project name" />
+        <button type="submit" className="gg-pixel-button" data-tone="accent">Add</button>
       </form>
-      {current && <div style={{ marginTop: 8, color: '#008751' }}>✔ Assigned to {current}</div>}
+      {name
+        ? <p className="gg-room-panel-ok">✔ On {name}</p>
+        : <p className="gg-orc-hint">On the bench — pick a project above.</p>}
     </div>
   )
 }

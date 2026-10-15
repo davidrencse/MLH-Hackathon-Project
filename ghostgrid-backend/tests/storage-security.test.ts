@@ -165,7 +165,7 @@ describe("persistent storage", () => {
               .prepare("SELECT version FROM schema_migrations ORDER BY version")
               .all()
               .map((row) => row.version),
-          ).toEqual([1, 2, 3]);
+          ).toEqual([1, 2, 3, 4]);
           const indices = store.db
             .prepare("SELECT name FROM sqlite_master WHERE type='index'")
             .all()
@@ -543,9 +543,18 @@ describe("security boundaries", () => {
     }
   });
   it("requires authentication when binding remotely", () => {
+    const strong = "a".repeat(32);
     expect(() => loadConfig({ HOST: "0.0.0.0" })).toThrow(/TOKEN/);
+    // A remote bind puts this token in front of an API that launches local processes, so a token
+    // short enough to guess is refused outright; loopback keeps accepting a short one.
+    expect(() =>
+      loadConfig({ HOST: "0.0.0.0", GHOSTGRID_API_TOKEN: "test" }),
+    ).toThrow(/at least 32 characters/);
     expect(
-      loadConfig({ HOST: "0.0.0.0", GHOSTGRID_API_TOKEN: "test" }).apiToken,
+      loadConfig({ HOST: "0.0.0.0", GHOSTGRID_API_TOKEN: strong }).apiToken,
+    ).toBe(strong);
+    expect(
+      loadConfig({ HOST: "127.0.0.1", GHOSTGRID_API_TOKEN: "test" }).apiToken,
     ).toBe("test");
   });
   it("redacts known secret values and sensitive keys", () => {

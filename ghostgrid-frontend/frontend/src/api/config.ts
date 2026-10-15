@@ -1,38 +1,19 @@
-// Runtime configuration for the real Ghost Grid backend.
+// Is the real Ghost Grid backend there, and what is it?
 //
-// Live mode is opt-in-by-availability: the app probes `GET /health` once. If the
-// backend answers, every api.* call goes to it; if it does not, the mock backend
-// in `mock.ts` keeps the demo working offline. Force either side with
-// `VITE_GG_LIVE=1` / `VITE_GG_LIVE=0`.
+// Live mode is opt-in-by-availability: the app probes `GET /health`. If the backend
+// answers, every api.* call goes to it; if it does not, those calls fail rather than
+// reading as an empty city. Force either side with `VITE_GG_LIVE=1` / `=0`.
 //
-// Env (frontend/.env.local):
-//   VITE_GG_API_URL    base URL of the backend, default "/gg" (dev proxy, see vite.config.ts)
-//   VITE_GG_API_TOKEN  bearer token when the backend runs with GHOSTGRID_API_TOKEN
-//   VITE_GG_PROJECT_ID project UUID to attach to; otherwise the first project is used/created
-//   VITE_GG_LIVE       "1" force live, "0" force mock, unset = probe
+// The probe result is cached, but not forever and not blindly: a backend that dies
+// mid-session is noticed, because http.ts invalidates this cache after repeated
+// unreachable calls (and the result expires on its own). The connection badge
+// therefore tracks reality instead of the first answer of the page load.
+//
+// Static configuration (base URL, token, project id) lives in env.ts.
+import { FORCED_LIVE } from './env.ts'
+import { isBackendError, request, setProbeInvalidator } from './http.ts'
 
-const env = import.meta.env as Record<string, string | undefined>
-
-export const BASE_URL = (env.VITE_GG_API_URL ?? '/gg').replace(/\/$/, '')
-export const API_TOKEN = env.VITE_GG_API_TOKEN ?? null
-export const PROJECT_ID = env.VITE_GG_PROJECT_ID ?? null
-const FORCED = env.VITE_GG_LIVE === '1' ? true : env.VITE_GG_LIVE === '0' ? false : null
-
-// URL of the hosted Library of Babel web app (the "news"/Medium Library project).
-// Clicking the Library building in the city opens this site in a new tab.
-// Override with VITE_GG_LIBRARY_SITE_URL, falling back to VITE_GG_LIBRARY_URL.
-export const LIBRARY_SITE_URL =
-  env.VITE_GG_LIBRARY_SITE_URL ?? env.VITE_GG_LIBRARY_URL ?? 'http://127.0.0.1:8765'
-
-export function openLibrarySite() {
-  window.open(LIBRARY_SITE_URL, '_blank', 'noopener,noreferrer')
-}
-
-export const apiUrl = (path: string) => `${BASE_URL}${path}`
-
-export function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return API_TOKEN ? { ...extra, Authorization: `Bearer ${API_TOKEN}` } : extra
-}
+export { API_TOKEN, BASE_URL, LIBRARY_SITE_URL, PROJECT_ID, apiUrl, authHeaders, openLibrarySite } from './env.ts'
 
 export interface BackendStatus {
   live: boolean
@@ -40,47 +21,74 @@ export interface BackendStatus {
   workerConcurrency?: number
   storage?: string
   message?: string
+  /** When this verdict was reached, so callers can show staleness. */
+  checkedAt: number
 }
 
-let probe: Promise<BackendStatus> | null = null
-let retryAt = 0
+/** A positive verdict is re-checked after this long even if nothing failed. */
+const LIVE_TTL_MS = 30_000
+/** A negative verdict is re-checked this soon, so a backend that starts is picked up. */
+const DEAD_TTL_MS = 5_000
 
-/** Resolved once per page load. Call `resetBackendStatus()` after the backend starts. */
+let probe: Promise<BackendStatus> | null = null
+let expiresAt = 0
+
+function cache(status: BackendStatus): BackendStatus {
+  expiresAt = Date.now() + (status.live ? LIVE_TTL_MS : DEAD_TTL_MS)
+  return status
+}
+
+async function runProbe(): Promise<BackendStatus> {
+  if (FORCED_LIVE === false) return cache({ live: false, message: 'VITE_GG_LIVE=0 (forced offline)', checkedAt: Date.now() })
+  try {
+    // No retries: this probe *is* the reachability test, and a slow answer should
+    // not hold the first paint. The status call is allowed to fail on its own.
+    await request<{ status?: string }>('GET', '/health', { timeoutMs: 4_000, retries: 0, dedupe: false })
+    const info = await request<Record<string, unknown>>('GET', '/api/v1/status', { timeoutMs: 4_000, retries: 0 }).catch(
+      () => ({}) as Record<string, unknown>,
+    )
+    return cache({
+      live: true,
+      version: typeof info.version === 'string' ? info.version : undefined,
+      workerConcurrency: typeof info.workerConcurrency === 'number' ? info.workerConcurrency : undefined,
+      storage: typeof info.storage === 'string' ? info.storage : undefined,
+      checkedAt: Date.now(),
+    })
+  } catch (error) {
+    const message = isBackendError(error) ? `${error.kind}: ${error.message}` : error instanceof Error ? error.message : 'unreachable'
+    if (FORCED_LIVE === true) return cache({ live: true, message: `forced live, but ${message}`, checkedAt: Date.now() })
+    return cache({ live: false, message, checkedAt: Date.now() })
+  }
+}
+
+/** Cached reachability verdict. Re-probes when the cached one expires. */
 export function backendStatus(): Promise<BackendStatus> {
-  if (retryAt && Date.now() >= retryAt) { probe = null; retryAt = 0 }
-  probe ??= (async (): Promise<BackendStatus> => {
-    if (FORCED === false) return { live: false, message: 'VITE_GG_LIVE=0 (mock backend)' }
-    try {
-      const health = await fetch(apiUrl('/health'), {
-        headers: authHeaders(),
-        signal: AbortSignal.timeout(4000),
-      })
-      if (!health.ok) throw new Error(`health returned HTTP ${health.status}`)
-      const status = await fetch(apiUrl('/api/v1/status'), {
-        headers: authHeaders(),
-        signal: AbortSignal.timeout(4000),
-      })
-      const info = status.ok ? ((await status.json()) as Record<string, unknown>) : {}
-      return {
-        live: true,
-        version: typeof info.version === 'string' ? info.version : undefined,
-        workerConcurrency: typeof info.workerConcurrency === 'number' ? info.workerConcurrency : undefined,
-        storage: typeof info.storage === 'string' ? info.storage : undefined,
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'unreachable'
-      if (FORCED === true) return { live: true, message: `forced live, but ${message}` }
-      retryAt = Date.now() + 5000
-      return { live: false, message }
-    }
-  })()
+  if (probe && expiresAt && Date.now() >= expiresAt) probe = null
+  probe ??= runProbe().catch((error) => {
+    probe = null // never cache a thrown probe; the next caller retries
+    throw error
+  })
   return probe
 }
 
+/** Forget the cached verdict (the backend just started, or stopped answering). */
 export function resetBackendStatus() {
   probe = null
-  retryAt = 0
+  expiresAt = 0
 }
+
+/**
+ * Record that the backend is there but will not serve this app — a rejected token
+ * being the case that matters. The badge then says so instead of showing a healthy
+ * connection beside panels that cannot load.
+ */
+export function markBackendUnavailable(message: string) {
+  const status = cache({ live: false, message, checkedAt: Date.now() })
+  probe = Promise.resolve(status)
+}
+
+// Repeated unreachable calls mean the cached "live" verdict is stale.
+setProbeInvalidator(resetBackendStatus)
 
 export async function isLive(): Promise<boolean> {
   return (await backendStatus()).live

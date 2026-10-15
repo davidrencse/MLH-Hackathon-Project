@@ -2,23 +2,20 @@
 // status visuals (roof beacon, approval "!", error shake, selection frame, name label).
 // Building art components only draw geometry; they read BuildingCtx for size and status.
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as THREE from 'three'
-import { openLibrarySite } from '../api/config'
+import { hasOfficePage } from '../constants'
 import { useGrid } from '../store/grid'
 import { useIsOffline } from '../store/keys'
 import type { Building } from '../types'
 import { BuildingCtx } from './BuildingCtx'
-import { removeLabelAnchor, setLabelAnchor, setLabelEmphasis } from './Labels'
+import { removeLabelAnchor, setLabelAnchor } from './Labels'
 import { neonMat, PALETTE, signTexture, STATUS_EMISSIVE, UNIT_BOX } from './materials'
-import { BUILDING_HEIGHT, lotCenter, lotFootprint } from './world'
-import { useDozer } from './dozer'
-
-// Architecture uses actual world dimensions; labels, beacons, and docks share those heights.
-export const MEGA = 1
+import { buildingHeight, lotCenter, lotFootprint } from './world'
 
 const BEACON_MATS = Object.fromEntries(Object.entries(STATUS_EMISSIVE).map(([k, c]) => [k, neonMat(c, 3)]))
+const NO_RAYCAST = () => null
 const DARK_MAT = new THREE.MeshBasicMaterial({ color: '#1a1040' })
 const FRAME_MAT = neonMat(PALETTE.pink, 2.2)
 // Fake shadow (no real-time shadow maps): a dark quad stretched away from the moon light.
@@ -52,18 +49,27 @@ export function BuildingShell({ building, children }: { building: Building; chil
   hoveredRef.current = hovered
 
   const inner = useRef<THREE.Group>(null)
+  const art = useRef<THREE.Group>(null)
   const beacon = useRef<THREE.Mesh>(null)
   const [x, , z] = lotCenter(building.lot)
   const footprint = lotFootprint(building.lot)
-  const baseHeight = BUILDING_HEIGHT[building.type]
-  const height = baseHeight * MEGA
+  const height = buildingHeight(building)
 
   const ctx = useMemo(
-    () => ({ building, footprint, height: baseHeight, statusRef, offlineRef, selectedRef, hoveredRef }),
+    () => ({ building, footprint, height, statusRef, offlineRef, selectedRef, hoveredRef }),
     // footprint is derived from lot; building object identity changes when it updates
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [building, baseHeight],
+    [building, height],
   )
+
+  // Every mesh the building's art is made of drops out of raycasting; the invisible proxy below
+  // is the only thing the pointer can hit. Re-run when the art changes, since a new building type
+  // mounts new meshes.
+  useLayoutEffect(() => {
+    art.current?.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).raycast = NO_RAYCAST
+    })
+  }, [children])
 
   // name plate anchor (rendered as DOM by Labels.tsx)
   useEffect(() => {
@@ -74,7 +80,6 @@ export function BuildingShell({ building, children }: { building: Building; chil
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
     const status = statusRef.current
-    setLabelEmphasis(building.id, hoveredRef.current || selectedRef.current)
     if (inner.current) {
       // error shake: ±0.05 world units, steps(3)
       inner.current.position.x = status === 'error' ? ((Math.floor(t * 18) % 3) - 1) * 0.05 : 0
@@ -88,19 +93,8 @@ export function BuildingShell({ building, children }: { building: Building; chil
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
-    if (building.type === 'router') return
-    if (useDozer.getState().on) {
-      useGrid.getState().removeBuilding(building.id)
-      document.body.style.cursor = ''
-      return
-    }
     if (useGrid.getState().buildMode) return
-    // Clicking the Library opens the hosted Library of Babel web app instead of a panel.
-    if (building.type === 'library') {
-      openLibrarySite()
-      return
-    }
-    if (building.type === 'codex' || building.type === 'claude') {
+    if (hasOfficePage(building.type)) {
       navigate(`/office/${encodeURIComponent(building.id)}`)
       return
     }
@@ -108,24 +102,38 @@ export function BuildingShell({ building, children }: { building: Building; chil
   }
   const onOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
-    if (building.type === 'router') return
     setHovered(true)
-    document.body.style.cursor = useDozer.getState().on ? 'crosshair' : 'pointer'
+    document.body.style.cursor = 'pointer'
   }
   const onOut = () => {
     setHovered(false)
     document.body.style.cursor = ''
   }
 
-  const fw = footprint.w + 0.1
-  const fd = footprint.d + 0.1
+  const fw = footprint.w + 0.3
+  const fd = footprint.d + 0.3
   const frameMat = selected ? FRAME_MAT : HOVER_MAT
   const showFrame = selected || hovered
 
   return (
     <group position={[x, 0, z]}>
-      <group ref={inner} onClick={onClick} onPointerOver={onOver} onPointerOut={onOut}>
-        <group scale={[1, MEGA, 1]}>
+      {/* PERF: one hit target per building instead of every box it is drawn from.
+          R3F raycasts the scene on each pointer move, and a pointer moving over the city is the
+          normal case — trackpad zoom and orbit both generate a stream of them. The art is ~18
+          meshes per building and no building's art handles its own events (every click comes
+          through this shell), so the art opts out and an invisible proxy the size of the
+          building carries the pointer. That takes the city from ~500 raycast targets to ~28. */}
+      <group ref={inner}>
+        <mesh
+          geometry={UNIT_BOX}
+          position={[0, height / 2, 0]}
+          scale={[footprint.w, height, footprint.d]}
+          visible={false}
+          onClick={onClick}
+          onPointerOver={onOver}
+          onPointerOut={onOut}
+        />
+        <group ref={art}>
           <BuildingCtx.Provider value={ctx}>{children}</BuildingCtx.Provider>
         </group>
       </group>

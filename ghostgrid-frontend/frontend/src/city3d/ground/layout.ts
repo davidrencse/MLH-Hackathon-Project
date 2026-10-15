@@ -90,7 +90,7 @@ export const PROPS: Prop[] = (() => {
           if (isOnLot(x, z, 0.3) || isOnRoad(x, z) || Math.abs(x) > HALF - 0.6 || Math.abs(z) > HALF - 0.6) continue
           out.push({ kind: kinds[n % kinds.length], x, z, rot: (n & 2) === 0 })
         }
-  // benches ring the Router Spire plaza in the centre block
+  // benches ring the plaza in the centre block
   out.push({ kind: 'bench', x: 0, z: -1.55 })
   out.push({ kind: 'bench', x: 0, z: 1.55 })
   out.push({ kind: 'bench', x: -1.55, z: 0, rot: true })

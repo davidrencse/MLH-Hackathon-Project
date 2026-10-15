@@ -13,11 +13,13 @@ import { dockPoint } from './world'
 
 const FLIGHT_DRONES = 4 // pool: active 'drone' / 'drone-cargo' flights
 const PACKETS = 4 // pool: active 'packet' flights
-// Tiny residents cruise in several lanes; reuse the existing instanced rig.
+// Patrol lanes: the two inner rings orbit above the landmark blocks (tops ~13.6), the outer
+// rings stay low so the lanes read as a stack of corridors over the skyline.
+const LANE_Y = [14.6, 15.9, 9.6, 7.6, 6.2]
 const PATROLS = Array.from({ length: 20 }, (_, i) => ({
-  r: 5 + (i % 5) * 4.8,
-  y: i % 5 < 2 ? 17.5 + (i % 3) * 0.8 : 8 + (i % 4) * 1.2,
-  speed: (i % 2 ? -1 : 1) * (0.055 + (i % 4) * 0.018),
+  r: 5 + i % 5 * 4.8,
+  y: LANE_Y[i % 5] + (i % 3) * 0.7,
+  speed: (i % 2 ? -1 : 1) * (0.055 + i % 4 * 0.018),
   phase: i * 2.39996,
 }))
 
@@ -31,7 +33,7 @@ const SMOKE_LIFE = 0.9 // s
 const SMOKE_EVERY = 0.08 // s between puffs
 const SMOKE_RISE = 0.55 // units/s
 const ARC_PEAK = 2.5 // arc peak above the higher dock point
-const PARK_LIFT = 1.0 // parked drone hovers this far above the router dock (clear of the DOM label)
+const PARK_LIFT = 1.0 // parked drone hovers this far above its dock (clear of the DOM label)
 const ROTOR_SPEED = 40 // rad/s
 
 // ---------- part transforms (drone local space: +x = nose, body centered at origin) ----------
@@ -194,7 +196,6 @@ function update(r: Rig, t: number, dt: number) {
   const s = useGrid.getState()
   const now = Date.now()
   const tm = r.reduced ? 0 : t // ambient loops freeze with prefers-reduced-motion; flights still move
-  const rejected = s.task?.phase === 'rejected'
   let nd = 0 // drones written
   let nc = 0 // cargo written
   let np = 0 // packets written
@@ -227,17 +228,17 @@ function update(r: Rig, t: number, dt: number) {
     const yaw = dx || dz ? Math.atan2(-dz, dx) : 0 // local +x (nose) → travel direction
     writeDrone(r, nd, _A.x, _A.y, _A.z, yaw, -0.3 * easeSpeed(p), tm * ROTOR_SPEED + nd * 1.3, true)
     if (f.kind === 'drone-cargo') writeCargo(r, nc++)
-    if (f.kind === 'drone' && rejected && p < 1) {
+    if (f.kind === 'drone' && f.rejected && p < 1) {
       smokeOn = true
       r.emit.set(_A.x - Math.cos(yaw) * 0.3, _A.y, _A.z + Math.sin(yaw) * 0.3) // just behind the tail
     }
     nd++
   }
 
-  // Parked drone: hovers over the router while no delivery drone is out.
-  const router = s.buildings.router
-  if (!flying && router) {
-    const d = dock(router)
+  // Parked drone: waits over Codex Tower while no delivery drone is out.
+  const home = s.buildings.codex
+  if (!flying && home) {
+    const d = dock(home)
     writeDrone(r, nd++, d[0], d[1] + PARK_LIFT + Math.sin(tm * 2) * 0.08, d[2], tm * 0.4, 0, tm * ROTOR_SPEED, true)
   }
 

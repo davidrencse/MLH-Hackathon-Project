@@ -111,21 +111,77 @@ export function safePath(root: string, path: string): string {
   return actual;
 }
 const registeredSecrets = new Set<string>();
+/** Bumped whenever the registered set changes, so every cached list rebuilds. */
+let secretsRevision = 0;
 export function registerSecret(value: string | undefined): void {
-  if (value) registeredSecrets.add(value);
+  if (!value || registeredSecrets.has(value)) return;
+  registeredSecrets.add(value);
+  secretsRevision++;
 }
+
+const SECRET_KEY = /(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)/i;
+
+interface SecretCache {
+  revision: number;
+  /** every secret-shaped env var name, in enumeration order, and the values they held */
+  names: string[];
+  values: (string | undefined)[];
+  secrets: string[];
+}
+// Keyed by the environment object, so a test passing its own env never shares the
+// process cache.
+const secretCaches = new WeakMap<NodeJS.ProcessEnv, SecretCache>();
+
+/**
+ * The secrets to scrub, cached per environment.
+ *
+ * Rebuilding this list was 90% of every `redact()` call — 106µs of 118µs on an 86-variable
+ * environment — and `redact` runs on every response and on every event the SSE loop writes,
+ * up to 500 per 250ms tick. Caching it takes the call to 54µs.
+ *
+ * Invalidation is exact, and deliberately so: a stale list here puts an API key into a
+ * response or a log in the clear. The revision counter covers `registerSecret`; comparing the
+ * secret-shaped key names covers one appearing, disappearing or being swapped for another;
+ * re-reading their values covers a reassignment. See tests/redact-cache.test.ts.
+ *
+ * Most of what is left is `Object.keys(env)`: `process.env` is host-backed, so enumerating it
+ * copies the whole environment block (a plain object costs 0.2µs). A cheaper guard — the key
+ * count alone — is what the first version used, and it missed a tick that drops one plain
+ * variable while adding one key. Redaction is a security guarantee; it does not get traded for
+ * the difference.
+ */
+function secretsFor(env: NodeJS.ProcessEnv): string[] {
+  // Name every secret-shaped variable on each call. Testing the keys costs 4µs on top of the
+  // enumeration we already pay, and it is the only way to see a secret-shaped variable that
+  // *appeared*: a guard on the key count misses a tick that drops one plain variable and adds
+  // one key, which is a new secret going out unscrubbed.
+  const names: string[] = [];
+  for (const key of Object.keys(env)) if (SECRET_KEY.test(key)) names.push(key);
+
+  const cached = secretCaches.get(env);
+  if (cached && cached.revision === secretsRevision && cached.names.length === names.length) {
+    let stale = false;
+    for (let i = 0; i < names.length; i++)
+      if (cached.names[i] !== names[i] || env[names[i]] !== cached.values[i]) {
+        stale = true;
+        break;
+      }
+    if (!stale) return cached.secrets;
+  }
+
+  const values = names.map((name) => env[name]);
+  // A variable only carries a secret once it holds something worth hiding; it stays tracked
+  // either way, so filling in an empty one later still invalidates this.
+  const fromEnv = values.filter((value): value is string => !!value && value.length >= 4);
+  // Longest first: a short secret that is a substring of a longer one must not blank out the
+  // part that would otherwise identify the longer one.
+  const secrets = [...registeredSecrets, ...fromEnv].sort((a, b) => b.length - a.length);
+  secretCaches.set(env, { revision: secretsRevision, names, values, secrets });
+  return secrets;
+}
+
 export function redact<T>(value: T, env: NodeJS.ProcessEnv = process.env): T {
-  const secrets = [
-    ...registeredSecrets,
-    ...Object.entries(env)
-      .filter(
-        ([key, value]) =>
-          /(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)/i.test(key) &&
-          value &&
-          value.length >= 4,
-      )
-      .map(([, value]) => value!),
-  ].sort((a, b) => b.length - a.length);
+  const secrets = secretsFor(env);
   const walk = (input: any): any => {
     if (typeof input === "string") {
       let text = input;

@@ -3,11 +3,11 @@
 // and the event → log-line formatting the city ticker uses.
 //
 // Kept beside live.ts rather than inside it so the two can be edited independently;
-// both are reached through client.ts and both throw on failure so client.ts can fall
-// back to the mock.
+// both are reached through client.ts and both throw on failure, which client.ts reports
+// and passes on to the caller.
 import type { BuildingId, LogLevel, ProviderKey, Session, TaskResult } from '../types'
-import { backend, type BackendEvent, type BackendProviderType, type BackendSession, type BackendTask } from './backend'
-import { bootstrap } from './live'
+import { backend, type BackendEvent, type BackendProviderType, type BackendSession, type BackendTask } from './backend.ts'
+import { bootstrap } from './live.ts'
 
 const ACTIVE = new Set(['pending', 'queued', 'running', 'awaiting_approval'])
 const ms = (iso?: string) => (iso ? Date.parse(iso) : Number.NaN)
@@ -125,7 +125,10 @@ export async function listBuildingSessions(buildingId: BuildingId): Promise<Sess
   ])
   const agent = await backend.listAgents({ limit: 200 }).then((page) => page.items.find((candidate) => candidate.id === agentId))
   const provider = providers.items.find((candidate) => candidate.id === agent?.providerId)
-  const runtime = RUNTIME_OF_BACKEND_TYPE[provider?.type ?? 'mock']
+  // `provider.type` is cast out of backend JSON, never validated against this union, and the
+  // backend keeps its own copy of it — so an unknown type must land on a real runtime here
+  // rather than travelling on as an `undefined` typed `RuntimeId`.
+  const runtime = RUNTIME_OF_BACKEND_TYPE[provider?.type ?? 'mock'] ?? 'local-cli'
   return sessions.items.map((session) => ({
     id: session.id,
     title: session.name ?? 'Session',

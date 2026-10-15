@@ -4,11 +4,15 @@ import { ChevronDown, DoorOpen, KeyRound, Pencil, Trash2, TriangleAlert } from '
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '@/components/StatusBadge'
-import { CATALOG, DEFAULT_BUILDINGS, PROVIDERS, STATUS_COLOR, botLabel } from '@/constants'
+import { CATALOG, DEFAULT_BUILDINGS, PROVIDERS, STATUS_COLOR, botLabel, hasOfficePage } from '@/constants'
 import { useBuildingLogs, useGrid } from '@/store/grid'
 import { maskKey, resolveBuildingKey, useIsOffline, useKeys } from '@/store/keys'
+import { useBuildingUsage } from '@/store/usageLedger'
 import type { Building, BuildingId, BuildingStatus, BuildingType, LogLevel } from '@/types'
+import { AgentAskSection } from './AgentAskSection'
 import { BotSection } from './BotSection'
+import { LibrarySection } from './LibrarySection'
+import { WallStreetSection } from './WallStreetSection'
 import { BTN } from './buttons'
 import { BlurField, Field, SectionTitle } from './parts'
 import { SessionsSection } from './SessionsSection'
@@ -22,7 +26,7 @@ const LEVEL_COLOR: Record<LogLevel, string> = {
 
 const LEVEL_TAG: Record<LogLevel, string> = { info: 'INF', ok: 'OK ', warn: 'WRN', error: 'ERR' }
 
-const SESSION_TYPES: BuildingType[] = ['codex', 'cursor', 'claude', 'deepseek', 'groq', 'router']
+const SESSION_TYPES: BuildingType[] = ['codex', 'cursor', 'claude', 'deepseek', 'groq']
 
 const pad = (v: number) => String(v).padStart(2, '0')
 const hms = (ts: number) => {
@@ -37,8 +41,8 @@ export function BuildingView({ building }: { building: Building }) {
   const { id, type } = building
   const offline = useIsOffline(id)
   const badge: BuildingStatus | 'offline' = offline && building.status === 'idle' ? 'offline' : building.status
-  const playerBuilt = !DEFAULT_BUILDINGS.some((d) => d.id === id)
-  const accent = building.bot?.color || CATALOG[type].accent
+  const playerBuilt = !DEFAULT_BUILDINGS.some((d) => d.id === id) && type !== 'quant' && type !== 'agent'
+  const accent = building.bot?.color || building.repo?.accent || CATALOG[type].accent
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,7 +57,7 @@ export function BuildingView({ building }: { building: Building }) {
         <>
           <button
             type="button"
-            onClick={() => type === 'codex' || type === 'claude' ? navigate(`/office/${encodeURIComponent(id)}`) : useGrid.getState().openOffice(id)}
+            onClick={() => hasOfficePage(type) ? navigate(`/office/${encodeURIComponent(id)}`) : useGrid.getState().openOffice(id)}
             className={`${BTN.cyan} w-full justify-between`}
           >
             <span className="flex items-center gap-2">
@@ -65,11 +69,57 @@ export function BuildingView({ building }: { building: Building }) {
           <SessionsSection sessions={building.sessions} />
         </>
       )}
+      {type === 'agent' && <AgentAskSection building={building} />}
       {type === 'bot' && building.bot && <BotSection id={id} bot={building.bot} />}
+      {type === 'library' && <LibrarySection />}
+      {type === 'quant' && building.repo && <WallStreetSection repo={building.repo} />}
       <Logs id={id} working={building.status === 'working'} />
+      <Usage id={id} />
       <AgentConfig id={id} type={type} fallbackModel={building.model} />
       {playerBuilt && <Demolish building={building} />}
     </div>
+  )
+}
+
+// ---- Usage: what this building really spent, from the city's one usage ledger ----
+
+const fmtTok = (n: number) =>
+  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`
+
+/**
+ * A building's own recorded usage. The ledger attributes API usage through the backend agent
+ * that carries this building id, and a local CLI's transcripts through the building that runs
+ * it — so Codex Tower shows what Codex CLI actually spent, and an Agent Row house shows its own
+ * traffic once it has run anything.
+ *
+ * Nothing recorded yet is said plainly rather than shown as a zero, because the two read the same
+ * on a tile and mean different things.
+ */
+function Usage({ id }: { id: BuildingId }) {
+  const usage = useBuildingUsage(id)
+  if (!usage) return null
+  const cli = usage.kinds.includes('cli')
+  return (
+    <section>
+      <SectionTitle right={<span className="font-pixel text-[8px] leading-none text-gg-mute">{cli ? 'CLI' : 'API'}</span>}>
+        USAGE
+      </SectionTitle>
+      <div className="grid grid-cols-2 border-2 border-gg-haze bg-gg-void">
+        <div className="flex flex-col gap-1 px-3 py-2">
+          <span className="font-pixel text-[8px] leading-none text-gg-mute">TOKENS</span>
+          <span className="text-[20px] leading-none text-gg-ink tabular-nums">{fmtTok(usage.tokens)}</span>
+        </div>
+        <div className="flex flex-col gap-1 border-l-2 border-gg-haze px-3 py-2">
+          <span className="font-pixel text-[8px] leading-none text-gg-mute">REQUESTS</span>
+          <span className="text-[20px] leading-none text-gg-ink tabular-nums">{usage.requests}</span>
+        </div>
+      </div>
+      <p className="mt-2 text-[16px] leading-5 text-gg-mute">
+        {usage.sources.join(' · ')}
+        {usage.untokenedRequests ? ` · ${usage.untokenedRequests} without token counts` : ''}
+        {cli ? ' · subscription, not metered' : ''}
+      </p>
+    </section>
   )
 }
 
@@ -140,7 +190,8 @@ function Header({
 // ---- Tiny CSS pixel building, windows lit in the status color, frame in the accent color ----
 
 const THUMB: Record<BuildingType, { cols: number; rows: number; antenna: boolean }> = {
-  router: { cols: 3, rows: 5, antenna: true },
+  quant: { cols: 4, rows: 6, antenna: true },
+  agent: { cols: 3, rows: 2, antenna: true },
   codex: { cols: 4, rows: 4, antenna: false },
   cursor: { cols: 3, rows: 5, antenna: false },
   claude: { cols: 4, rows: 5, antenna: true },
@@ -379,7 +430,7 @@ function Demolish({ building }: { building: Building }) {
   const demolish = () => {
     const s = useGrid.getState()
     s.removeBuilding(building.id) // also closes the panel (selected → null)
-    s.pushLog('router', 'warn', `demolished ${building.name} on lot ${building.lot} · +${refund} BP refund`)
+    s.pushLog('security', 'warn', `demolished ${building.name} on lot ${building.lot} · +${refund} BP refund`)
   }
 
   return (

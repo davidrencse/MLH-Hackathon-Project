@@ -1,37 +1,1170 @@
-.native-office { --office-accent: #39ff14; height: 100%; padding: 28px; background: #0b0820; color: #e8e6ff; overflow-y: auto; }
-.native-office button, .native-office input { font: inherit; }
-.native-office :is(button, a, input):focus-visible { outline: 2px solid var(--office-accent); outline-offset: 4px; }
-.native-office-header { max-width: 1440px; margin: 0 auto 28px; display: flex; align-items: center; gap: 28px; }
-.native-office-back { display: flex; align-items: center; gap: 8px; color: #c5bfe5; white-space: nowrap; }
-.native-office h1 { font-family: var(--font-pixel); font-size: 16px; line-height: 1.6; margin: 0 0 8px; }
-.native-office-header p { margin: 0; font-size: 22px; color: #bbb5d8; }
-.native-office-count { margin-left: auto; white-space: nowrap; font-size: 24px; color: var(--office-accent); }
-.native-office-layout { max-width: 1440px; margin: auto; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
-.native-room { border: 4px solid #544077; box-shadow: 8px 8px #05030f; min-width: 0; }
-.native-room-notice { color: #d2c3d9; font-size: 22px; padding: 28px; }
-.native-room-footer { display: flex; justify-content: space-between; gap: 16px; padding: 16px; background: #21172e; color: #c9b4d2; font-family: var(--font-pixel); font-size: 8px; line-height: 1.8; }
-.native-hiring { padding: 24px 0; }.native-hiring h2 { margin: 0 0 12px; font-family: var(--font-pixel); font-size: 12px; line-height: 1.8; }.native-hiring p { font-size: 20px; line-height: 1.2; color: #bbb5d8; }.native-hiring form { display: flex; flex-direction: column; gap: 12px; margin: 24px 0; }.native-hiring form > label, .native-hiring legend { font-size: 20px; color: #e8e6ff; }.native-hiring input:not([type=radio]) { width: 100%; min-height: 44px; border: 2px solid #776a92; background: #1a1040; color: #e8e6ff; padding: 8px 12px; font-size: 20px; }.native-hiring input::placeholder { color: #aaa2c5; }.native-hiring fieldset { border: 0; margin: 8px 0; padding: 0; min-width: 0; }.native-hiring legend { margin-bottom: 12px; }
-.native-runtime { min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 12px; cursor: pointer; border: 2px solid #574777; margin-bottom: 8px; font-size: 20px; }.native-runtime[data-selected=true] { border-color: var(--office-accent); background: #1a1040; }.native-runtime input { accent-color: var(--office-accent); }
-.native-add-worker { min-height: 48px; border: 2px solid var(--office-accent); background: var(--office-accent); color: #0b0820; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 20px; cursor: pointer; }.native-add-worker:hover { background: #e8e6ff; }.native-add-worker:disabled { opacity: .5; cursor: not-allowed; }.native-hiring .native-form-hint { font-size: 18px; margin: 0; line-height: 1.3; }.native-hiring .native-setup-message { color: #f2d89b; font-size: 18px; }.native-office-error { border: 2px solid #ff8299; padding: 12px; color: #ffadbd !important; overflow-wrap: anywhere; }.native-hiring nav { margin-top: 28px; font-size: 20px; color: var(--office-accent); }
-@media (max-width: 900px) { .native-office-layout { grid-template-columns: minmax(0, 1fr); }.native-office-header { flex-wrap: wrap; gap: 16px; }.native-office-back { width: 100%; }.native-office-count { margin-left: 0; } }
-@media (max-width: 560px) { .native-office { padding: 16px; }.native-office h1 { font-size: 12px; }.native-office-header p { font-size: 20px; }.native-room-footer { flex-direction: column; gap: 4px; } }
-.native-room-canvas { height: 560px; width: 100%; background: #161026; }
-.native-room-toolbar { padding: 16px; min-height: 56px; background: #21172e; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 20px; color: #d2c3d9; }
-.native-room-toolbar > div { display: flex; align-items: center; gap: 8px; }
-.native-room-toolbar button { border: 2px solid #776a92; background: #1a1040; color: #e8e6ff; width: 44px; height: 44px; cursor: pointer; }
-.native-room-toolbar button:disabled { opacity: .4; cursor: default; }
-.native-worker-picker { display: flex; flex-wrap: wrap; padding: 16px; gap: 8px; background: #21172e; border-top: 2px solid #544077; }
-.native-worker-picker button { min-height: 44px; max-width: 100%; overflow-wrap: anywhere; border: 2px solid #776a92; padding: 8px 12px; color: #e8e6ff; background: #1a1040; font-size: 20px; cursor: pointer; }
-.native-worker-picker button[aria-pressed=true] { color: #0b0820; border-color: var(--office-accent); background: var(--office-accent); }
-.native-selected-worker { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid #544077; padding: 12px 16px; background: #21172e; }
-.native-selected-worker > div { flex: 1; min-width: 160px; }
-.native-selected-worker strong { font-size: 22px; font-weight: normal; overflow-wrap: anywhere; color: #f4dfc4; }
-.native-selected-worker p { margin: 0; font-size: 18px; overflow-wrap: anywhere; color: #c9b4d2; }
-.native-selected-worker .native-desk-activity { color: #aaa2c5; margin-top: 4px; }
-.native-desk-activity span { color: var(--office-accent); }
-.native-open-worker, .native-remove-worker { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 12px; background: transparent; border: 2px solid #957383; color: #ffadbd; cursor: pointer; font-size: 18px !important; }
-.native-open-worker { border-color: var(--office-accent); color: var(--office-accent); }
-.native-open-worker:hover { background: var(--office-accent); color: #0b0820; }
-.native-open-worker:disabled, .native-remove-worker:disabled { opacity: .5; cursor: not-allowed; }
-@media (max-width: 900px) { .native-room-canvas { height: 440px; }.native-hiring { max-width: none; padding-top: 0; } }
-@media (max-width: 560px) { .native-room-canvas { height: 360px; }.native-room-toolbar { flex-direction: column; align-items: start; font-size: 18px; }.native-office-header { margin-bottom: 20px; } }
+/* Why: the office is a walk-in room inside the city, so it has to read as the same machine as the
+   city HUD — always-night industrial terminal, readable first and neon second. Everything here is
+   built from the `--gg-*` tokens in index.css and the pixel-frame idioms (2px haze border, hard
+   black shadow, zero radius, Press Start 2P for labels and VT323 for data). The only colour a
+   building brings of its own is `--office-accent`, from CATALOG. */
+
+.native-office {
+  --office-accent: var(--gg-cyan);
+  --office-frame: 2px solid var(--gg-haze);
+  --office-drop: 4px 4px 0 0 rgba(0, 0, 0, 0.6);
+  /* One hard drop for small chrome (chips, buttons, cards inside a panel), one for panels. */
+  --office-drop-sm: 2px 2px 0 0 rgba(0, 0, 0, 0.6);
+
+  /* The three kinds of person this office is made of, each with one colour it keeps everywhere:
+     in the header readouts, down the left edge of the roster, on a board card and in the room's
+     own labels. Reading the colour is reading the kind. */
+  --office-live: var(--gg-green);   /* a terminal already running on this machine */
+  --office-desk: var(--gg-cyan);    /* a window Ghost Grid opened */
+  --office-agent: var(--gg-pink);   /* a backend employee the orchestrator can send work to */
+
+  /* Surfaces, darkest to lightest. Depth is which of these a box uses, never a blur. */
+  --office-sunken: var(--gg-void);
+  --office-panel: var(--gg-night);
+  --office-raised: var(--gg-dusk);
+
+  /* 4px grid (DESIGN.md). Everything inside this page spaces on these. */
+  --o-1: 4px;
+  --o-2: 8px;
+  --o-3: 12px;
+  --o-4: 16px;
+  --o-5: 20px;
+  --o-6: 24px;
+
+  height: 100%;
+  padding: var(--o-6);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  overflow-y: auto;
+}
+.native-office button, .native-office input, .native-office select { font: inherit; border-radius: 0; }
+.native-office :is(button, a, input, select):focus-visible { outline: 2px solid var(--office-accent); outline-offset: 3px; }
+
+/* ---- labels ---------------------------------------------------------------------------------
+   Every label, heading and badge is pixel type at 8-12px; everything else is VT323 at 18-20px. */
+.native-office :is(h1, h2, h3, legend, .native-label) {
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+  line-height: 1.8;
+  margin: 0;
+}
+.native-office h1 { font-size: 12px; color: var(--gg-ink); }
+.native-office h2 { font-size: 10px; color: var(--gg-ink); }
+.native-office .native-label { font-size: 8px; color: var(--gg-mute); }
+
+/* ---- header: the office's instrument spine ---------------------------------------------------
+   Left to right: the way out, whose office this is, and the three headcounts as separate
+   readouts. It used to end in one box reading "8 running / 2 desks · 3 employees", where the
+   three numbers that mean three different things were a single string of text. */
+.native-office-header {
+  max-width: 1440px;
+  margin: 0 auto var(--o-5);
+  display: flex;
+  align-items: stretch;
+  gap: var(--o-4);
+  border: var(--office-frame);
+  border-left: 4px solid var(--office-accent);
+  background: var(--office-panel);
+  box-shadow: var(--office-drop);
+  padding: var(--o-3) var(--o-4);
+}
+.native-office-back {
+  display: flex;
+  align-items: center;
+  gap: var(--o-2);
+  white-space: nowrap;
+  min-height: 44px;
+  padding: 0 var(--o-3);
+  border: var(--office-frame);
+  background: var(--office-raised);
+  color: var(--gg-mute);
+  font-size: 18px;
+}
+.native-office-back:hover { color: var(--gg-ink); border-color: var(--office-accent); }
+.native-office-id { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.native-office-header h1 { margin-bottom: var(--o-1); overflow-wrap: anywhere; }
+.native-office-header p { margin: 0; font-size: 18px; line-height: 1.3; color: var(--gg-mute); }
+
+.native-office-readouts {
+  margin: 0 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  border: var(--office-frame);
+  background: var(--office-sunken);
+}
+/* Each cell is its own gauge, divided by the frame rather than by whitespace, so the cluster
+   reads as one instrument with three dials. */
+.native-readout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--o-1);
+  min-width: 92px;
+  padding: var(--o-2) var(--o-3);
+  border-left: var(--office-frame);
+}
+.native-readout:first-child { border-left: 0; }
+.native-readout dt {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.6;
+  text-transform: uppercase;
+  color: var(--gg-mute);
+}
+.native-readout dd {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--gg-grey);
+}
+/* A readout only lights up when it has something to report; a zero stays grey, so the lit ones
+   are what the eye lands on. */
+.native-readout[data-kind='live'] dd { color: var(--office-live); }
+.native-readout[data-kind='desk'] dd { color: var(--office-desk); }
+.native-readout[data-kind='agent'] dd { color: var(--office-agent); }
+.native-readout[data-zero='true'] dd { color: var(--gg-grey); }
+
+/* ---- layout: the room and the board stack in one column, hiring sits beside them -------------- */
+.native-office-layout {
+  max-width: 1440px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+}
+.native-office-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+/* The staffing board is its own surface under the office, not a panel in the rail: it runs the
+   full width of the page so a lane can hold a row of cards, and it stays put while the rail
+   changes tabs. */
+.native-office-staffing {
+  max-width: 1440px;
+  margin: 20px auto 0;
+  padding-top: 20px;
+  border-top: 2px solid var(--gg-dusk);
+}
+
+/* ---- the room -------------------------------------------------------------------------------- */
+.native-room { border: var(--office-frame); box-shadow: var(--office-drop); background: var(--gg-night); min-width: 0; }
+.native-room-canvas { height: 540px; width: 100%; background: var(--gg-void); image-rendering: pixelated; }
+/* Reading what somebody is doing is the task while their panel is open, so the room keeps only
+   enough height to still show who was clicked. Both then fit the page's one scroller. */
+.native-room[data-compact='true'] .native-room-canvas { height: clamp(220px, 26vh, 320px); }
+.native-room-notice { color: var(--gg-mute); font-size: 18px; padding: 24px; margin: 0; }
+/* The strip above the room says how to work it, and holds the floor control. A 4px tick in the
+   building's colour marks it as the room's own chrome rather than another panel header. */
+.native-room-toolbar {
+  padding: var(--o-2) var(--o-3);
+  min-height: 52px;
+  background: var(--office-raised);
+  border-bottom: var(--office-frame);
+  border-left: 4px solid var(--office-accent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--o-3);
+  font-size: 18px;
+  color: var(--gg-mute);
+}
+/* The floor control: one bordered group, so the two arrows and the count are one instrument. */
+.native-room-toolbar > div {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 0 0 auto;
+  border: var(--office-frame);
+  background: var(--office-sunken);
+}
+.native-room-toolbar > div > span {
+  padding: 0 var(--o-2);
+  white-space: nowrap;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--gg-mute);
+}
+.native-room-toolbar button {
+  border: 0;
+  background: var(--office-panel);
+  color: var(--gg-ink);
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+.native-room-toolbar button:hover:not(:disabled) { background: var(--office-accent); color: var(--gg-void); }
+.native-room-toolbar button:active:not(:disabled) { background: var(--gg-ink); }
+.native-room-toolbar button:disabled { opacity: 0.4; cursor: default; }
+/* Shown instead of a selected person's panel, and a sibling of the room rather than a strip
+   inside it, so it carries the same frame the panel it stands in for does. */
+.native-room-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--o-4);
+  padding: var(--o-3) var(--o-4);
+  background: var(--office-panel);
+  border: var(--office-frame);
+  border-left: 4px solid var(--gg-dusk);
+  color: var(--gg-grey);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+}
+
+/* ---- live crew strip: what the machine itself is running ------------------------------------- */
+.native-crew-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--gg-night);
+  border-bottom: var(--office-frame);
+}
+.native-crew-strip .native-label { margin-right: 4px; }
+.native-crew-pip {
+  width: 8px;
+  height: 8px;
+  background: var(--gg-green);
+  box-shadow: 0 0 0 2px rgba(182, 243, 107, 0.2);
+  animation: native-crew-blink 0.6s steps(2, end) infinite;
+}
+.native-crew-pip[data-idle=true] { background: var(--gg-grey); box-shadow: none; animation: none; }
+@keyframes native-crew-blink { 50% { opacity: 0.25; } }
+.native-crew-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-size: 16px;
+  cursor: pointer;
+}
+.native-crew-chip b { font-family: var(--font-pixel); font-size: 8px; font-weight: normal; color: var(--gg-green); }
+.native-crew-chip span { color: var(--gg-mute); }
+.native-crew-chip:hover { border-color: var(--office-accent); }
+.native-crew-chip[aria-pressed=true] { border-color: var(--gg-green); background: var(--gg-dusk); }
+.native-crew-note { margin: 0; font-size: 16px; color: var(--gg-grey); }
+/* Why this desk has no message box, and where the one that does is. Sits under the terminal so
+   it is read after the transcript, not instead of it. */
+.native-desk-why { margin: 0; flex: 0 0 auto; font-size: 16px; line-height: 1.35; color: var(--gg-grey); }
+.native-desk-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--office-accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.native-desk-link:hover { color: var(--gg-ink); }
+
+/* ---- the selected desk ----------------------------------------------------------------------- */
+/* A column, not a centred row: the terminal or the chat gets the full width, and the identity
+   line and its buttons sit above it. The row version put a 560px CRT beside a one-line note and
+   centred both, which is what cut the top off the CRT's own heading. */
+.native-selected-worker {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--o-3);
+  min-height: 0;
+  /* A card of its own, not a strip with one rule under it: it is a sibling of the room, and
+     with only a bottom border it read as the bottom half of something unfinished. The left
+     spine carries the colour of the kind of person who is open — the same green/cyan/pink the
+     header readouts and the roster use — so the page says what you are looking at before the
+     name is read. */
+  border: var(--office-frame);
+  border-left: 4px solid var(--office-desk);
+  box-shadow: var(--office-drop);
+  padding: var(--o-3) var(--o-4);
+  background: var(--office-panel);
+}
+.native-selected-worker[data-kind='employee'] { border-left-color: var(--office-agent); }
+.native-selected-worker[data-kind='desk']:has(.native-live-badge) { border-left-color: var(--office-live); }
+/* The identity line: who this is, what they are, and what you can do about it. */
+.native-desk-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--o-2) var(--o-3);
+  flex: 0 0 auto;
+  padding-bottom: var(--o-2);
+  border-bottom: 2px solid var(--gg-dusk);
+}
+.native-desk-head > p { flex: 1 1 200px; min-width: 0; }
+.native-desk-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+/* The name is the heading of this card, so it is ink, not accent: the accent is already the
+   spine, and two accents in one small card left nothing quiet. */
+.native-selected-worker strong {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  color: var(--gg-ink);
+}
+.native-selected-worker p { margin: 0; font-size: 18px; overflow-wrap: anywhere; color: var(--gg-mute); }
+.native-selected-worker .native-desk-activity { color: var(--gg-grey); margin-top: 2px; }
+.native-desk-activity span { color: var(--gg-green); }
+.native-live-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  background: var(--gg-green);
+  color: var(--gg-void);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  vertical-align: middle;
+}
+
+.native-worker-picker {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  gap: 8px;
+  background: var(--gg-dusk);
+  border-top: var(--office-frame);
+}
+.native-worker-picker button {
+  min-height: 40px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  border: var(--office-frame);
+  padding: 6px 10px;
+  color: var(--gg-ink);
+  background: var(--gg-night);
+  font-size: 18px;
+  cursor: pointer;
+}
+.native-worker-picker button:hover { border-color: var(--office-accent); }
+.native-worker-picker button[aria-pressed=true] { color: var(--gg-void); border-color: var(--office-accent); background: var(--office-accent); }
+
+/* ---- buttons --------------------------------------------------------------------------------- */
+.native-office :is(.native-open-worker, .native-remove-worker, .native-add-worker) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.6);
+}
+.native-office :is(.native-open-worker, .native-remove-worker, .native-add-worker):active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.native-open-worker { border: 2px solid var(--office-accent); background: var(--gg-night); color: var(--office-accent); }
+.native-open-worker:hover:not(:disabled) { background: var(--office-accent); color: var(--gg-void); }
+.native-remove-worker { border: 2px solid var(--gg-red); background: var(--gg-night); color: var(--gg-red); }
+.native-remove-worker:hover:not(:disabled) { background: var(--gg-red); color: var(--gg-void); }
+.native-add-worker { border: 2px solid var(--office-accent); background: var(--office-accent); color: var(--gg-void); font-size: 10px; }
+.native-add-worker:hover:not(:disabled) { background: var(--gg-ink); border-color: var(--gg-ink); }
+.native-office :is(.native-open-worker, .native-remove-worker, .native-add-worker):disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---- hiring rail ----------------------------------------------------------------------------- */
+/* The rail is the darkest surface on the page, so the panels inside it lift off it and the tab
+   that is pressed sinks into it. Night-on-night left every panel edge doing that work alone. */
+.native-hiring {
+  border: var(--office-frame);
+  box-shadow: var(--office-drop);
+  background: var(--office-sunken);
+  padding: var(--o-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--o-3);
+}
+.native-hiring p { margin: 0; font-size: 18px; line-height: 1.3; color: var(--gg-mute); }
+.native-hiring form { display: flex; flex-direction: column; gap: 10px; }
+.native-hiring form > label, .native-hiring legend { font-family: var(--font-pixel); font-size: 8px; line-height: 1.8; text-transform: uppercase; color: var(--gg-mute); }
+.native-hiring input:not([type=radio]) {
+  width: 100%;
+  min-height: 44px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  padding: 8px 10px;
+  font-size: 18px;
+}
+.native-hiring input:not([type=radio]):focus { border-color: var(--office-accent); }
+.native-hiring input::placeholder { color: var(--gg-grey); }
+.native-hiring fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.native-hiring legend { margin-bottom: 8px; }
+/* One choice per row, with the chosen one marked by a spine in the building's colour — the same
+   mark the selected person's card and the roster rows carry, so "this is the one" looks the
+   same wherever the office says it. */
+.native-runtime {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border: var(--office-frame);
+  border-left: 4px solid var(--gg-dusk);
+  background: var(--office-sunken);
+  margin-bottom: 4px;
+  font-size: 18px;
+  color: var(--gg-mute);
+}
+.native-runtime:hover { color: var(--gg-ink); }
+.native-runtime[data-selected=true] {
+  border-color: var(--office-accent);
+  background: var(--office-raised);
+  color: var(--gg-ink);
+}
+.native-runtime input { accent-color: var(--office-accent); }
+.native-runtime em { margin-left: auto; font-style: normal; font-family: var(--font-pixel); font-size: 8px; color: var(--gg-green); }
+.native-hiring .native-form-hint { font-size: 16px; color: var(--gg-grey); }
+.native-hiring .native-setup-message { font-size: 16px; color: var(--gg-yellow); border-left: 2px solid var(--gg-yellow); padding-left: 8px; }
+.native-office-error {
+  border: 2px solid var(--gg-red);
+  background: var(--gg-void);
+  padding: 10px;
+  margin: 0;
+  font-size: 16px;
+  color: var(--gg-red) !important;
+  overflow-wrap: anywhere;
+}
+.native-hiring nav { margin-top: 4px; font-size: 18px; }
+.native-hiring nav a { color: var(--office-accent); }
+.native-hiring nav a:hover { color: var(--gg-ink); }
+
+/* ---- staffing board (gg-sb-*) and org chart (gg-oc-*) ----------------------------------------
+   Both read people the same way: a role is a colour (manager pink, lead yellow, engineer cyan)
+   and a live terminal reads green wherever it appears, which is the office's signal for "real".
+
+   The board is lanes, not columns. A project collects many people while the list of projects
+   stays short, so a full-width lane fits a folder path and a terminal's uptime without wrapping,
+   and nothing scrolls sideways on a laptop or a phone. The chart is a real indented tree: the
+   reporting line is the whole point of a chart, so it is drawn rather than implied. */
+.native-office :is(.gg-sb, .gg-oc) {
+  border: var(--office-frame);
+  box-shadow: var(--office-drop);
+  background: var(--gg-night);
+  padding: 14px;
+}
+/* ---- one panel header for every deck ----
+   The board, the chart, the skills rack, the roles and the org editor all open with the same
+   band: a title marked by a tick in the building's colour, anything else on the right, and a
+   rule under it. They each had their own version of this, which is why four panels in one rail
+   never looked like four panels of one machine. */
+.native-office :is(.gg-sb, .gg-oc, .gg-sd) > header,
+.native-office .gg-roles-head {
+  display: flex;
+  align-items: center;
+  gap: var(--o-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--o-3);
+  padding-bottom: var(--o-2);
+  border-bottom: var(--office-frame);
+}
+.native-office :is(.gg-sb, .gg-oc, .gg-sd) > header > h2,
+.native-office .gg-roles-head h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--o-2);
+}
+.native-office :is(.gg-sb, .gg-oc, .gg-sd) > header > h2::before,
+.native-office .gg-roles-head h2::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 4px;
+  height: 12px;
+  background: var(--office-accent);
+}
+.gg-role {
+  display: inline-block;
+  padding: 1px 5px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.6;
+  color: var(--gg-void);
+  background: var(--gg-cyan);
+}
+.gg-role[data-role=Manager] { background: var(--gg-pink); }
+.gg-role[data-role='Team Lead'] { background: var(--gg-yellow); }
+.gg-role[data-source=live] { outline: 2px solid var(--gg-green); outline-offset: 1px; }
+
+/* ---- staffing board ---- */
+
+/* The new-project field sits in the header, where naming a lane belongs, instead of masquerading
+   as a lane of its own at the end of the row. */
+.gg-sb-add { display: flex; gap: 6px; margin-left: auto; }
+.native-office .gg-sb-add input {
+  min-height: 36px;
+  width: 170px;
+  max-width: 44vw;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  padding: 4px 8px;
+  font-size: 16px;
+}
+
+.gg-sb-lanes { display: flex; flex-direction: column; gap: 10px; }
+.gg-sb-lane {
+  border: var(--office-frame);
+  background: var(--gg-void);
+  padding: 10px;
+}
+/* The bench is a holding area, not a destination, so it reads as an open edge. */
+.gg-sb-lane[data-bench=true] { border-style: dashed; border-color: var(--gg-dusk); background: transparent; }
+.gg-sb-lane[data-hot=true] { border-style: solid; border-color: var(--office-accent); background: var(--gg-dusk); }
+.gg-sb-lane > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.gg-sb-lane h3 { font-family: var(--font-pixel); font-size: 10px; line-height: 1.8; text-transform: uppercase; margin: 0; color: var(--gg-ink); }
+.gg-sb-lane-path { font-size: 16px; color: var(--gg-grey); overflow-wrap: anywhere; }
+
+/* The run strip on a lane: goal, Run, and what the orchestrator is doing with that lane's staff.
+   One row that wraps as a unit, so the lane header stays readable when a run is reporting. */
+.gg-sb-run { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; border-top: 1px solid var(--gg-dusk); background: #0d1a2a; }
+.gg-sb-run[data-running] { background: #10261f; border-top-color: var(--gg-green); }
+.gg-sb-goal { flex: 1 1 220px; min-width: 0; padding: 5px 8px; font-size: 16px; color: var(--gg-ink); background: var(--gg-void); border: 1px solid var(--gg-haze); }
+.gg-sb-goal:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 1px; }
+.gg-sb-goal:disabled { color: var(--gg-grey); background: #0a1220; }
+.gg-sb-run-state { font-family: var(--font-pixel); font-size: 8px; text-transform: uppercase; color: var(--gg-mute); }
+.gg-sb-run-state[data-status='running'] { color: var(--gg-green); }
+.gg-sb-run-state[data-status='failed'] { color: var(--gg-red); }
+.gg-sb-run-state[data-status='completed'] { color: var(--gg-cyan); }
+.gg-sb-run-error { font-size: 16px; color: var(--gg-red); flex-basis: 100%; }
+.gg-sb-run-note { font-size: 16px; color: var(--gg-mute); }
+.gg-sb-outage { font-size: 16px; color: var(--gg-yellow); }
+.gg-sb-lane-count {
+  margin-left: auto;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--gg-void);
+  background: var(--gg-mute);
+  padding: 2px 7px;
+}
+.gg-sb-lane[data-bench=true] .gg-sb-lane-count { background: var(--gg-dusk); color: var(--gg-mute); }
+
+/* Role mix: one block per person, coloured by role. A project with no yellow block has no lead. */
+.gg-sb-mix { display: flex; align-items: center; gap: 7px; }
+.gg-sb-mix-bar { display: flex; gap: 2px; }
+.gg-sb-mix-bar i { width: 7px; height: 14px; background: var(--gg-cyan); }
+.gg-sb-mix-bar i[data-role=Manager] { background: var(--gg-pink); }
+.gg-sb-mix-bar i[data-role='Team Lead'] { background: var(--gg-yellow); }
+.gg-sb-mix-text { font-size: 16px; color: var(--gg-mute); }
+
+.gg-sb-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+.gg-sb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 0 1 auto;
+  min-width: 190px;
+  max-width: 320px;
+  border: var(--office-frame);
+  border-left: 4px solid var(--gg-cyan);
+  background: var(--gg-night);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.6);
+  padding: 6px 9px;
+  cursor: grab;
+  font-size: 16px;
+  color: var(--gg-ink);
+  text-align: left;
+}
+.gg-sb-card[data-role=Manager] { border-left-color: var(--gg-pink); }
+.gg-sb-card[data-role='Team Lead'] { border-left-color: var(--gg-yellow); }
+.gg-sb-card[data-source=live] { border-left-color: var(--gg-green); }
+.gg-sb-card[data-dragging=true] { opacity: 0.4; box-shadow: none; }
+.gg-sb-card[data-selected=true] { border-color: var(--office-accent); background: var(--gg-dusk); }
+.gg-sb-card:focus-visible { outline: 2px solid var(--office-accent); outline-offset: 2px; }
+.gg-sb-card-top { display: flex; align-items: center; gap: 6px; }
+.gg-sb-card-top b { font-weight: normal; }
+.gg-sb-card-detail { color: var(--gg-grey); font-size: 16px; overflow-wrap: anywhere; }
+/* The move control belongs to the selected card only: one select, not one per person. */
+.gg-sb-move { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.native-office .gg-sb-move select {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-size: 16px;
+  padding: 2px 4px;
+}
+.gg-sb-empty { margin: 0; padding: 6px 2px; font-size: 16px; color: var(--gg-grey); }
+.gg-sb-none { margin: 0; padding: 10px 2px; font-size: 18px; color: var(--gg-mute); max-width: 68ch; }
+
+.native-office .gg-pixel-button {
+  min-height: 40px;
+  padding: 6px 10px;
+  border: var(--office-frame);
+  background: var(--gg-dusk);
+  color: var(--gg-ink);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.6);
+}
+.native-office .gg-pixel-button:hover:not(:disabled) { border-color: var(--office-accent); color: var(--office-accent); }
+.native-office .gg-pixel-button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
+.native-office .gg-pixel-button[data-tone=accent] { background: var(--office-accent); color: var(--gg-void); border-color: var(--office-accent); }
+.native-office .gg-pixel-button[data-tone=accent]:hover { background: var(--gg-ink); border-color: var(--gg-ink); color: var(--gg-void); }
+.native-office .gg-pixel-button[data-tone=danger] { color: var(--gg-red); border-color: var(--gg-red); }
+.native-office .gg-pixel-button[data-tone=danger]:hover { background: var(--gg-red); color: var(--gg-void); }
+
+/* ---- org chart: a real tree ----
+   Each level is one <ul>, so the nesting a screen reader announces is the nesting you see. The
+   connectors are drawn with borders on the <li> rather than characters, which keeps them crisp
+   at the pixel sizes this office uses. */
+/* Naming a project is the one way to open another office, so the field lives at the foot of the
+   list of projects, where the next one would appear. */
+.gg-oc-add-form { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.native-office .gg-oc-add-form input {
+  min-height: 34px;
+  width: 100%;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  padding: 0 8px;
+  font: 10px/1 var(--font-mono, 'VT323'), monospace;
+}
+.native-office .gg-oc-add-form input:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 1px; }
+.native-office .gg-oc-add { width: 100%; margin-top: 0; }
+.native-office .gg-oc-add:disabled { opacity: .5; cursor: not-allowed; }
+.gg-oc-tree, .gg-oc-tree ul { list-style: none; margin: 0; padding: 0; }
+.gg-oc-tree ul { margin-left: 9px; padding-left: 13px; border-left: 2px solid var(--gg-dusk); }
+.gg-oc-tree li { position: relative; padding: 3px 0; }
+/* The elbow into each row, and the stub that caps the last child's trunk. */
+.gg-oc-tree ul > li::before {
+  content: '';
+  position: absolute;
+  left: -13px;
+  top: 16px;
+  width: 11px;
+  border-top: 2px solid var(--gg-dusk);
+}
+.gg-oc-tree ul > li:last-child::after {
+  content: '';
+  position: absolute;
+  left: -15px;
+  top: 18px;
+  bottom: 0;
+  border-left: 2px solid var(--gg-night);
+}
+.gg-oc-root { display: flex; align-items: baseline; gap: 8px; padding: 2px 0 4px; }
+.gg-oc-root b { font-weight: normal; font-size: 20px; color: var(--gg-ink); }
+
+.gg-oc-branch { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
+.gg-oc-branch h3 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--gg-ink);
+}
+.gg-oc-branch-count {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  color: var(--gg-void);
+  background: var(--gg-mute);
+  padding: 1px 5px;
+}
+.gg-oc-branch-actions { display: flex; gap: 5px; margin-left: auto; }
+.gg-oc-branch-empty { margin: 2px 0 4px 13px; font-size: 16px; color: var(--gg-grey); }
+.gg-oc-live-tag {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  color: var(--gg-void);
+  background: var(--gg-green);
+  padding: 1px 5px;
+}
+
+.gg-oc-person {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  border: 2px solid transparent;
+  background: transparent;
+  padding: 3px 6px;
+  font-size: 18px;
+  color: var(--gg-ink);
+  cursor: pointer;
+}
+.gg-oc-person b { font-weight: normal; }
+.gg-oc-person:hover { border-color: var(--gg-dusk); background: var(--gg-night); }
+.gg-oc-person[aria-pressed=true] { border-color: var(--office-accent); background: var(--gg-dusk); }
+.gg-oc-person em { font-style: normal; font-size: 16px; color: var(--gg-mute); margin-left: auto; }
+.gg-oc-person em[data-lane=idle] { color: var(--gg-grey); }
+
+.gg-oc-detail {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: var(--office-frame);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+  color: var(--gg-mute);
+}
+.gg-oc-detail-who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gg-oc-detail-who b { font-weight: normal; font-size: 20px; color: var(--gg-ink); }
+.gg-oc-detail p { margin: 0; overflow-wrap: anywhere; }
+.gg-oc-detail label { display: flex; align-items: center; gap: 8px; }
+.native-office .gg-oc-detail select {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-size: 16px;
+  padding: 2px 6px;
+}
+.gg-oc-detail-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ---- skills deck (gg-sd-*) -------------------------------------------------------------------
+   A rack of equipment cards under the staffing board. An installed card reads green, because
+   "equipped" is the same signal as a live terminal everywhere else in this office. */
+.native-office .gg-sd {
+  border: var(--office-frame);
+  box-shadow: var(--office-drop);
+  background: var(--gg-night);
+  padding: 14px;
+}
+/* The rack's header carries a control on its right; the band above gives it everything else. */
+.native-office .gg-sd > header { justify-content: space-between; }
+.gg-sd-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.native-office .gg-sd-controls select {
+  flex: 1 1 260px;
+  min-width: 0;
+  min-height: 40px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-size: 18px;
+  padding: 4px 8px;
+}
+.native-office .gg-sd-controls select:focus { border-color: var(--office-accent); }
+.native-office .gg-sd-controls input {
+  flex: 0 1 180px;
+  min-width: 0;
+  min-height: 40px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-size: 18px;
+  padding: 4px 8px;
+}
+.gg-sd-target { margin: 0 0 12px; font-size: 16px; color: var(--gg-mute); overflow-wrap: anywhere; }
+.gg-sd-target b { color: var(--gg-ink); font-weight: normal; }
+.gg-sd-target code { font-family: var(--font-mono); color: var(--gg-cyan); }
+.gg-sd-note { margin: 0 0 10px; font-size: 16px; color: var(--gg-green); }
+.gg-sd-empty { margin: 0; padding: 16px 0; font-size: 16px; color: var(--gg-grey); }
+
+.gg-sd-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.gg-sd-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: var(--office-frame);
+  border-top: 4px solid var(--gg-haze);
+  background: var(--gg-void);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.6);
+  padding: 8px 10px;
+}
+.gg-sd-card[data-installed=true] { border-top-color: var(--gg-green); }
+.gg-sd-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--gg-ink);
+  overflow-wrap: anywhere;
+}
+.gg-sd-card h3 em {
+  font-style: normal;
+  padding: 1px 4px;
+  background: var(--gg-dusk);
+  color: var(--gg-yellow);
+}
+.gg-sd-card p {
+  margin: 0;
+  flex: 1;
+  font-size: 16px;
+  line-height: 1.25;
+  color: var(--gg-mute);
+  /* Five lines is enough to judge a skill; the rest is in its SKILL.md. */
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gg-sd-card footer { display: flex; gap: 6px; }
+.gg-sd-card footer .gg-pixel-button { flex: 1; justify-content: center; display: flex; align-items: center; gap: 6px; }
+
+@media (width < 560px) {
+  .gg-sd-cards { grid-template-columns: minmax(0, 1fr); max-height: none; }
+  .native-office .gg-sd-controls select, .native-office .gg-sd-controls input { flex-basis: 100%; }
+}
+
+/* ---- orchestrator (gg-orc-*) -----------------------------------------------------------------
+   The control room: work stream, goal, staff, the planned graph and the live run. Stage and
+   status both read by colour, on the same palette as the rest of the office. */
+.native-office .gg-orc {
+  border: var(--office-frame);
+  border-top: 4px solid var(--office-accent);
+  box-shadow: var(--office-drop);
+  background: var(--gg-night);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.native-office .gg-orc h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--gg-mute);
+}
+.native-office .gg-orc :is(select, input, textarea) {
+  min-height: 40px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-size: 18px;
+  padding: 4px 8px;
+}
+.native-office .gg-orc :is(select, input, textarea):focus { border-color: var(--office-accent); }
+.native-office .gg-orc textarea { width: 100%; resize: vertical; font-family: var(--font-mono); line-height: 1.3; }
+.native-office .gg-orc textarea:disabled { opacity: 0.5; }
+.gg-orc-hint { margin: 0; font-size: 16px; color: var(--gg-grey); }
+/* What this panel does, before the first control. Reads as prose, not as a label stack. */
+.gg-orc-lede {
+  margin: 0;
+  max-width: 68ch;
+  border-left: 3px solid var(--office-accent);
+  padding-left: 10px;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--gg-mute);
+}
+
+.gg-orc-stream, .gg-orc-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gg-orc-stream select { flex: 1 1 200px; min-width: 0; }
+.gg-orc-controls select { flex: 0 1 220px; min-width: 0; }
+.gg-orc-controls input { flex: 1 1 200px; min-width: 0; }
+
+/* ---- gates and file access ----
+   Both are decisions taken before a run: which stages stop for the operator, and what the
+   office may touch on disk. Checkboxes are drawn as chips so a glance reads the choice. */
+.gg-orc-gates { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.gg-orc-gates label, .gg-orc-check {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  color: var(--gg-mute);
+  padding: 4px 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.gg-orc-gates label[data-on=true], .gg-orc-check[data-on=true] {
+  border-color: var(--office-accent);
+  color: var(--gg-ink);
+}
+.gg-orc-gates input, .gg-orc-check input { accent-color: var(--office-accent); min-height: 0; }
+.gg-orc-check input:disabled { opacity: 0.4; cursor: not-allowed; }
+.gg-orc-access { display: flex; flex-direction: column; gap: 8px; }
+.gg-orc-access h3 { color: var(--gg-mute); }
+
+/* ---- staff ---- */
+.gg-orc-staff { border-top: 2px dashed var(--gg-dusk); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.gg-orc-person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: var(--office-frame);
+  background: var(--gg-void);
+  padding: 6px 8px;
+  font-size: 16px;
+}
+.gg-orc-person[data-busy=true] { opacity: 0.5; }
+.gg-orc-person b { font-weight: normal; color: var(--gg-ink); min-width: 90px; }
+.gg-orc-person select { flex: 0 1 150px; min-width: 0; min-height: 34px; font-size: 16px; }
+.gg-orc-person em { font-style: normal; margin-left: auto; color: var(--gg-grey); }
+.gg-orc-hire { display: flex; gap: 6px; flex-wrap: wrap; }
+.gg-orc-hire input { flex: 1 1 120px; min-width: 0; }
+.gg-orc-hire select { flex: 0 1 130px; min-width: 0; }
+
+/* ---- the graph, planned and running ---- */
+.native-office :is(.gg-orc-plan, .gg-orc-run) {
+  border-top: 2px dashed var(--gg-dusk);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.native-office :is(.gg-orc-plan, .gg-orc-run) ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.native-office :is(.gg-orc-plan, .gg-orc-run) li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: var(--office-frame);
+  border-left: 4px solid var(--gg-haze);
+  background: var(--gg-void);
+  padding: 5px 8px;
+  font-size: 16px;
+  color: var(--gg-mute);
+}
+.native-office :is(.gg-orc-plan, .gg-orc-run) li b { font-weight: normal; color: var(--gg-ink); min-width: 90px; }
+.native-office :is(.gg-orc-plan, .gg-orc-run) li em { font-style: normal; margin-left: auto; color: var(--gg-grey); }
+/* A node's left edge is its state once it is running. */
+/* ---- the run transcript: what each desk actually wrote ---- */
+.gg-orc-transcript { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.gg-orc-delivered {
+  border: 2px solid var(--office-accent);
+  background: var(--gg-void);
+  padding: 8px;
+  margin-bottom: 4px;
+}
+.gg-orc-transcript pre {
+  margin: 4px 0 0;
+  padding: 8px;
+  max-height: 260px;
+  overflow: auto;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-void);
+  color: var(--gg-ink);
+  font-size: 16px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.gg-orc-transcript-node { border: 2px solid var(--gg-haze); background: var(--gg-night); }
+.gg-orc-transcript-node[data-open=true] { border-color: var(--office-accent); }
+.gg-orc-transcript-node > button {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 6px 8px; background: none; color: var(--gg-ink); text-align: left;
+}
+.gg-orc-transcript-node > button:hover { background: var(--gg-dusk); }
+.gg-orc-transcript-node > button em { color: var(--gg-mute); font-size: 16px; }
+.gg-orc-transcript-body { padding: 0 8px 8px; }
+.gg-orc-transcript-body details { margin-top: 6px; }
+.gg-orc-transcript-body summary { cursor: pointer; color: var(--gg-mute); font-size: 16px; }
+.gg-orc-run li[data-status=completed] { border-left-color: var(--gg-green); }
+.gg-orc-run li[data-status=running] { border-left-color: var(--gg-cyan); }
+.gg-orc-run li[data-status=failed] { border-left-color: var(--gg-red); }
+.gg-orc-run li[data-status=cancelled] { border-left-color: var(--gg-grey); }
+/* A step waiting on the operator is the one thing on this board that needs them to act. */
+.gg-orc-run li[data-status=awaiting_approval] { border-left-color: var(--gg-yellow); }
+.gg-orc-run li em[data-status=awaiting_approval] { color: var(--gg-yellow); }
+.gg-orc-decide { display: inline-flex; gap: 6px; margin-left: auto; }
+.gg-orc-run li em[data-status=completed] { color: var(--gg-green); }
+.gg-orc-run li em[data-status=running] { color: var(--gg-cyan); }
+.gg-orc-run li em[data-status=failed] { color: var(--gg-red); }
+.gg-orc-error { flex-basis: 100%; color: var(--gg-red); overflow-wrap: anywhere; }
+.gg-orc-stage {
+  display: inline-block;
+  padding: 1px 5px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.6;
+  color: var(--gg-void);
+  background: var(--gg-grey);
+}
+.gg-orc-stage[data-stage=plan] { background: var(--gg-pink); }
+.gg-orc-stage[data-stage=design] { background: var(--gg-yellow); }
+.gg-orc-stage[data-stage=build] { background: var(--gg-cyan); }
+.gg-orc-stage[data-stage=review] { background: var(--gg-green); }
+.gg-orc-stage[data-stage=signoff] { background: var(--gg-ink); }
+/* ---- subtasks: the operator writes one, the lead gives it out ---- */
+.gg-orc-subtasks { border-top: 2px dashed var(--gg-dusk); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.gg-orc-subtasks form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.native-office .gg-orc-subtasks textarea { flex: 1 1 240px; min-width: 0; }
+.gg-orc-subtasks ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+.gg-orc-subtasks li {
+  border: var(--office-frame);
+  border-left: 4px solid var(--gg-haze);
+  background: var(--gg-void);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 16px;
+  color: var(--gg-mute);
+}
+.gg-orc-subtasks li[data-stage=delegating] { border-left-color: var(--gg-yellow); }
+.gg-orc-subtasks li[data-stage=building] { border-left-color: var(--gg-cyan); }
+.gg-orc-subtasks li[data-stage=done] { border-left-color: var(--gg-green); }
+.gg-orc-subtasks li[data-stage=failed] { border-left-color: var(--gg-red); }
+.gg-orc-subtask-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gg-orc-subtask-head b { font-weight: normal; color: var(--gg-ink); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.gg-orc-subtask-head .gg-pixel-button { min-height: 28px; padding: 2px 6px; }
+.gg-orc-subtask-chain { color: var(--gg-grey); }
+.gg-orc-subtask-chain em { font-style: normal; color: var(--gg-yellow); }
+.gg-orc-subtask-brief {
+  margin: 0;
+  padding: 5px 7px;
+  background: var(--gg-night);
+  border-left: 2px solid var(--gg-dusk);
+  color: var(--gg-mute);
+  font-size: 16px;
+  line-height: 1.3;
+  max-height: 86px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.gg-orc-history { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+@media (width < 560px) {
+  .gg-orc-person b, .native-office :is(.gg-orc-plan, .gg-orc-run) li b { min-width: 0; }
+  .gg-orc-person select, .gg-orc-controls select, .gg-orc-controls input { flex-basis: 100%; }
+}
+
+/* ---- the panel that opens over the canvas when you click someone in the room ---------------- */
+.gg-room-panel {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 50;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: var(--office-frame);
+  background: var(--gg-night);
+  box-shadow: var(--office-drop);
+  padding: 12px;
+  font-size: 16px;
+  color: var(--gg-ink);
+}
+.gg-room-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gg-room-panel h3 { font-family: var(--font-pixel); font-size: 10px; line-height: 1.8; text-transform: uppercase; margin: 0; color: var(--office-accent); overflow-wrap: anywhere; }
+.gg-room-panel > header button { border: 0; background: none; color: var(--gg-mute); cursor: pointer; padding: 4px; }
+.gg-room-panel > header button:hover { color: var(--gg-ink); }
+.gg-room-panel p { margin: 0; color: var(--gg-mute); }
+.native-office .gg-room-panel select { width: 100%; min-height: 36px; border: var(--office-frame); background: var(--gg-void); color: var(--gg-ink); font-size: 16px; padding: 2px 4px; }
+.gg-room-panel form { display: flex; gap: 6px; }
+.native-office .gg-room-panel input { flex: 1; min-width: 0; min-height: 36px; border: var(--office-frame); background: var(--gg-void); color: var(--gg-ink); padding: 4px 8px; font-size: 16px; }
+.gg-room-panel-ok { color: var(--gg-green) !important; }
+
+@media (width < 560px) {
+  .gg-room-panel { right: 8px; left: 8px; width: auto; }
+}
+
+/* ---- responsive: the HUD collapse point for this project is 900px ----------------------------- */
+@media (width < 900px) {
+  .native-office-layout { grid-template-columns: minmax(0, 1fr); }
+  .native-office-header { flex-wrap: wrap; gap: 12px; }
+  .native-office-back { width: 100%; justify-content: center; }
+  .native-office-readouts { margin-left: 0; width: 100%; }
+  .native-readout { flex: 1; min-width: 0; }
+  .native-room-canvas { height: 420px; }
+}
+@media (width < 560px) {
+  .native-office { padding: 12px; }
+  .native-office h1 { font-size: 10px; }
+  .native-office-header p { font-size: 16px; }
+  .native-readout { padding: 8px; }
+  .native-readout dd { font-size: 12px; }
+  .native-room-canvas { height: 340px; }
+  .native-room-toolbar { flex-direction: column; align-items: start; }
+  .native-room-footer { flex-direction: column; align-items: start; gap: 4px; }
+  /* One card per row at phone width, and the header's name field stops competing with it. */
+  .gg-sb-card { min-width: 100%; max-width: none; }
+  .gg-sb-add { margin-left: 0; width: 100%; }
+  .native-office .gg-sb-add input { width: 100%; max-width: none; }
+  .gg-sb-lane-count, .gg-oc-branch-count { margin-left: 0; }
+  .gg-oc-person { flex-wrap: wrap; }
+  .gg-oc-person em { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .native-crew-pip { animation: none; }
+}
+
+/* ---- hiring an intern ----------------------------------------------------------------------
+   Sits on the engineer's own panel rather than in the org editor: an intern belongs to one
+   engineer, not to the team, and the control says so by being where that engineer is. */
+.native-hire-intern { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.native-hire-intern-open {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  border: 2px solid var(--gg-haze); background: var(--gg-void); color: var(--gg-cyan);
+  padding: 4px 8px; font: 8px/1.4 'Press Start 2P', monospace; cursor: pointer;
+}
+.native-hire-intern-open:hover { border-color: var(--gg-cyan); }
+.native-hire-intern-form { display: flex; flex-direction: column; gap: 5px; }
+.native-hire-intern-form label { font: 8px/1.5 'Press Start 2P', monospace; color: var(--gg-mute); }
+.native-hire-intern-form textarea {
+  border: 2px solid var(--gg-haze); background: var(--gg-void); color: var(--gg-ink);
+  padding: 5px 6px; font: 12px/1.5 monospace; resize: vertical;
+}
+.native-hire-intern-form textarea:focus { outline: none; border-color: var(--gg-cyan); }
+.native-hire-intern-actions { display: flex; gap: 6px; }
+.native-hire-intern-actions button {
+  border: 2px solid var(--gg-haze); background: var(--gg-void); color: var(--gg-ink);
+  padding: 4px 10px; font: 8px/1.4 'Press Start 2P', monospace; cursor: pointer;
+}
+.native-hire-intern-actions button:first-child { color: var(--gg-cyan); }
+.native-hire-intern-actions button:hover:not(:disabled) { border-color: var(--gg-cyan); }
+.native-hire-intern-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+.native-hire-intern-note { font: 11px/1.5 monospace; color: var(--gg-mute); margin: 0; }
+
+/* A lead that told you it guessed. Yellow rather than red: the assignment is not wrong, it is
+   the one the lead was least sure of, and that is where a human should look first. */
+.gg-orc-unsure { color: var(--gg-yellow); font-style: normal; }

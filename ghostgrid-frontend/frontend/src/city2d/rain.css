@@ -1,0 +1,64 @@
+/* Rain2D — every class / keyframe is prefixed gg-rain- */
+
+.gg-rain-root {
+  position: absolute;
+  inset: 0;
+  z-index: 30; /* over the stage, under the HUD (CityPage renders that outside) */
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* One sheet = a column of streaks repeated across the viewport, scrolled downward.
+   The sheet is oversized and rotated so a leaning sheet still covers the corners. */
+.gg-rain-sheet {
+  position: absolute;
+  inset: -30% -30%;
+  opacity: var(--gg-rain-opacity);
+  transform: rotate(var(--gg-rain-lean));
+  /* Streaks run down the sheet; the mask below cuts them into columns. */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(191 233 255 / 0.85) 0,
+    rgb(191 233 255 / 0.85) var(--gg-rain-len),
+    transparent var(--gg-rain-len),
+    transparent calc(var(--gg-rain-len) * 3)
+  );
+  -webkit-mask-image: repeating-linear-gradient(
+    to right,
+    #000 0,
+    #000 2px,
+    transparent 2px,
+    transparent var(--gg-rain-gap)
+  );
+  mask-image: repeating-linear-gradient(to right, #000 0, #000 2px, transparent 2px, transparent var(--gg-rain-gap));
+  animation: gg-rain-fall var(--gg-rain-fall) linear infinite;
+  will-change: background-position;
+}
+
+@keyframes gg-rain-fall {
+  from { background-position: 0 0; }
+  to { background-position: 0 calc(var(--gg-rain-len) * 3); }
+}
+
+/* Storm severity only: two quick strikes, then dark. */
+.gg-rain-flash {
+  position: absolute;
+  inset: 0;
+  background: #dff3ff;
+  opacity: 0;
+  animation: gg-rain-flash 7s steps(1, end) infinite;
+}
+
+@keyframes gg-rain-flash {
+  0%, 1.6%, 3.4%, 100% { opacity: 0; }
+  0.7% { opacity: 0.1; }
+  2.6% { opacity: 0.07; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-rain-root * {
+    animation: none !important;
+  }
+  .gg-rain-sheet { opacity: calc(var(--gg-rain-opacity) * 0.7); }
+  .gg-rain-flash { display: none; }
+}

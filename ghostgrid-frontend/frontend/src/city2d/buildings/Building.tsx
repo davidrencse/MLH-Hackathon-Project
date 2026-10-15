@@ -46,8 +46,6 @@ export function Building({ id, mark, nokeyY, glitch, children }: BuildingProps) 
   return (
     <button
       type="button"
-      disabled={id === 'router'}
-      aria-hidden={id === 'router' ? true : undefined}
       className={cls}
       style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
       aria-label={`${info.name} — ${STATUS_LABEL[state].toLowerCase()}`}
@@ -88,10 +86,10 @@ export function Building({ id, mark, nokeyY, glitch, children }: BuildingProps) 
         </span>
       )}
 
-      {id !== 'router' && <span className="gg-bld-plate" style={{ left: plateX, top: PLATE_TOP - r.y, width: plateW }} aria-hidden="true">
+      <span className="gg-bld-plate" style={{ left: plateX, top: PLATE_TOP - r.y, width: plateW }} aria-hidden="true">
         <span className="gg-bld-dot" style={{ background: STATUS_COLOR[state] }} />
         <PixelText text={info.short} size={GLYPH_W} className="gg-bld-plate-txt" />
-      </span>}
+      </span>
       <B x={plateX + 2} y={PLATE_TOP - r.y + 10} w={1} h={4} className="gg-bld-leg" />
       <B x={plateX + plateW - 3} y={PLATE_TOP - r.y + 10} w={1} h={4} className="gg-bld-leg" />
     </button>

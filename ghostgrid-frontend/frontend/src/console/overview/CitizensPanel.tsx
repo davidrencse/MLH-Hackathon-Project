@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { StatusBadge } from '@/components/StatusBadge'
 import { CATALOG, botLabel } from '@/constants'
-import { useAgentBuildingList } from '@/store/grid'
+import { useBuildingList } from '@/store/grid'
 import { useIsOffline } from '@/store/keys'
 import type { Building } from '@/types'
 import { C, Panel } from './parts'
@@ -38,7 +38,7 @@ function CitizenCard({ b }: { b: Building }) {
 }
 
 export function CitizensPanel() {
-  const buildings = useAgentBuildingList()
+  const buildings = useBuildingList()
   return (
     <Panel title="CITIZENS" pip={C.pink} meta={<span className="text-lg leading-none text-gg-mute">{buildings.length} buildings</span>}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

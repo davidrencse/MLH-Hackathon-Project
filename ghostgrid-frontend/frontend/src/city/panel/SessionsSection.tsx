@@ -1,4 +1,4 @@
-// SESSIONS: the working sessions inside an agent building (codex / claude / deepseek / router).
+// SESSIONS: the working sessions inside an agent building (codex / claude / deepseek).
 import { GitBranch } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Session } from '@/types'
@@ -71,7 +71,7 @@ export function SessionsSection({ sessions }: { sessions: Session[] }) {
                       <span className="truncate">{x.branch}</span>
                     </span>
                   )}
-                  <span className="tabular-nums">{x.tokens > 0 ? `${fmtK(x.tokens)} tok` : '0 tok'}</span>
+                  <span className="tabular-nums" title={x.tokens > 0 ? undefined : 'No usage recorded for this session'}>{x.tokens > 0 ? `${fmtK(x.tokens)} tok` : '— tok'}</span>
                   <span className="tabular-nums">{ago(x.startedAt, now)}</span>
                 </div>
               </li>

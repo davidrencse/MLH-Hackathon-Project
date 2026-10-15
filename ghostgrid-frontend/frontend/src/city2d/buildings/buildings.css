@@ -85,7 +85,7 @@
   animation: gg-bld-shake 0.3s steps(3) infinite;
 }
 
-/* 1px light edge: the side that faces the Router Spire's neon */
+/* 1px light edge: the side that faces the centre plaza's neon */
 .gg-bld-edge-l {
   box-shadow:
     inset 1px 0 0 0 rgba(0, 240, 255, 0.3),
@@ -114,28 +114,6 @@
   background-image: linear-gradient(to bottom, var(--gg-ink) 0 3px, transparent 3px);
   background-size: 1px 16px;
   animation: gg-bld-flow 1.2s steps(8) infinite;
-}
-
-/* router "eye" */
-.gg-bld-eye {
-  overflow: hidden;
-  background: rgba(var(--gg-bld-rgb), 0.85);
-  box-shadow: 0 0 2px 0 rgba(var(--gg-bld-rgb), var(--gg-bld-glow));
-}
-.gg-bld-eye::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: none;
-  width: 3px;
-  height: 1px;
-  background: var(--gg-ink);
-}
-.gg-bld--working .gg-bld-eye::after,
-.gg-bld--needs_approval .gg-bld-eye::after {
-  display: block;
-  animation: gg-bld-scan 1.2s steps(9) infinite alternate;
 }
 
 /* ---------- signs ---------- */

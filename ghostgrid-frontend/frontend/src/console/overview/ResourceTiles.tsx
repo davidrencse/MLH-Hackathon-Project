@@ -1,4 +1,4 @@
-// Row 1: the six city resources as chunky game tiles. COST (real USD) sits apart under "REAL MONEY".
+// Row 1: the city resources as chunky game tiles.
 import type { ReactNode } from 'react'
 import { useResources } from '@/store/resources'
 import type { Resource } from '@/store/resources'
@@ -39,25 +39,15 @@ function RowLabel({ color, children }: { color: string; children: ReactNode }) {
 
 export function ResourceTiles() {
   const resources = useResources()
-  const game = resources.filter((r) => r.key !== 'cost')
-  const cost = resources.find((r) => r.key === 'cost')
 
   return (
-    <div className="flex flex-col gap-4 xl:flex-row">
-      <div className="min-w-0 flex-1">
-        <RowLabel color={C.cyan}>CITY RESOURCES</RowLabel>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {game.map((r) => (
-            <Tile key={r.key} r={r} />
-          ))}
-        </div>
+    <div className="min-w-0">
+      <RowLabel color={C.cyan}>CITY RESOURCES</RowLabel>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {resources.map((r) => (
+          <Tile key={r.key} r={r} />
+        ))}
       </div>
-      {cost && (
-        <div className="border-t-2 border-dashed border-gg-haze pt-4 xl:w-[200px] xl:flex-none xl:border-t-0 xl:border-l-2 xl:pt-0 xl:pl-4">
-          <RowLabel color={C.yellow}>REAL MONEY</RowLabel>
-          <Tile r={cost} />
-        </div>
-      )}
     </div>
   )
 }

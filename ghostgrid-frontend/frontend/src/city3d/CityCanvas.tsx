@@ -5,21 +5,21 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useGrid } from '../store/grid'
 import type { Building } from '../types'
+import { Atmosphere } from './Atmosphere'
 import { GasAtmosphere } from './GasAtmosphere'
 import { CameraRig } from './CameraRig'
 import { CityBuildings } from './CityBuildings'
+import { Districts } from './Districts'
 import { Drones } from './Drones'
 import { Zeppelins } from './Zeppelins'
-import { Transit } from './Transit'
-import { Megastructures } from './Megastructures'
-import { Citizens } from './Citizens'
 import { Effects } from './Effects'
 import { Ground } from './Ground'
+import { Rain } from './Rain'
 import { Scenery } from './scenery/Scenery'
 import { PlotLabels, VoxelDistricts } from './VoxelDistricts'
 import { BuildingLabels, LabelProjector } from './Labels'
 import { PALETTE } from './materials'
-import { BUILDING_HEIGHT, CAMERA, lotCenter, PIXEL_SIZE } from './world'
+import { buildingHeight, CAMERA, lotCenter, PIXEL_SIZE } from './world'
 
 // Lights: exactly 3 (hemisphere, moon, one alert light). No real-time shadows —
 // BuildingShell draws cheap fake shadows instead. Never add lights elsewhere: changing the
@@ -45,7 +45,7 @@ function AlertLight() {
       return
     }
     const [x, , z] = lotCenter(target.lot)
-    light.position.set(x, BUILDING_HEIGHT[target.type] + 1.2, z)
+    light.position.set(x, buildingHeight(target) + 1.2, z)
     light.color.set(target.status === 'error' ? PALETTE.red : PALETTE.yellow)
     light.intensity = Math.floor(clock.elapsedTime / 0.3) % 2 ? 45 : 8
   })
@@ -89,17 +89,18 @@ export function CityCanvas() {
         <fog attach="fog" args={['#10293b', 64, 160]} />
         <Lights />
         <GasAtmosphere />
+        <Atmosphere />
         <Ground />
         <Scenery />
+        <Districts />
         <VoxelDistricts />
         <CityBuildings />
         <Drones />
         <Zeppelins />
-        <Transit />
-        <Megastructures />
-        <Citizens />
         <CameraRig />
         <LabelProjector />
+        {/* Real NYC rain, in front of the city and behind the HUD. */}
+        <Rain />
         <Effects />
       </Canvas>
       <BuildingLabels />

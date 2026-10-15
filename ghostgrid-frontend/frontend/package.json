@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "test": "node --import ./scripts/ts-resolve.mjs --test scripts/*.test.mjs",
+    "preview": "vite preview",
+    "verify": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -29,7 +32,6 @@
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
     "recharts": "^3.10.1",
-    "shadcn": "^4.21.4",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
@@ -44,6 +46,7 @@
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "shadcn": "^4.21.4",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
   }

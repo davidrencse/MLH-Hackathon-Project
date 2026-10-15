@@ -1,16 +1,16 @@
-// Instanced industrial outskirts: workshops, neon windows, and gas storage tanks.
+// Shared, instanced toy-town outskirts: little cottages, warm windows and lollipop trees.
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 
 const BOX = new THREE.BoxGeometry(1, 1, 1)
-const LEAF = new THREE.CylinderGeometry(0.7, 0.7, 1, 8)
+const LEAF = new THREE.IcosahedronGeometry(1, 0)
 const WALL = new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true })
-const ROOF = new THREE.MeshLambertMaterial({ color: '#21394e', flatShading: true })
-const WINDOW = new THREE.MeshBasicMaterial({ color: '#42e8ed', toneMapped: false })
-const WOOD = new THREE.MeshLambertMaterial({ color: '#3d576b' })
-const GREEN = new THREE.MeshLambertMaterial({ color: '#3e6974', flatShading: true })
-const GRASS = new THREE.MeshLambertMaterial({ color: '#142638' })
-const COLORS = ['#30485e', '#39405c', '#4d3c54', '#254658', '#465268', '#3e5260']
+const ROOF = new THREE.MeshLambertMaterial({ color: '#52797a', flatShading: true })
+const WINDOW = new THREE.MeshBasicMaterial({ color: '#ffe4ad', toneMapped: false })
+const WOOD = new THREE.MeshLambertMaterial({ color: '#977a62' })
+const GREEN = new THREE.MeshLambertMaterial({ color: '#9ac5a4', flatShading: true })
+const GRASS = new THREE.MeshLambertMaterial({ color: '#527b70' })
+const COLORS = ['#d6aaa9', '#adc8c0', '#d5c49f', '#b2bdd3', '#c5bdce', '#d6b89e']
 const noRaycast = () => null
 
 export type PocketDistrict = { x: number; z: number; seed: number }
@@ -38,7 +38,7 @@ export function PocketNeighborhoods({ districts }: { districts: PocketDistrict[]
       const seed = district.seed
       const x = district.x + (i % 49 % 7 - 3) * 4.5
       const z = district.z + (Math.floor(i % 49 / 7) - 3) * 4.5
-      const h = 1.8 + ((i * 7 + seed * 3) % 7) * 0.55
+      const h = 1.3 + ((i * 7 + seed * 3) % 5) * 0.36
       place(0, i, x, h / 2, z, 1.9, h, 1.8)
       parts[0].setColorAt(i, color.set(COLORS[(i + seed) % COLORS.length]))
       place(1, i, x, h + 0.15, z, 2.15, 0.3, 2.05)

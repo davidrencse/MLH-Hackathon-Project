@@ -2,16 +2,23 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { BUILDING_HEIGHT } from './world'
 
 const BOX = new THREE.BoxGeometry(1, 1, 1)
 const HULL = new THREE.SphereGeometry(1, 10, 7)
-const COLORS = ['#65455f', '#2a606d', '#6b5847', '#3c4f77', '#735047', '#426258']
+const COLORS = ['#f9bed7', '#b1f1df', '#ffe7a0', '#c6ccff', '#ffd0aa', '#d0edac']
 const BODY = new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true })
 const TRIM = new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false })
 const DARK = new THREE.MeshLambertMaterial({ color: '#263b51', flatShading: true })
-const WINDOW = new THREE.MeshBasicMaterial({ color: '#42e8ed', toneMapped: false })
-const FLEET = Array.from({ length: 9 }, (_, i) => ({ radius: 12 + i % 3 * 4, phase: i * Math.PI * 2 / 9, speed: (i % 2 ? -1 : 1) * (0.025 + i % 3 * 0.005), height: BUILDING_HEIGHT.router * 0.7 + 4 + i % 3 * 1.1, scale: 1.65 + i % 3 * 0.18 }))
+const WINDOW = new THREE.MeshBasicMaterial({ color: '#fff3ca', toneMapped: false })
+// Cruising altitude. Raised from 15.2 on request: at the old height the fleet flew through the
+// skyline rather than over it, and a zeppelin crossing behind a tower read as stuck to it.
+//
+// It needs more clearance than the roofs suggest. Under the 2:1 iso projection a point's screen
+// height is y*sin(60) minus its depth, so a zeppelin on the NEAR side of its circle drops about
+// 7 units down the frame relative to one on the far side. At 24 the near half of the fleet still
+// sat among the towers. 33 puts the whole circle above the skyline from every angle.
+const CRUISE_Y = 33
+const FLEET = Array.from({ length: 9 }, (_, i) => ({ radius: 12 + i % 3 * 4, phase: i * Math.PI * 2 / 9, speed: (i % 2 ? -1 : 1) * (0.025 + i % 3 * 0.005), height: CRUISE_Y + i % 3 * 1.1, scale: 1.65 + i % 3 * 0.18 }))
 const root = new THREE.Object3D()
 const part = new THREE.Object3D()
 const matrix = new THREE.Matrix4()
@@ -22,7 +29,7 @@ export function Zeppelins() {
     const color = new THREE.Color()
     for (let i = 0; i < 9; i++) {
       meshes[0].setColorAt(i, color.set(COLORS[i % COLORS.length]))
-      meshes[1].setColorAt(i * 2, color.set(['#ff4da6', '#42e8ed', '#ffcd70'][i % 3]).multiplyScalar(1.6))
+      meshes[1].setColorAt(i * 2, color.set(COLORS[(i + 2) % COLORS.length]))
       meshes[1].setColorAt(i * 2 + 1, color)
     }
     for (const mesh of meshes) { mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled = false; mesh.raycast = () => null }
@@ -47,10 +54,8 @@ export function Zeppelins() {
       root.rotation.set(0, -angle - Math.sign(cfg.speed) * Math.PI / 2, Math.sin(t * 0.4 + i) * 0.025)
       root.scale.setScalar(cfg.scale); root.updateMatrix()
       place(0, i, 0, 0, 0, 1.65, 0.64, 0.64)
-      // The hull is an ellipsoid (x radius 1.65, z radius 0.64): a flat stripe wider than
-      // 0.64 * sqrt(1 - (x / 1.65)^2) punches out through the nose and tail as stray corners.
-      place(1, i * 2, 0, 0, 0, 1.9, 0.13, 0.98)
-      place(1, i * 2 + 1, -0.9, 0.1, 0, 0.16, 0.8, 0.72)
+      place(1, i * 2, 0, 0, 0, 2.4, 0.14, 1.22)
+      place(1, i * 2 + 1, -0.85, 0.12, 0, 0.17, 0.92, 0.85)
       place(2, i * 8, 0.1, -0.8, 0, 0.95, 0.32, 0.48)
       place(2, i * 8 + 1, -1.5, 0.2, 0, 0.55, 0.75, 0.08)
       place(2, i * 8 + 2, -1.5, 0, 0, 0.55, 0.08, 0.85)

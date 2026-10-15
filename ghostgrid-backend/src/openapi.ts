@@ -116,11 +116,15 @@ export function createOpenApi(apiToken?: string): OpenApiDocument {
       {
         ...identity,
         name: str,
-        buildingId: str,
+        buildingId: {
+          ...nullableString,
+          description:
+            "City building this agent owns. Null for an agent that belongs to no building; such an agent is its own building for building-scoped filters, and its usage is reported under a null buildingId.",
+        },
         projectId: uuid,
         providerId: uuid,
         role: str,
-        workspace: str,
+        workspace: nullableString,
         permissions: array({ type: "string", enum: ["read", "write"] }),
       },
       ["id", "name", "projectId", "providerId", "permissions"],
@@ -183,6 +187,12 @@ export function createOpenApi(apiToken?: string): OpenApiDocument {
         },
         usage: { anyOf: [ref("Usage"), { type: "null" }] },
         attempts: { type: "integer" },
+        requiresApproval: { type: "boolean" },
+        approvedAt: nullableString,
+        approvedBy: nullableString,
+        // The composed prompt the provider was given: role brief, project instructions, saved
+        // session notes, the task prompt and every dependency output.
+        effectivePrompt: nullableString,
       },
       ["id", "projectId", "agentId", "title", "prompt", "status"],
     ),
@@ -199,6 +209,7 @@ export function createOpenApi(apiToken?: string): OpenApiDocument {
         title: str,
         prompt: str,
         dependsOn: array(str),
+        requiresApproval: { type: "boolean" },
       },
       ["key", "agentId", "prompt"],
     ),
@@ -247,15 +258,65 @@ export function createOpenApi(apiToken?: string): OpenApiDocument {
     ),
     UsageTotals: object({
       requests: { type: "integer" }, inputTokens: { type: "number" }, outputTokens: { type: "number" },
+      cachedInputTokens: { type: "number", description: "Prompt tokens served from cache. Already counted inside inputTokens; reported so a caller can show how much of the input was not fresh." },
       reportedCostUsd: { type: "number" }, estimatedCostUsd: { type: "number" },
       unknownCostRequests: { type: "integer" }, unknownTokenRequests: { type: "integer" },
-    }, ["requests", "inputTokens", "outputTokens", "reportedCostUsd", "estimatedCostUsd", "unknownCostRequests", "unknownTokenRequests"]),
-    ProviderCredits: object({ fetchedAt: number, rows: array(object({ provider: str, status: { type: "string", enum: ["ok", "nokey", "unsupported", "error"] }, balanceUsd: number, demoTokens: number, demo: { type: "boolean" }, currency: str, detail: str, quota: object({ limitTokens: number, remainingTokens: number, limitRequests: number, remainingRequests: number, resetTokens: str, resetRequests: str }) }, ["provider", "status"])) }, ["fetchedAt", "rows"]),
+    }, ["requests", "inputTokens", "outputTokens", "cachedInputTokens", "reportedCostUsd", "estimatedCostUsd", "unknownCostRequests", "unknownTokenRequests"]),
+    ProviderCredits: object({ fetchedAt: number, usage: ref("UsageSummary"), rows: array({ allOf: [object({ id: str, name: str, provider: str, status: { type: "string", enum: ["ok", "nokey", "unsupported", "error"] }, balanceUsd: number, currency: str, detail: str, tokensUsed: number, quota: object({ limitTokens: number, remainingTokens: number, limitRequests: number, remainingRequests: number, resetTokens: str, resetRequests: str }), source: { type: "string", enum: ["vendor", "local-cli"] }, cacheReadTokens: number, cacheWriteTokens: number, plan: str, sessions: number, lastActivity: str, windows: array(object({ label: str, usedPercent: number, resetsAt: str }, ["label", "usedPercent"])), models: array(object({ model: str, tokens: number, requests: number }, ["model", "tokens", "requests"])) }, ["provider", "status"]), ref("UsageTotals")] }) }, ["fetchedAt", "rows"]),
+    // One person on a work stream, with the line the log shows under their name. `talkable` is
+    // the contract for the operator's chat: false for an intern, who answers to the engineer who
+    // hired them, and the messages route refuses one with 409.
+    OfficeLogPerson: object({
+      sessionId: uuid, name: str, title: str,
+      roleKind: { type: "string", enum: ["manage", "lead", "build", "intern"] },
+      managerId: nullableString, managerName: nullableString, team: str,
+      activeTasks: { type: "integer" }, totalTasks: { type: "integer" },
+      doing: str, talkable: { type: "boolean" },
+    }, ["sessionId", "name", "title", "roleKind", "managerId", "managerName", "team", "activeTasks", "totalTasks", "doing", "talkable"]),
+    OfficeLogEntry: object({
+      id: uuid, at: str, sessionId: uuid, who: str, title: str,
+      roleKind: { type: "string", enum: ["manage", "lead", "build", "intern"] },
+      label: str, summary: str, status: str,
+      startedAt: nullableString, completedAt: nullableString,
+      durationMs: { anyOf: [{ type: "number" }, { type: "null" }] },
+      error: nullableString,
+      // Set when the task is a node of an orchestration run or a subtask, so the log can group it.
+      workflowId: nullableString,
+    }, ["id", "at", "sessionId", "who", "title", "roleKind", "label", "summary", "status", "startedAt", "completedAt", "durationMs", "error", "workflowId"]),
+    OfficeStreamLog: object({
+      officeProjectId: nullableString,
+      staff: array(ref("OfficeLogPerson")),
+      entries: array(ref("OfficeLogEntry")),
+      total: { type: "integer", description: "Tasks on the stream before the feed was clipped to `limit`." },
+    }, ["officeProjectId", "staff", "entries", "total"]),
+    /** Somebody a hiring call created. */
+    OfficeHire: object({
+      sessionId: uuid, name: str, title: str,
+      roleKind: { type: "string", enum: ["manage", "lead", "build", "intern"] },
+      managerId: nullableString,
+    }, ["sessionId", "name", "title", "roleKind", "managerId"]),
+    // A work stream, with whoever was staffed onto it when it was created.
+    OfficeStream: object({
+      id: str, name: str, goal: str,
+      staff: { anyOf: [object({ lead: ref("OfficeHire"), engineers: array(ref("OfficeHire")), hired: array(ref("OfficeHire")) }, ["lead", "engineers", "hired"]), { type: "null" }] },
+    }, ["id", "name", "goal"]),
+    CliActivity: object({
+      pid: number, sessionId: str, name: nullableString, status: nullableString, cwd: nullableString,
+      version: nullableString, startedAt: nullableString, updatedAt: nullableString,
+      lines: array(object({ kind: { type: "string", enum: ["prompt", "say", "tool", "result", "error", "hook", "subagent"] }, text: str, at: str }, ["kind", "text"])),
+      // Subagents the CLI spawned for itself, read out of its own transcript. The office draws a
+      // desk per entry, under the desk that spawned it.
+      subagents: array(object({ id: str, description: str, agentType: nullableString, at: nullableString }, ["id", "description"])),
+    }, ["pid", "sessionId", "lines", "subagents"]),
     UsageSummary: object({
       totals: ref("UsageTotals"), today: ref("UsageTotals"),
-      providers: array({ allOf: [ref("UsageTotals"), object({ providerId: nullableString, name: nullableString, type: nullableString })] }),
+      providers: array({ allOf: [ref("UsageTotals"), object({ providerId: nullableString, name: nullableString, type: nullableString, baseUrl: nullableString })] }),
+      // One row per agent that spent anything. `buildingId` is null when the agent owns no
+      // city building; `agentId` and `name` are always present so that spend can still be
+      // shown (as unassigned) instead of disappearing.
+      agents: array({ allOf: [ref("UsageTotals"), object({ agentId: str, name: str, buildingId: nullableString }, ["agentId", "name"])] }),
       tokensLastMinute: { type: "number" }, fetchedAt: str, dayStart: str,
-    }, ["totals", "today", "providers", "tokensLastMinute", "fetchedAt", "dayStart"]),
+    }, ["totals", "today", "providers", "agents", "tokensLastMinute", "fetchedAt", "dayStart"]),
     Usage: object(
       {
         ...identity,
@@ -393,6 +454,14 @@ function responseSchema(method: string, url: string): Schema {
     // Upstream read-only responses retain their own fields, rather than project fields.
     return { type: "object", additionalProperties: true };
   }
+  if (url === "/api/v1/office/activity") return ref("CliActivity");
+  if (url === "/api/v1/office/log") return ref("OfficeStreamLog");
+  if (url === "/api/v1/office/engineers") return ref("OfficeHire");
+  if (url === "/api/v1/office/projects")
+    return method === "GET"
+      ? object({ items: array(ref("OfficeStream")) }, ["items"])
+      : ref("OfficeStream");
+  if (url === "/api/v1/office/projects/{slug}") return ref("OfficeStream");
   if (url === "/api/v1/provider-credits") return ref("ProviderCredits");
   if (url === "/api/v1/usage/summary") return ref("UsageSummary");
   if (url.endsWith("/status")) return ref("Status");
@@ -473,10 +542,22 @@ export function registerOperation(
       query("subtopic_id", libraryIdentifier);
       query("access", { type: "string", enum: ["all", "free", "locked"] });
     }
+  } else if (verb === "GET" && url === "/api/v1/office/activity") {
+    query("pid", { type: "integer", minimum: 1 });
+    query("limit", { type: "integer", minimum: 1, maximum: 200 });
+  } else if (verb === "GET" && url === "/api/v1/office/log") {
+    query("projectId", uuid);
+    query("buildingId", { type: "string", minLength: 1, maxLength: 160 });
+    query("officeProjectId", { type: "string", minLength: 1, maxLength: 64 });
+    query("limit", { type: "integer", minimum: 1, maximum: 500, default: 120 });
   } else if (verb === "GET" && url === "/api/v1/provider-credits") {
     query("refresh", { type: "string", enum: ["0", "1"] });
+    query("projectId", uuid);
   } else if (verb === "GET" && url === "/api/v1/usage/summary") {
     query("projectId", uuid);
+  } else if (verb === "GET" && url === "/api/v1/events/head") {
+    for (const name of ["taskId", "sessionId", "agentId", "projectId"])
+      query(name, uuid);
   } else if (verb === "GET" && url.endsWith("/events")) {
     query("after", { type: "integer", minimum: 0 });
     query("limit", {

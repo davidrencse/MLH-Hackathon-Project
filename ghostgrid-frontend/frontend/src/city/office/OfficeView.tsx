@@ -7,12 +7,13 @@ import { Square, Trash2, X } from 'lucide-react'
 import { useEffect, type CSSProperties } from 'react'
 import { StatusBadge } from '@/components/StatusBadge'
 import { CATALOG } from '@/constants'
-import { RUNTIMES } from '@/constants'
+import { runtimeOf } from '@/constants'
 import { useGrid } from '@/store/grid'
 import { useIsOffline } from '@/store/keys'
 import type { Building, Session } from '@/types'
+import { backend } from '@/api/backend'
 import { flavorFor, type RoomPropKind } from './flavor'
-import { SessionMenu } from './SessionMenu'
+import { DeskPanel } from './DeskPanel'
 import { SecuritySessionOverview } from './SecuritySessionOverview'
 import './office.css'
 
@@ -28,6 +29,21 @@ const SESSION_TONE: Record<Session['status'], string> = {
 const SESSION_LABEL: Record<Session['status'], string> = { running: 'RUNNING', queued: 'QUEUED', done: 'DONE', error: 'STOPPED' }
 
 const fmtK = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`)
+
+/**
+ * Stop a desk for real: cancel the backend session, which cancels its running tasks, then
+ * re-read the list. The previous version only painted the row red locally.
+ */
+async function stopBackendSession(buildingId: string, sessionId: string) {
+  try {
+    await backend.cancelSession(sessionId)
+    await useGrid.getState().loadSessions(buildingId)
+  } catch (error) {
+    // Both halves reach the backend and both can be refused. The row keeps the state the
+    // backend last reported rather than being painted stopped by a cancel that did not land.
+    console.warn('[ghostgrid] stopping the desk failed:', error)
+  }
+}
 
 export function OfficeView() {
   const building = useGrid((s) => (s.office ? (s.buildings[s.office] ?? null) : null))
@@ -45,6 +61,14 @@ export function OfficeView() {
     window.addEventListener('keydown', onKey, true)
     return () => window.removeEventListener('keydown', onKey, true)
   }, [open])
+
+  // Desks are read when the room opens; nothing is held between visits, so a desk on screen is
+  // one the backend had a moment ago rather than one this browser remembers inventing.
+  useEffect(() => {
+    const id = building?.id
+    if (!id) return
+    void useGrid.getState().loadSessions(id).catch(() => undefined)
+  }, [building?.id])
 
   return (
     <AnimatePresence>
@@ -76,9 +100,9 @@ export function OfficeView() {
               <aside className="w-full shrink-0 border-2 border-gg-haze bg-gg-void p-3 min-[900px]:w-[300px]">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="inline-block size-2 shrink-0 bg-gg-pink" />
-                  <h3 className="font-pixel text-[10px] leading-none text-gg-ink">SESSION MENU</h3>
+                  <h3 className="font-pixel text-[10px] leading-none text-gg-ink">DESKS</h3>
                 </div>
-                <SessionMenu building={building} />
+                <DeskPanel building={building} />
               </aside>
             </div>
             )}
@@ -294,7 +318,7 @@ function RoomProp({ kind }: { kind: RoomPropKind }) {
 // ---- one desk = one session ----
 
 function Desk({ buildingId, session, deskWord }: { buildingId: string; session: Session; deskWord: string }) {
-  const rt = RUNTIMES[session.runtime]
+  const rt = runtimeOf(session.runtime)
   const tone = SESSION_TONE[session.status]
   const run = session.status === 'running'
   const busy = run || session.status === 'queued'
@@ -346,14 +370,16 @@ function Desk({ buildingId, session, deskWord }: { buildingId: string; session: 
           {rt.short}
         </span>
         <span className="text-[16px] leading-[18px] text-gg-mute">{session.model}</span>
-        <span className="text-[16px] leading-[18px] text-gg-mute tabular-nums">{fmtK(session.tokens)} tok</span>
+        <span className="text-[16px] leading-[18px] text-gg-mute tabular-nums">
+          {session.tokens > 0 ? `${fmtK(session.tokens)} tok` : 'tokens on the ledger'}
+        </span>
       </div>
 
       <div className="flex gap-2">
         {busy ? (
           <button
             type="button"
-            onClick={() => void useGrid.getState().stopSession(buildingId, session.id)}
+            onClick={() => void stopBackendSession(buildingId, session.id)}
             className="gg-of-btn font-pixel flex h-8 flex-1 items-center justify-center gap-1 border-2 border-gg-red bg-gg-void px-2 text-[8px] leading-none text-gg-red uppercase hover:bg-gg-red hover:text-gg-void"
           >
             <Square size={16} strokeWidth={2.5} />

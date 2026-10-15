@@ -1,0 +1,188 @@
+/* The selected desk's CRT: an 8-bit terminal, drawn with the city's palette and no curves.
+   Its own file so the office stylesheet stays about the room. */
+
+.gg-crt {
+  display: flex;
+  flex-direction: column;
+  /* Grows into the panel and lets the screen below it do the scrolling. `min-height: 0` is what
+     allows a flex child to be shorter than its content instead of pushing the panel open. */
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 6px;
+  border: 3px solid var(--gg-haze);
+  background: var(--gg-void);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  padding: 8px;
+  image-rendering: pixelated;
+}
+
+.gg-crt-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid var(--gg-haze);
+  padding-bottom: 6px;
+}
+
+.gg-crt-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--gg-green);
+  box-shadow: 0 0 0 2px rgba(182, 243, 107, 0.25);
+}
+
+.gg-crt-name {
+  flex: 1;
+  color: var(--gg-ink);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.gg-crt-status {
+  font-size: 8px;
+  border: 2px solid currentcolor;
+  padding: 2px 4px;
+  color: var(--gg-mute);
+}
+
+/* The CLI's own three words for itself, each with the colour the HUD already uses for it. */
+.gg-crt-status[data-status='busy'] {
+  color: var(--gg-green);
+}
+.gg-crt-status[data-status='idle'] {
+  color: var(--gg-cyan);
+}
+.gg-crt-status[data-status='shell'] {
+  color: var(--gg-yellow);
+}
+
+.gg-crt-meta {
+  margin: 0;
+  color: var(--gg-mute);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.gg-crt-screen {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 2px solid var(--gg-night);
+  background: #04080f;
+}
+
+.gg-crt-body {
+  /* Fills the screen it sits in rather than capping itself at 220px: the panel around it is
+     what is bounded now, and the old cap left dead space under a transcript with more to show. */
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 120px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gg-haze) transparent;
+}
+
+/* The desk answers back. Same composer idiom as an employee's chat, so both panels under the room
+   behave the same way. */
+.gg-crt-composer { display: flex; align-items: flex-end; gap: 6px; flex: 0 0 auto; }
+.gg-crt-composer textarea {
+  flex: 1;
+  min-width: 0;
+  resize: vertical;
+  border: 2px solid var(--gg-haze);
+  background: var(--gg-night);
+  color: var(--gg-ink);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 1.35;
+}
+.gg-crt-composer textarea:focus { border-color: var(--office-accent); outline: none; }
+.gg-crt-composer textarea:disabled { opacity: 0.6; }
+.native-office .gg-crt-send {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding-inline: 12px;
+}
+.gg-crt-note { margin: 0; font-size: 15px; color: var(--gg-green); }
+.gg-crt-alert { margin: 0; font-size: 15px; color: var(--gg-red); overflow-wrap: anywhere; }
+
+.gg-crt-line {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 6px;
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--gg-mute);
+  overflow-wrap: anywhere;
+}
+
+.gg-crt-glyph {
+  color: var(--gg-haze);
+  text-align: center;
+}
+
+.gg-crt-line[data-kind='prompt'] {
+  color: var(--gg-cyan);
+}
+.gg-crt-line[data-kind='prompt'] .gg-crt-glyph {
+  color: var(--gg-cyan);
+}
+.gg-crt-line[data-kind='say'] {
+  color: var(--gg-ink);
+}
+.gg-crt-line[data-kind='say'] .gg-crt-glyph {
+  color: var(--gg-pink, #ff4da6);
+}
+.gg-crt-line[data-kind='tool'] {
+  color: var(--gg-green);
+}
+.gg-crt-line[data-kind='tool'] .gg-crt-glyph {
+  color: var(--gg-green);
+}
+.gg-crt-line[data-kind='error'] {
+  color: var(--gg-red);
+}
+.gg-crt-line[data-kind='error'] .gg-crt-glyph {
+  color: var(--gg-red);
+}
+
+.gg-crt-cursor {
+  width: 8px;
+  height: 14px;
+  background: var(--gg-green);
+  animation: gg-crt-blink 1s steps(1, end) infinite;
+}
+
+@keyframes gg-crt-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Scanlines over the text, not under it; pointer-events off so the log still scrolls. */
+.gg-crt-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(66, 232, 237, 0.05) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-crt-cursor {
+    animation: none;
+  }
+}

@@ -62,12 +62,6 @@
   align-items: center;
   gap: 14px;
 }
-.gg-hud-divider {
-  flex: none;
-  width: 2px;
-  height: 32px;
-  background: var(--gg-haze);
-}
 .gg-hud-chip {
   display: flex;
   flex: none;
@@ -121,11 +115,13 @@
   background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 6px);
 }
 .gg-hud-sub {
-  max-width: 136px;
+  max-width: 80px;
   margin-top: 2px;
   overflow: hidden;
-  font-size: 16px;
-  line-height: 12px;
+  /* HUD type scale: label 8, value 10. At 16px this line needed 115px inside an
+     80px clamp, so every chip's sub-line was cut mid-word ("87 api · 11…"). */
+  font-size: 8px;
+  line-height: 10px;
   color: var(--gg-mute);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -143,30 +139,10 @@
   50% { opacity: 0.25; }
 }
 
-/* Real money box: dashed ink frame + "REAL $" legend, no neon. Must not read as game currency. */
-.gg-hud-real {
-  position: relative;
-  flex: none;
-  /* Top padding clears the "REAL $" legend so it cannot sit on top of the COST label. */
-  padding: 9px 6px 2px;
-  border: 2px dashed rgba(232, 230, 255, 0.35);
-  background: rgba(11, 8, 32, 0.6);
-}
-.gg-hud-real-tag {
-  position: absolute;
-  top: -4px;
-  left: 4px;
-  padding: 0 2px;
-  font-size: 8px;
-  line-height: 8px;
-  color: var(--gg-ink);
-  background: var(--gg-void);
-  white-space: nowrap;
-}
 
 /* Responsive: < 1400 no sub text, < 1150 no labels, < 900 only CREDITS + COST. */
 @media (width >= 1600px) {
-  .gg-hud-sub { max-width: 176px; }
+  .gg-hud-sub { max-width: 112px; }
 }
 @media (width < 1400px) {
   .gg-hud-sub { display: none; }
@@ -178,6 +154,13 @@
 }
 @media (width < 900px) {
   .gg-hud-chip[data-kind='energy'] { display: none; }
+}
+/* Phones: the logo, tabs, key button and gutters claim ~300px of a 390px bar, which
+   left the HUD 52px for a 110px chip — `overflow-x: clip` then cut the city's one
+   number in half ("12.0M tok" → "12."). Tighten the frame instead of clipping. */
+@media (width < 760px) {
+  .gg-nav-frame { gap: 8px; padding-inline: 10px; }
+  .gg-nav-tabs a { padding-inline: 8px; }
 }
 
 /* ---- "No key" warning dot on the key button ---- */

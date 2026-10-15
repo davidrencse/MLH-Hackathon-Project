@@ -5,10 +5,9 @@
 .gg-nav-word { color: var(--gg-ink); text-shadow: 2px 0 #42e8ed30; }
 .gg-top-nav .gg-hud-label { color: var(--gg-mute); }
 .gg-top-nav .gg-hud-value { color: var(--gg-ink); }
-.gg-hud-real { background: #0b1624; border-color: #3e5a70; }
 .gg-top-nav nav a, .gg-top-nav a[title]:not(.gg-nav-logo) { border-color: #3e5a70; box-shadow: inset 0 1px #e2f5fa12; }
 .gg-top-nav nav a.gg-nav-tab-active { background: #42e8ed; border-color: #77fbff; color: #070f1c; box-shadow: 0 0 14px #42e8ed25; }
-:is(.gg-build-menu, .gg-weather, .gg-sp-shell, .gg-of-shell, .gg-mobile-directory, .gg-cred-panel) {
+:is(.gg-build-menu, .gg-sp-shell, .gg-of-shell, .gg-mobile-directory, .gg-cred-panel) {
   background-color: #111f32; border: 1px solid #3e5a70;
   box-shadow: inset 0 1px #e2f5fa14, 0 8px 24px #030916a6;
 }
@@ -22,13 +21,25 @@
 .gg-build-menu ul button:hover, .gg-camera-controls button:hover, .gg-directory-toggle:hover { background: #233d51; border-color: #42e8ed; }
 .gg-build-menu ul button[aria-pressed='true'] { background: #163c4a; border-color: #42e8ed; }
 .gg-build-menu > div:last-child { background: #0b1624; }
-.gg-weather { background: #0b1624; }
 .gg-dozer-button { background: #ffcd70 !important; color: #070f1c !important; border: 1px solid #ffe6b4 !important; box-shadow: 0 5px 16px #03091680 !important; }
 .gg-dozer-button[aria-pressed='true'] { background: #ff627b !important; }
-.gg-building-label { background: #111f32 !important; border-color: #42e8ed66 !important; box-shadow: 0 3px 10px #03091699 !important; color: #e2f5fa; }
+/* The soft cyan border is the *idle* look. Applied to every label it also overrode the
+   inline status colour, so an erroring or offline tower painted exactly like a healthy
+   one — the one thing the label exists to show. */
+.gg-building-label { background: #111f32 !important; box-shadow: 0 3px 10px #03091699 !important; color: #e2f5fa; }
+.gg-building-label[data-status='idle'] { border-color: #42e8ed66 !important; }
+.gg-voxel-plot { display: flex; min-height: 44px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; white-space: nowrap; cursor: pointer; }
+.gg-voxel-plot > span { font: 8px/1.4 var(--font-pixel, 'Press Start 2P'), monospace; }
+.gg-voxel-plot small { font: 18px/1 'VT323', monospace; }
+@media (width < 900px) { .gg-voxel-plot { padding: 8px; } .gg-voxel-plot > span { font-size: 7px; } .gg-voxel-plot small { display: none; } }
 .gg-voxel-plot { background: #111f32; border: 1px solid #3e5a70; color: #e2f5fa; box-shadow: inset 0 1px #e2f5fa12, 0 5px 14px #03091688; }
 .gg-voxel-plot small { color: #a3bbc9; }
 .gg-voxel-plot:hover { background: #203047; border-color: #42e8ed; }
+/* District nameplate on an opened plate, and on the core island. Quieter than the OPEN PLOT
+   button on purpose: it is a place name, not a call to action. */
+.gg-plot-name { padding: 3px 8px; white-space: nowrap; text-transform: uppercase; letter-spacing: .08em; font: 8px/1 var(--font-pixel, 'Press Start 2P'), monospace; color: #a3bbc9; background: #0b1726cc; border: 1px solid #3e5a7099; box-shadow: inset 0 1px #e2f5fa0f; }
+.gg-plot-name[data-core] { color: #e2f5fa; border-color: #42e8ed99; }
+@media (width < 900px) { .gg-plot-name { display: none; } }
 .gg-mobile-nav { background: #0b1624; border-top: 1px solid #3e5a70; }
 .gg-mobile-nav a.is-active { background: #163c4a; color: #42e8ed; box-shadow: inset 0 2px #42e8ed; }
 .gg-mobile-city-hint { color: #a3bbc9; text-shadow: 0 2px 4px #070f1c; }

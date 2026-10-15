@@ -39,9 +39,9 @@ function Corners() {
 }
 
 function StatsHeader() {
-  const count = useGrid((s) => s.order.filter((id) => s.buildings[id].type !== 'router').length)
+  const count = useGrid((s) => s.order.length)
   return (
-    <header className="gg-dashboard-header relative mb-6 border-2 border-gg-haze bg-gg-night px-6 py-5 shadow-[4px_4px_0_0_rgba(0,0,0,.5)]">
+    <header className="relative mb-6 border-2 border-gg-haze bg-gg-night px-6 py-5 shadow-[4px_4px_0_0_rgba(0,0,0,.5)]">
       <Corners />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
@@ -78,7 +78,7 @@ function TabStrip() {
   return (
     <nav
       aria-label="Dashboard"
-      className="gg-dashboard-tabs sticky top-0 z-20 -mx-6 mb-6 flex overflow-x-auto border-b-2 border-gg-haze bg-gg-void/90 px-6 py-3 max-sm:-mx-4 max-sm:px-4"
+      className="sticky top-0 z-20 -mx-6 mb-6 flex overflow-x-auto border-b-2 border-gg-haze bg-gg-void/90 px-6 py-3 max-sm:-mx-4 max-sm:px-4"
     >
       {TABS.map((t) => (
         <NavLink key={t.to} to={t.to} end={t.end} className={tabClass}>
@@ -112,7 +112,7 @@ export function DashboardLayout() {
   return (
     <div className="h-full bg-gg-void">
       <TopNav />
-      <main ref={mainRef} className="gg-dashboard-main gg-cl-grid fixed inset-x-0 top-16 bottom-0 overflow-auto">
+      <main ref={mainRef} className="gg-cl-grid fixed inset-x-0 top-16 bottom-0 overflow-auto">
         <div className="mx-auto max-w-[1280px] px-6 py-6 max-sm:px-4">
           <StatsHeader />
           <TabStrip />

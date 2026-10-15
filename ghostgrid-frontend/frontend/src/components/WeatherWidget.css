@@ -9,4 +9,7 @@
 .gg-weather-details > span { display: flex; align-items: center; gap: 4px; }
 .gg-weather-details a:hover { color: var(--gg-cyan); }
 .gg-weather-details a:focus-visible { outline: 2px solid var(--gg-cyan); outline-offset: 2px; }
-@media (width < 600px) { .gg-weather { bottom: 12px; left: 12px; width: 220px; padding: 10px; } .gg-weather-main { margin: 10px 0; gap: 10px; } .gg-weather-main .font-pixel { font-size: 14px; } }
+.gg-weather-rain { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--gg-haze); font-size: 9px; color: var(--gg-cyan); text-transform: uppercase; letter-spacing: .04em; }
+/* The command bar is 560px centred with a 4.5rem gutter; below ~1100px it reaches
+   this corner, and two stacked HUD cards in one corner read as a bug. */
+@media (width < 1100px) { .gg-weather { display: none; } }

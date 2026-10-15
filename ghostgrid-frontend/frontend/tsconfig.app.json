@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    // The class of bug that blanked this whole app twice — a map lookup returning `undefined`
+    // and being rendered, a symbol used before it exists — is exactly what strictNullChecks
+    // catches. Without it `npm run verify` went green on both.
+    "strict": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "es2023",
     "lib": [

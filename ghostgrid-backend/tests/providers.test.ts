@@ -657,6 +657,7 @@ describe("Claude SDK integration contract", () => {
     expect(result.usage).toEqual({
       inputTokens: 20,
       outputTokens: 5,
+      cachedInputTokens: null,
       costUsd: null,
     });
     expect(events).toContainEqual({

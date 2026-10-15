@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { resolve, sep } from "node:path";
 export interface Config {
   host: string;
   port: number;
@@ -28,8 +28,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const apiToken = env.GHOSTGRID_API_TOKEN;
   if (apiToken !== undefined && (!apiToken.trim() || /[\s\x00-\x1f\x7f]/.test(apiToken)))
     throw new Error("GHOSTGRID_API_TOKEN must be a nonempty token without whitespace or control characters");
-  if (!["127.0.0.1", "::1", "localhost"].includes(host) && !apiToken)
+  const loopback = ["127.0.0.1", "::1", "localhost"].includes(host);
+  if (!loopback && !apiToken)
     throw new Error("GHOSTGRID_API_TOKEN is required for remote binding");
+  // On a remote bind this token is the only thing in front of an API that launches local
+  // processes and writes to disk, and every length passed the checks above — `=x` started
+  // cleanly and was guessable in one request. On loopback a short token stays allowed: the
+  // Host-header check already covers that case and dev convenience is worth more there.
+  if (!loopback && apiToken!.length < 32)
+    throw new Error(
+      "GHOSTGRID_API_TOKEN must be at least 32 characters when binding a non-loopback host",
+    );
   const dataDir = resolve(env.GHOSTGRID_DATA_DIR ?? "data");
   return {
     host,
@@ -51,7 +60,18 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean)
-      .map((s) => resolve(s)),
+      .map((s) => resolve(s))
+      // An allowlist is only a boundary if it is narrower than the machine. `/` or a bare `$HOME`
+      // — easy to reach by a typo or an unset variable — would make every file on disk a legal
+      // workspace for a write-capable agent, for `skills/install`, and for the worker launcher.
+      .map((path) => {
+        const home = env.HOME ?? env.USERPROFILE;
+        if (path === sep || (home && resolve(home) === path))
+          throw new Error(
+            `GHOSTGRID_ALLOWED_WORKSPACES must name a project directory, not ${path}`,
+          );
+        return path;
+      }),
     concurrency: positive("GHOSTGRID_CONCURRENCY", 4, 32),
     providerConcurrency: positive("GHOSTGRID_PROVIDER_CONCURRENCY", 2, 32),
     taskTimeoutMs: positive("GHOSTGRID_TASK_TIMEOUT_MS", 300000, 3600000),

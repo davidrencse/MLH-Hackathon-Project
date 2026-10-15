@@ -1,15 +1,22 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Html, OrbitControls } from '@react-three/drei'
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { Html } from '@react-three/drei/web/Html'
+import { useHtmlPortal } from './useHtmlPortal'
+import { OrbitControls } from '@react-three/drei/core/OrbitControls'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { pickLine } from './slang'
+import { endTurn, joinChatter, lineSeed, nextSpeaker, useChatter } from './chatter'
 import { employeeFor, managerOf, useOrg, type Employee } from './org'
 import { OrgPanel } from './OrgPanel'
-import { useBuildingOffices, useOffices, type Office } from './OrgChart'
+import { type CrewMember } from './crew'
+import { lanesFrom } from './lanes'
+import { ProjectOffices } from './ProjectOffices'
+import { VOID_GAP, deskPlatform, officeFloor, platformFor, projectPlatforms, projectTeams } from './projectOffice'
+import { bullpen } from './floorplan'
 import { useReducedMotion } from 'framer-motion'
 import * as THREE from 'three'
 import { create } from 'zustand'
 import type { OfficeWorker } from '@/api/backend'
-import { DESK_COMMANDS } from './deskCommands'
+import { deskCommandsFor } from './deskCommands'
 
 const BOX = new THREE.BoxGeometry(1, 1, 1)
 const MATERIALS = new Map<string, THREE.MeshLambertMaterial>()
@@ -17,36 +24,49 @@ function material(color: string) {
   if (!MATERIALS.has(color)) MATERIALS.set(color, new THREE.MeshLambertMaterial({ color, flatShading: true }))
   return MATERIALS.get(color)!
 }
+// PERF: no castShadow/receiveShadow. A shadow map renders every caster a second time, and this
+// room is ~570 separate boxes, so shadows were exactly doubling the frame's draw calls (measured:
+// 1130 -> 574). The city made the same call long ago — see CityCanvas, "No real-time shadows" —
+// and fakes contact with a dark quad instead. Flat shading plus a low fill light carries the form.
 function Block({ position, size, color }: { position: [number, number, number]; size: [number, number, number]; color: string }) {
-  return <mesh geometry={BOX} material={material(color)} position={position} scale={size} castShadow receiveShadow />
+  return <mesh geometry={BOX} material={material(color)} position={position} scale={size} />
 }
 
-function Camera({ width, depth }: { width: number; depth: number }) {
+// Cubicle screens and the trim that caps them, shared by the open-plan desks and the rooms.
+const PARTITION = '#8e82a8'
+const ROOM_TRIM = '#b6a899'
+
+/**
+ * Frames the floor, but never zooms out past the point where an office is readable.
+ *
+ * It used to fit the whole floor, so every project added shrank all of them — at six platforms
+ * the desks were specks. `readable` is the span of one platform and its gap, and the camera stops
+ * widening there; past it the floor is bigger than the frame on purpose and the player pans to
+ * reach the rest.
+ */
+function Camera({ width, depth, readable }: { width: number; depth: number; readable: number }) {
   const { camera, size } = useThree()
   useLayoutEffect(() => {
     camera.position.set(18, 18, 18)
     camera.lookAt(0, 0.7, 0)
     if (camera instanceof THREE.OrthographicCamera) {
-      camera.zoom = Math.min(size.width / ((width + depth) * 0.72), size.height / ((width + depth) * 0.42 + 4)) * 0.88
+      const span = Math.min(width + depth, readable)
+      camera.zoom = Math.min(size.width / (span * 0.72), size.height / (span * 0.42 + 4)) * 0.88
       camera.updateProjectionMatrix()
     }
-  }, [camera, size.width, size.height, width, depth])
+  }, [camera, size.width, size.height, width, depth, readable])
   return null
 }
 
-// One speaker in the whole room at a time: a new bubble every 5s, visible ~3.5s.
-const SPEAKERS = new Set<number>()
-const useChatter = create<{ speaker: number | null; tick: number }>(() => ({ speaker: null, tick: 0 }))
+// One speaker in the whole room at a time: a new bubble every 5s, visible ~3.5s. The turn itself
+// lives in `chatter.ts`, which is where the one-voice rule is enforced and tested.
 function ChatterClock() {
   useEffect(() => {
     let hide: ReturnType<typeof setTimeout>
     const next = () => {
-      const all = [...SPEAKERS]
-      if (!all.length) return
-      const speaker = all[Math.floor(Math.random() * all.length)]
-      useChatter.setState((s) => ({ speaker, tick: s.tick + 1 }))
+      if (!nextSpeaker()) return
       clearTimeout(hide)
-      hide = setTimeout(() => useChatter.setState({ speaker: null }), 3500)
+      hide = setTimeout(endTurn, 3500)
     }
     const first = setTimeout(next, 1200)
     const id = setInterval(next, 5000)
@@ -55,14 +75,19 @@ function ChatterClock() {
   return null
 }
 
-function SpeechBubble({ seed }: { seed: number }) {
-  useEffect(() => { SPEAKERS.add(seed); return () => { SPEAKERS.delete(seed) } }, [seed])
-  const speaking = useChatter((s) => s.speaker === seed)
+function SpeechBubble({ id }: { id: string }) {
+  // The turn is keyed on this rendered person, not on their id: if the same employee were ever
+  // drawn twice — seated in their room and again at a desk — they still could not talk over
+  // themselves. The id only decides which line they tell.
+  const voice = useId()
+  useEffect(() => joinChatter(voice), [voice])
+  const speaking = useChatter((s) => s.speaker === voice)
   const tick = useChatter((s) => s.tick)
+  const portal = useHtmlPortal()
   if (!speaking) return null
-  return <Html position={[0, 1.9, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-    <div style={{ background: '#fffbe8', color: '#111', border: '2px solid #111', boxShadow: '3px 3px 0 #111', padding: '4px 8px', font: "8px/1.3 'Press Start 2P', monospace", whiteSpace: 'nowrap', transform: 'translateY(-60%)' }}>
-      {pickLine(seed, tick)}
+  return <Html portal={portal} position={[0, 1.9, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+    <div style={{ background: 'var(--gg-night)', color: 'var(--gg-ink)', border: '2px solid var(--gg-haze)', boxShadow: '3px 3px 0 rgba(0,0,0,0.6)', padding: '4px 8px', font: "8px/1.3 'Press Start 2P', monospace", whiteSpace: 'nowrap', transform: 'translateY(-60%)' }}>
+      {pickLine(lineSeed(id), tick)}
     </div>
   </Html>
 }
@@ -73,36 +98,37 @@ const useDrag = create<{ drag: Drag | null }>(() => ({ drag: null }))
 
 function DragGhost() {
   const drag = useDrag((s) => s.drag)
+  const portal = useHtmlPortal()
   if (!drag || !drag.moved) return null
   return <group position={[drag.pos[0], 0.9, drag.pos[1]]}>
     <Person color={drag.color} />
-    <Html position={[0, 2.1, 0]} center zIndexRange={[12, 0]} style={{ pointerEvents: 'none' }}>
-      <div style={{ font: "8px 'Press Start 2P', monospace", background: '#ffec27', color: '#111', border: '2px solid #111', padding: '2px 5px', whiteSpace: 'nowrap' }}>✋ {drag.emp.name}</div>
+    <Html portal={portal} position={[0, 2.1, 0]} center zIndexRange={[12, 0]} style={{ pointerEvents: 'none' }}>
+      <div style={{ font: "8px 'Press Start 2P', monospace", background: 'var(--gg-yellow)', color: 'var(--gg-void)', border: '2px solid var(--gg-void)', padding: '2px 5px', whiteSpace: 'nowrap' }}>✋ {drag.emp.name}</div>
     </Html>
   </group>
 }
 
-function DragFloor({ width, depth, pods, buildingId }: { width: number; depth: number; pods: { id: string; x: number; z: number }[]; buildingId: string }) {
+function DragFloor({ width, depth, pods, onTap }: {
+  width: number; depth: number
+  pods: { id: string; x: number; z: number; w: number; d: number }[]
+  /** A press that never moved is a click on that person: select them. */
+  onTap: (id: string) => void
+}) {
   const end = () => {
     const d = useDrag.getState().drag
     useDrag.setState({ drag: null })
     document.body.style.cursor = ''
     if (!d) return
-    if (!d.moved) { useOrg.getState().pick(d.emp); return }
-    const target = pods.find((p) => Math.abs(d.pos[0] - p.x) < POD_W / 2 && Math.abs(d.pos[1] - p.z) < POD_D / 2)
+    // Carrying somebody needs the whole pointer press, so a person in a room cannot also have an
+    // onClick: a tap ends here instead. It used to call `useOrg.pick`, which nothing read — so
+    // clicking an employee did nothing at all, however many times you clicked.
+    if (!d.moved) { onTap(d.emp.id); return }
+    // A drop in the corridor between rooms hits nothing, and nobody moves.
+    const target = pods.find((p) => Math.abs(d.pos[0] - p.x) < p.w / 2 && Math.abs(d.pos[1] - p.z) < p.d / 2)
     if (!target || target.id === d.emp.officeId) return
-    useOffices.getState().update(buildingId, (os) => {
-      const person = os.find((o) => o.id === d.emp.officeId)?.people.find((p) => p.id === d.emp.id)
-      if (!person) return os
-      return os.map((o) => {
-        if (o.id === d.emp.officeId) return { ...o, people: o.people.filter((p) => p.id !== person.id) }
-        if (o.id === target.id) {
-          const role = person.role === 'Manager' && o.people.some((p) => p.role === 'Manager') ? 'Team Lead' : person.role
-          return { ...o, people: [...o.people, { ...person, role }] }
-        }
-        return o
-      })
-    })
+    // A room is a project now, so carrying someone into one is the same act as dragging their
+    // card into that lane on the staffing board: it writes the one assignment both views read.
+    useOrg.getState().assignTo(d.emp.id, target.id)
   }
   useEffect(() => { window.addEventListener('pointerup', end); return () => window.removeEventListener('pointerup', end) })
   return <mesh rotation-x={-Math.PI / 2} position={[0, 0.9, 0]}
@@ -118,18 +144,27 @@ function DragFloor({ width, depth, pods, buildingId }: { width: number; depth: n
   </mesh>
 }
 
-const TAG: Record<string, string> = { Manager: '#ff004d', 'Team Lead': '#ffa300', Engineer: '#29adff' }
+// The same three role colours the staffing board and the org chart use.
+const TAG: Record<string, string> = { Manager: 'var(--gg-pink)', 'Team Lead': 'var(--gg-yellow)', Engineer: 'var(--gg-cyan)' }
+// Rank only. The tag used to carry the person's project under it, which was worth saying while a
+// room held a whole org-chart team: you could not otherwise tell what anyone was working on. A
+// room is a project now, and `projectTeams` groups people by lane, so everybody under one roof is
+// on that roof's project by construction — the chip could never read anything but the nameplate
+// over the door, and nine desks in one room stacked nine copies of it into an unreadable pile.
 function RoleTag({ emp }: { emp: Employee }) {
-  const project = useOrg((s) => s.assign[emp.id])
-  return <Html position={[0, 1.5, 0]} center zIndexRange={[9, 0]} style={{ pointerEvents: 'none' }}>
+  const portal = useHtmlPortal()
+  return <Html portal={portal} position={[0, 1.5, 0]} center zIndexRange={[9, 0]} style={{ pointerEvents: 'none' }}>
     <div style={{ font: "8px/1.3 'Press Start 2P', monospace", textAlign: 'center', whiteSpace: 'nowrap' }}>
-      <span style={{ background: TAG[emp.role], color: '#fff', padding: '1px 4px' }}>{emp.role === 'Manager' ? 'MGR' : emp.role === 'Team Lead' ? 'LEAD' : 'ENG'}</span>
-      {project && <div style={{ background: '#111', color: '#ffec27', padding: '1px 4px', marginTop: 2 }}>{project}</div>}
+      <span style={{ background: TAG[emp.role], color: 'var(--gg-void)', padding: '1px 4px' }}>{emp.role === 'Manager' ? 'MGR' : emp.role === 'Team Lead' ? 'LEAD' : 'ENG'}</span>
     </div>
   </Html>
 }
 
-function Person({ color, host = false, typing = false, seed, emp }: { color: string; host?: boolean; typing?: boolean; seed?: number; emp?: Employee }) {
+function Person({ color, host = false, typing = false, chatterId, emp, onPick }: {
+  color: string; host?: boolean; typing?: boolean; chatterId?: string; emp?: Employee
+  /** Selects this person. Rooms' people are dragged instead, and tap-select ends in DragFloor. */
+  onPick?: (id: string) => void
+}) {
   const hands = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const reduce = useReducedMotion()
@@ -142,9 +177,9 @@ function Person({ color, host = false, typing = false, seed, emp }: { color: str
   const draggingMe = useDrag((s) => s.drag?.moved && s.drag.emp.id === emp?.id)
   return <group visible={!draggingMe} position={[0, host ? 0 : 0.1, 0]}
     onPointerDown={emp?.officeId ? (e) => { e.stopPropagation(); document.body.style.cursor = 'grabbing'; useDrag.setState({ drag: { emp, color, start: [e.point.x, e.point.z], pos: [e.point.x, e.point.z], moved: false } }) } : undefined}
-    onClick={emp && !emp.officeId ? (e) => { e.stopPropagation(); useOrg.getState().pick(emp) } : undefined}
+    onClick={emp && !emp.officeId && onPick ? (e) => { e.stopPropagation(); onPick(emp.id) } : undefined}
     onPointerOver={emp ? () => (document.body.style.cursor = emp.officeId ? 'grab' : 'pointer') : undefined} onPointerOut={emp ? () => (document.body.style.cursor = '') : undefined}>
-    {seed !== undefined && <SpeechBubble seed={seed} />}
+    {chatterId !== undefined && <SpeechBubble id={chatterId} />}
     {emp && <RoleTag emp={emp} />}
     <Block color="#3f3655" position={[-0.14, 0.22, 0]} size={[0.22, 0.4, 0.24]} />
     <Block color="#3f3655" position={[0.14, 0.22, 0]} size={[0.22, 0.4, 0.24]} />
@@ -191,7 +226,7 @@ function TerminalScreen({ worker, accent }: { worker: OfficeWorker; accent: stri
     const context = screen.canvas.getContext('2d')!
     context.fillStyle = '#10282b'; context.fillRect(0, 0, 128, 80)
     context.font = '12px monospace'
-    const commands = DESK_COMMANDS[worker.runtime]
+    const commands = deskCommandsFor(worker.runtime)
     for (let row = 0; row < 4; row++) {
       context.fillStyle = row === 3 ? accent : '#87b6a5'
       context.fillText(commands[(phase + row + 3) % commands.length].replace('…', '...'), 5, 14 + row * 16)
@@ -218,6 +253,11 @@ function Desk({ worker, x, z, selected, accent, onSelect, emp }: {
   const screen = worker ? worker.runtime.includes('browser') ? '#9bc6d0' : accent : '#433a59'
   return <group position={[x, 0, z]} onClick={(event) => { if (worker) { event.stopPropagation(); onSelect(worker.id) } }}>
     {selected && <Block color={accent} position={[0, 0.04, 0.1]} size={[2.7, 0.05, 2.4]} />}
+    {/* Screens on the two faces the camera never looks through, so the bullpen reads as cubicles
+        against the walled rooms behind it. */}
+    <Block color={PARTITION} position={[0, 0.66, -0.86]} size={[2.6, 1.32, 0.1]} />
+    <Block color={ROOM_TRIM} position={[0, 1.35, -0.86]} size={[2.64, 0.07, 0.16]} />
+    <Block color={PARTITION} position={[-1.3, 0.6, -0.3]} size={[0.1, 1.2, 1.2]} />
     <Block color="#b89083" position={[0, 1, -0.25]} size={[2.2, 0.18, 1.1]} />
     {[-0.86, 0.86].map((x) => <Block key={x} color="#72566d" position={[x, 0.48, -0.25]} size={[0.16, 0.96, 0.7]} />)}
     <Block color="#59506c" position={[0, 1.48, -0.53]} size={[0.96, 0.62, 0.14]} />
@@ -230,121 +270,132 @@ function Desk({ worker, x, z, selected, accent, onSelect, emp }: {
     <Block color="#706389" position={[0, 0.4, 0.8]} size={[0.64, 0.16, 0.64]} />
     <Block color="#706389" position={[0, 0.71, 1.04]} size={[0.64, 0.58, 0.16]} />
     <Block color="#3e344f" position={[0, 0.2, 0.8]} size={[0.12, 0.4, 0.12]} />
-    {worker && <group position={[0, 0.18, 0.66]} rotation-y={-Math.PI / 4}><Person color={accent} typing emp={emp} seed={[...worker.id].reduce((a, c) => a + c.charCodeAt(0), 0)} /></group>}
-  </group>
-}
-
-const POD_W = 6.4
-const POD_D = 5.4
-const RUGS = ['#3b2f5c', '#2f4a5c', '#5c2f45', '#2f5c46', '#5c4a2f', '#46305c']
-const ROLE_ORDER = { Manager: 0, 'Team Lead': 1, Engineer: 2 } as const
-
-// One team "pod" per org-chart office: colored rug, name sign, manager desk up front, team desks behind.
-function OfficePod({ office, index, x, z, accent }: { office: Office; index: number; x: number; z: number; accent: string }) {
-  const people = [...office.people].sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role])
-  const mgr = people.find((p) => p.role === 'Manager')
-  const team = people.filter((p) => p.role !== 'Manager').slice(0, 6)
-  const rug = RUGS[index % RUGS.length]
-  return <group position={[x, 0, z]}>
-    {/* carpet */}
-    <Block color={rug} position={[0, 0.06, 0]} size={[POD_W - 0.3, 0.04, POD_D - 0.3]} />
-    {/* back + side walls (solid lower half, glass upper) */}
-    {([[0, -POD_D / 2 + 0.1, POD_W - 0.2, 0.14], [-POD_W / 2 + 0.1, 0, 0.14, POD_D - 0.2], [POD_W / 2 - 0.1, 0, 0.14, POD_D - 0.2]] as const).map(([wx, wz, ww, wd], k) => <group key={k}>
-      <Block color="#d9cfc4" position={[wx, 0.55, wz]} size={[ww, 1.1, wd]} />
-      <mesh geometry={BOX} position={[wx, 1.55, wz]} scale={[ww, 0.9, wd * 0.6]}><meshLambertMaterial color="#9fd8ff" transparent opacity={0.28} /></mesh>
-      <Block color={accent} position={[wx, 2.03, wz]} size={[ww + 0.02, 0.07, wd + 0.02]} />
-    </group>)}
-    {/* front wall with a door gap */}
-    {[-1, 1].map((side) => <group key={side} position={[side * (POD_W / 4 + 0.35), 0, POD_D / 2 - 0.1]}>
-      <Block color="#d9cfc4" position={[0, 0.55, 0]} size={[POD_W / 2 - 0.9, 1.1, 0.14]} />
-      <mesh geometry={BOX} position={[0, 1.55, 0]} scale={[POD_W / 2 - 0.9, 0.9, 0.08]}><meshLambertMaterial color="#9fd8ff" transparent opacity={0.28} /></mesh>
-      <Block color={accent} position={[0, 2.03, 0]} size={[POD_W / 2 - 0.88, 0.07, 0.16]} />
-    </group>)}
-    {/* door frame + name plate */}
-    <Block color="#5a4636" position={[0, 2.05, POD_D / 2 - 0.1]} size={[1.5, 0.12, 0.18]} />
-    <Html position={[0, 2.45, POD_D / 2 - 0.1]} center zIndexRange={[8, 0]} style={{ pointerEvents: 'none' }}>
-      <div style={{ font: "9px 'Press Start 2P', monospace", background: '#111', color: '#ffec27', border: `2px solid ${accent}`, padding: '3px 6px', whiteSpace: 'nowrap' }}>🏢 {office.name} · {office.people.length}</div>
-    </Html>
-    {/* ceiling light */}
-    <pointLight position={[0, 2.6, 0]} intensity={4} distance={5} color="#ffe9c4" />
-    {mgr && <group position={[POD_W / 2 - 1.3, 0, POD_D / 2 - 1.3]}>
-      <Block color="#7a5a48" position={[0, 0.75, -0.55]} size={[1.6, 0.1, 0.7]} />
-      <Block color="#2b2140" position={[0, 1.05, -0.8]} size={[0.6, 0.4, 0.05]} />
-      <Person color="#e2a197" host seed={index * 31 + 3} emp={{ id: mgr.id, name: mgr.name, role: 'Manager', officeId: office.id }} />
+    {worker && <group position={[0, 0.18, 0.66]} rotation-y={-Math.PI / 4}>
+      <Person color={accent} typing emp={emp} chatterId={worker.id} onPick={() => onSelect(worker.id)} />
     </group>}
-    {team.map((p, i) => {
-      const col = i % 3, row = Math.floor(i / 3)
-      const px = (col - 1) * 1.7 - 0.2, pz = -POD_D / 2 + 1.1 + row * 1.5
-      return <group key={p.id} position={[px, 0, pz]}>
-        <Block color="#b88a6a" position={[0, 0.72, -0.35]} size={[1.2, 0.08, 0.55]} />
-        <Block color={accent} position={[0, 1.0, -0.55]} size={[0.5, 0.34, 0.04]} />
-        <group scale={0.8} position={[0, 0, 0.15]}><Person color={p.role === 'Team Lead' ? '#ffa300' : accent} typing seed={index * 31 + i + 7}
-          emp={{ id: p.id, name: p.name, role: p.role, officeId: office.id, reportsTo: p.role === 'Team Lead' ? mgr?.id : people.find((q) => q.role === 'Team Lead')?.id ?? mgr?.id }} /></group>
-      </group>
-    })}
   </group>
 }
 
+// ---- offices ----------------------------------------------------------------------------------
+// Each org-chart office is a room of its own, not a cell in one big grid of cubicles: rooms stand
+// apart with a corridor between them, and the workspaces inside are sized by rank — the manager
+// gets a glazed private office, every team lead a wide corner cubicle with a return desk and two
+// screens, engineers a standard one they can see over.
+//
+// The camera only ever orbits the +x/+z quadrant (see DragAwareOrbit's azimuth limits), so each
+// room keeps its two far walls full height and its two near walls knee high: a doll-house cutaway,
+// rather than a room that hides its own desks behind its own glass.
+
+
+
+/**
+ * Dragging empty floor moves the view; dragging a person moves the person.
+ *
+ * Left-drag pans rather than orbits, because the azimuth is clamped to a narrow window anyway —
+ * there is almost no orbit to spend the main gesture on, and the floor is now wider than the
+ * frame, so panning is how you reach the next office. Rotation stays on the right button and on
+ * a two-finger drag. The whole control is switched off while someone is being carried, so the
+ * view does not slide out from under the drop.
+ */
 function DragAwareOrbit(props: React.ComponentProps<typeof OrbitControls>) {
   const dragging = useDrag((s) => !!s.drag)
-  return <OrbitControls {...props} enabled={!dragging} />
+  return <OrbitControls
+    {...props}
+    enabled={!dragging}
+    enablePan
+    screenSpacePanning
+    mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }}
+    touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
+  />
 }
 
-export function OfficeRoom3D({ workers, accent, selected, onSelect, buildingId = 'office' }: { workers: OfficeWorker[]; accent: string; selected: string | null; onSelect: (id: string) => void; buildingId?: string }) {
-  const offices = useBuildingOffices(buildingId)
-  const podCols = Math.min(2, offices.length)
-  const podRows = Math.ceil(offices.length / podCols)
-  const count = Math.max(3, workers.length + (workers.length < 12 ? 1 : 0))
-  const columns = Math.min(3, count)
-  const rows = Math.ceil(count / columns)
-  const deskW = columns * 3.3 + 2
-  const deskD = rows * 3.2 + 3.2
-  const width = Math.max(deskW, podCols * POD_W + 1.5)
-  const depth = deskD + podRows * POD_D + 0.5
-  const room = workers[0]?.buildingId ?? decodeURIComponent(location.pathname.split('/').pop() ?? 'office')
-  const mgr = managerOf(room)
-  const emps = workers.map((w, i) => employeeFor(room, w, i, columns))
+export function OfficeRoom3D({ workers, accent, selected, onSelect, crew, streams = [] }: { workers: OfficeWorker[]; accent: string; selected: string | null; onSelect: (id: string) => void; buildingId?: string; crew?: Map<string, CrewMember>; streams?: { id: string; name: string }[] }) {
+  // PERF: a hidden tab was still rendering this room every frame. Same guard as CityCanvas.
+  const [visible, setVisible] = useState(() => !document.hidden)
+  useEffect(() => {
+    const onVisibility = () => setVisible(!document.hidden)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+  const desks = bullpen(workers.length)
+  const roomName = workers[0]?.buildingId ?? decodeURIComponent(location.pathname.split('/').pop() ?? 'office')
+  const mgr = managerOf(roomName)
+  // One lane list for the whole room, from the same inputs the staffing board uses, so a tag over
+  // someone's head names the project their card sits in.
+  const projects = useOrg((state) => state.projects)
+  const assign = useOrg((state) => state.assign)
+  const lanes = useMemo(() => lanesFrom([...(crew?.values() ?? [])], projects, streams), [crew, projects, streams])
+  // Each project is a room of its own, holding exactly the people its lane holds on the staffing
+  // board. Benched people have no project, so they have no room — they stand at the terminal desks.
+  const teams = useMemo(
+    // roleKind and managerId travel with the person: without the kind a custom role lands in a
+    // cubicle whatever it does in a run, and without the manager an intern has no desk to sit at.
+    () => projectTeams(
+      [...(crew?.values() ?? [])].map((m) => ({
+        id: m.id, name: m.name, role: m.role, roleKind: m.roleKind, managerId: m.managerId, source: m.source, cwd: m.cwd,
+      })),
+      assign,
+      lanes,
+    ),
+    [crew, assign, lanes],
+  )
+  const floor = useMemo(() => officeFloor(teams, desks), [teams, desks])
+  const deck = deskPlatform(floor)
+  // One platform and its gap: the widest the camera will pull back to before the player pans.
+  const slab = platformFor(floor.room)
+  const readable = slab.w + slab.d + VOID_GAP * 2
+  const { width, depth } = floor
+  // The roster owns names and roles, so the tag over a desk matches its card on the staffing board.
+  const emps = workers.map((w, i) => {
+    const base = employeeFor(roomName, w, i, desks.columns)
+    const member = crew?.get(w.id)
+    return member ? { ...base, name: member.name, role: member.role } : base
+  })
   const nameOf = (id?: string) => id === mgr.id ? mgr.name : id?.startsWith('lead:') ? (emps[Number(id.split(':').pop())]?.name ?? 'Team Lead') : (emps.find((e) => e.id === id)?.name ?? '—')
   return <div className="native-room-canvas" aria-label="3D isometric office; select a worker using their desk or the buttons below" style={{ position: 'relative' }}>
-    <OrgPanel nameOf={nameOf} />
-    <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={Math.min(1.5, window.devicePixelRatio || 1)} shadows gl={{ antialias: true }}>
-      <Camera width={width} depth={depth} />
+    <OrgPanel nameOf={nameOf} lanes={lanes} crew={crew} />
+    {/* `shadows` alone asks for PCFSoftShadowMap, which three has removed: it warned on
+        every mount and silently fell back. Name the filter the renderer actually uses. */}
+    <Canvas orthographic camera={{ position: [18, 18, 18], near: 0.1, far: 100 }} dpr={1} frameloop={visible ? 'always' : 'never'} gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
+      <Camera width={width} depth={depth} readable={readable} />
       <ChatterClock />
-      <DragAwareOrbit target={[0, 0.7, 0]} enablePan={false} enableDamping={false}
+      <DragAwareOrbit target={[0, 0.7, 0]} enableDamping={false}
         minPolarAngle={0.65} maxPolarAngle={1.1} minAzimuthAngle={0.25} maxAzimuthAngle={1.35}
         minZoom={12} maxZoom={160} />
-      <color attach="background" args={['#161026']} />
-      <ambientLight intensity={1.4} />
-      <directionalLight position={[4, 12, 8]} intensity={2} color="#ffe4c2" castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12} shadow-bias={-0.001} />
-      <Block color="#473751" position={[0, -0.22, 0]} size={[width, 0.44, depth]} />
-      {Array.from({ length: Math.ceil(depth / 0.5) }, (_, i) => <Block key={i} color={i % 2 ? '#937276' : '#85666f'} position={[0, 0.025, -depth / 2 + i * 0.5 + 0.25]} size={[width - 0.08, 0.05, 0.48]} />)}
-      <Block color="#6c536f" position={[-width / 2, 1.65, 0]} size={[0.18, 3.3, depth]} />
-      <Block color="#79607e" position={[0, 1.65, -depth / 2]} size={[width, 3.3, 0.18]} />
-      <Block color="#b49ca0" position={[-width / 2 + 0.12, 0.15, 0]} size={[0.12, 0.3, depth]} />
-      <Block color="#b49ca0" position={[0, 0.15, -depth / 2 + 0.12]} size={[width, 0.3, 0.12]} />
-      {/* Cutaway back wall: two night windows, wooden frames and a little moon. */}
-      {[-width * 0.22, width * 0.2].map((x) => <group key={x} position={[x, 2, -depth / 2 + 0.14]}>
-        <Block color="#c0a79e" position={[0, 0, 0]} size={[2.2, 1.7, 0.12]} />
-        <Block color="#222b4c" position={[0, 0, 0.08]} size={[1.96, 1.46, 0.04]} />
-        <Block color="#f2dfac" position={[0.55, 0.34, 0.12]} size={[0.3, 0.3, 0.03]} />
-        <Block color="#c0a79e" position={[0, 0, 0.14]} size={[0.08, 1.5, 0.06]} />
-        <Block color="#c0a79e" position={[0, 0, 0.14]} size={[2, 0.08, 0.06]} />
-        <Block color="#c0a79e" position={[0, -0.86, 0.2]} size={[2.4, 0.12, 0.4]} />
-      </group>)}
-      {/* Small bookcase tucked against the side wall. */}
-      {[0.7, 1.4, 2.1].map((y) => <group key={y}>
-        <Block color="#c19382" position={[-width / 2 + 0.45, y, -depth / 2 + 1.25]} size={[0.7, 0.12, 1.7]} />
-        {[0, 1, 2, 3, 4].map((i) => <Block key={i} color={['#91b9a6', '#d3a380', '#ad98c0'][i % 3]} position={[-width / 2 + 0.4, y + 0.27, -depth / 2 + 0.65 + i * 0.28]} size={[0.36, 0.45, 0.2]} />)}
-      </group>)}
-      <Plant x={width / 2 - 0.8} z={-depth / 2 + 0.8} />
-      <Plant x={-width / 2 + 0.6} z={depth / 2 - 0.6} />
-      <group position={[width / 2 - 0.8, 0, depth / 2 - 0.6]}><Person color="#e2a197" host seed={3} /></group>
-      <DragFloor width={width} depth={depth} buildingId={buildingId} pods={offices.map((o, i) => ({ id: o.id, x: ((i % podCols) - (podCols - 1) / 2) * POD_W, z: -depth / 2 + deskD + Math.floor(i / podCols) * POD_D + POD_D / 2 }))} />
+      <color attach="background" args={['#070f1c']} />
+      {/* Without a shadow map the light has to do the separating: less flat fill, a stronger key
+          from one side, and a dim back light so a far wall is not the same tone as a near one. */}
+      <ambientLight intensity={0.95} />
+      <directionalLight position={[4, 12, 8]} intensity={2.5} color="#ffe4c2" />
+      <directionalLight position={[-7, 5, -6]} intensity={0.5} color="#7fa6d8" />
+      {/* No shared floor: every project is its own platform, and the dark between them is the
+          point. The terminals get a platform of their own at the back. */}
+      <group position={[deck.x, 0, deck.z]}>
+        <Block color="#3a3b3d" position={[0, -0.35, 0]} size={[deck.w, 0.7, deck.d]} />
+        <Block color="#26272a" position={[0, -0.84, 0]} size={[deck.w - 0.9, 0.28, deck.d - 0.9]} />
+        <Block color="#55565a" position={[0, 0.01, 0]} size={[deck.w, 0.06, deck.d]} />
+        {[-1, 1].map((side) => <group key={side}>
+          <Block color={accent} position={[side * (deck.w / 2 - 0.05), 0.05, 0]} size={[0.1, 0.07, deck.d]} />
+          <Block color={accent} position={[0, 0.05, side * (deck.d / 2 - 0.05)]} size={[deck.w, 0.07, 0.1]} />
+        </group>)}
+        <Plant x={deck.w / 2 - 0.7} z={-deck.d / 2 + 0.7} />
+        <Plant x={-deck.w / 2 + 0.7} z={deck.d / 2 - 0.7} />
+        <group position={[deck.w / 2 - 0.9, 0, deck.d / 2 - 0.7]}><Person color="#e2a197" host chatterId="host" /></group>
+      </group>
+      <DragFloor width={width} depth={depth} onTap={onSelect}
+        pods={projectPlatforms(floor).map((platform) => ({ id: platform.id, x: platform.x, z: platform.z, w: platform.w, d: platform.d }))} />
       <DragGhost />
-      {offices.map((o, i) => <OfficePod key={o.id} office={o} index={i} accent={accent}
-        x={((i % podCols) - (podCols - 1) / 2) * POD_W} z={-depth / 2 + deskD + Math.floor(i / podCols) * POD_D + POD_D / 2} />)}
-      {Array.from({ length: count }, (_, i) => <Desk key={workers[i]?.id ?? `empty_${i}`} worker={workers[i]}
-        x={(i % columns - (columns - 1) / 2) * 3.3} z={Math.floor(i / columns) * 3.2 - depth / 2 + 2.3}
+      <ProjectOffices floor={floor} accent={accent}
+        renderPerson={(member, seat, team) => (
+          <group scale={seat.kind === 'lead' ? 0.95 : 0.85}>
+            {selected === member.id && <Block color={accent} position={[0, 0.02, 0]} size={[1.1, 0.05, 1.1]} />}
+            <Person color={seat.kind === 'lead' ? '#ffcd70' : accent} typing chatterId={member.id}
+              onPick={onSelect}
+              emp={{ id: member.id, name: member.name, role: member.role, officeId: team.id, reportsTo: member.reportsTo }} />
+          </group>
+        )} />
+      {Array.from({ length: desks.count }, (_, i) => <Desk key={workers[i]?.id ?? `empty_${i}`} worker={workers[i]}
+        {...desks.deskAt(i, depth)}
         selected={selected === workers[i]?.id} accent={accent} onSelect={onSelect} emp={emps[i]} />)}
     </Canvas>
   </div>

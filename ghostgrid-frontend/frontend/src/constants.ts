@@ -14,17 +14,6 @@ export interface CatalogEntry {
 }
 
 export const CATALOG: Record<BuildingType, CatalogEntry> = {
-  router: {
-    type: 'router',
-    label: '',
-    short: '',
-    role: '',
-    model: '',
-    provider: 'anthropic',
-    cost: 0,
-    accent: '#00f0ff',
-    buildable: false,
-  },
   codex: {
     type: 'codex',
     label: 'Codex Tower',
@@ -113,6 +102,32 @@ export const CATALOG: Record<BuildingType, CatalogEntry> = {
     accent: '#ffd400',
     buildable: false,
   },
+  // Personal agents live on Agent Row (agents/personal.ts): the player's own assistants, one
+  // house per agent. Not leased from the build menu.
+  agent: {
+    type: 'agent',
+    label: 'Personal Agent',
+    short: 'AGENT',
+    role: 'Your own agent. Lives on Agent Row.',
+    model: 'personal',
+    provider: 'custom',
+    cost: 0,
+    accent: '#00f0ff',
+    buildable: false,
+  },
+  // Wall Street towers are district landmarks: each one is an open-source quant project on
+  // GitHub (see wallstreet/roster.ts). They are not leased from the build menu.
+  quant: {
+    type: 'quant',
+    label: 'Quant House',
+    short: 'QUANT',
+    role: 'Open-source quant trading project. Live repository metadata from GitHub.',
+    model: 'open-source',
+    provider: 'custom',
+    cost: 0,
+    accent: '#39ff14',
+    buildable: false,
+  },
 }
 
 export const BOT_KINDS: Record<BotKind, { label: string; description: string; color: string }> = {
@@ -122,40 +137,27 @@ export const BOT_KINDS: Record<BotKind, { label: string; description: string; co
   custom: { label: 'Custom Bot', description: 'Anything else. You define the endpoint.', color: '#ff2bd6' },
 }
 
-// Nice one-line label for a bot. Catalog-seeded bots all use the trading tower art (so their
-// `kind` is always 'trading'), but carry their real identity in `source` — prefer that over the
-// generic kind so a security monitor is not labeled a trading bot.
-const CATALOG_BOT_NAMES: Record<string, string> = {
-  'paper-trader': 'Paper Trading',
-  'market-signal': 'Market Signal',
-}
-const CATALOG_KIND_LABELS: Record<string, string> = {
-  trading: 'Trading',
-  security: 'Security',
-  monitoring: 'Monitoring',
-  automation: 'Automation',
-}
-
+// Nice one-line label for a bot.
 export function botLabel(bot: BotConfig): string {
-  const named = bot.source ? CATALOG_BOT_NAMES[bot.source.botId] : undefined
-  if (named) return named
-  const kind = bot.source ? CATALOG_KIND_LABELS[bot.source.catalogKind] : undefined
-  if (kind) return kind
   return BOT_KINDS[bot.kind]?.label ?? BOT_KINDS.custom.label
 }
 
 // Agent buildings with fixed ids for console data and backend bootstrap.
 export const BUILDING_IDS: BuildingId[] = ['codex', 'cursor', 'claude', 'deepseek', 'groq', 'security']
 
+// ZONING: the five landmark super-blocks keep the core's four corners and its centre; the small
+// buildings take ONE mid block each (N / S / E / W) instead of stacking three in the N block,
+// which left the E block empty and the N block with no room for the lease pads to read. Spread
+// this way the skyline has a tower on every approach and the player always has a free mid lot
+// next to whichever side they are looking at. The rest of the lots are the build menu's.
 export const DEFAULT_BUILDINGS: { id: BuildingId; type: BuildingType; lot: number }[] = [
-  { id: 'router', type: 'router', lot: 0 },
   { id: 'codex', type: 'codex', lot: 3 }, // left of the spire in the iso view (the demo's main building)
-  { id: 'cursor', type: 'cursor', lot: 13 }, // N block — editor studio beside the Library
   { id: 'claude', type: 'claude', lot: 2 }, // right
   { id: 'deepseek', type: 'deepseek', lot: 1 }, // back (low and wide, still visible behind the spire)
-  { id: 'groq', type: 'groq', lot: 6 }, // N block, next to the Library — the low-latency track
   { id: 'security', type: 'security', lot: 4 },
   { id: 'library', type: 'library', lot: 5 }, // N block — the Library of Babel (news/Medium archive)
+  { id: 'cursor', type: 'cursor', lot: 11 }, // E block — editor studio, its own frontage
+  { id: 'groq', type: 'groq', lot: 9 }, // W block — the low-latency track
 ]
 
 // Back-compat lookup for the default buildings: BUILDINGS.codex.name etc.
@@ -218,6 +220,19 @@ export interface RuntimeEntry {
   models: string[]
   accent: string
   hint: string
+}
+
+/**
+ * A runtime entry, for a `RuntimeId` that may not be one.
+ *
+ * `Session.runtime` is typed `RuntimeId`, but the value is produced by a lookup over backend
+ * JSON (`RUNTIME_OF_BACKEND_TYPE` in api/liveOps.ts) that the compiler cannot check, so a
+ * provider type this build has never heard of arrives typed as a `RuntimeId` and is not one.
+ * A bare `RUNTIMES[id]` then returns `undefined` and the next property read throws — inside
+ * the office, which renders outside the scene boundary, so it takes the page.
+ */
+export function runtimeOf(id: RuntimeId | string | undefined): RuntimeEntry {
+  return RUNTIMES[id as RuntimeId] ?? RUNTIMES['local-cli']
 }
 
 export const RUNTIMES: Record<RuntimeId, RuntimeEntry> = {
@@ -306,7 +321,8 @@ export const RUNTIME_ORDER: Record<SessionMode, RuntimeId[]> = {
 
 // What a building's office preselects in the session menu.
 export const DEFAULT_RUNTIME: Record<BuildingType, RuntimeId> = {
-  router: 'anthropic',
+  quant: 'local-cli',
+  agent: 'local-cli',
   codex: 'openai',
   cursor: 'local-cli',
   claude: 'anthropic',
@@ -323,6 +339,10 @@ export const TIMING = {
   codexWork: 4000,
   packetFlight: 800,
   returnFlight: 1500,
-  sessionQueue: 700, // queued → running, while the backend accepts the session
-  sessionWork: 6000, // running → done in the office demo
 }
+
+// Buildings with their own walk-in office page (/office/:id) instead of the session modal.
+// Clicking the building, its label or the panel button all go through this one list.
+export const OFFICE_PAGE_TYPES: BuildingType[] = ['codex', 'claude', 'deepseek']
+export const hasOfficePage = (type: BuildingType | undefined): boolean =>
+  type !== undefined && OFFICE_PAGE_TYPES.includes(type)

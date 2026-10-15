@@ -22,7 +22,7 @@ export function ResultView({ command, result }: { command: string; result: TaskR
           >
             TASK COMPLETE
           </h2>
-          <p className="font-pixel text-[8px] leading-none text-gg-mute">ROUTER · CODEX · SECURITY</p>
+          <p className="font-pixel text-[8px] leading-none text-gg-mute">CODEX · SECURITY</p>
         </div>
       </header>
 
@@ -62,10 +62,9 @@ export function ResultView({ command, result }: { command: string; result: TaskR
 
       <section>
         <SectionTitle>STATS</SectionTitle>
-        <div className="grid grid-cols-3 border-2 border-gg-haze bg-gg-void">
+        <div className="grid grid-cols-2 border-2 border-gg-haze bg-gg-void">
           <Stat label="TOKENS" value={result.tokens} format={(v) => Math.round(v).toLocaleString('en-US')} />
           <Stat label="LATENCY" value={result.latencyMs / 1000} format={(v) => `${v.toFixed(1)}s`} border />
-          <Stat label="COST" value={result.costUsd} format={(v) => `$${v.toFixed(v < 1 ? 3 : 2)}`} border />
         </div>
       </section>
     </div>

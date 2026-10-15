@@ -42,23 +42,19 @@ void main() {
   vec2 p = (vUv - 0.5) * 2.0;
   p += (vec2(grain, fbm(vUv * 5.0 - drift)) - 0.5) * 0.55;
   float edge = 1.0 - smoothstep(0.1, 0.92, dot(p, p));
-  float alpha = edge * smoothstep(0.26, 0.82, grain) * vLife * 0.22;
+  float alpha = edge * smoothstep(0.22, 0.8, grain) * vLife * 0.32;
   gl_FragColor = vec4(vTint, alpha);
   #include <colorspace_fragment>
 }`
 
-const VENT_TINTS = [PALETTE.cyan, PALETTE.pink, PALETTE.yellow]
-
 export function GasAtmosphere() {
   const resources = useMemo(() => {
     const half = MAP.size / 2
-    // Road intersections only. Lots never span a road tile (see world.ts LOTS), so a vent placed
-    // here can never end up inside a building footprint. Checkerboarded so the streets breathe
-    // across the whole map instead of fogging one corner.
-    const vents = ROAD_INDEXES.flatMap((roadX, i) =>
-      ROAD_INDEXES.flatMap((roadZ, j) => (i + j) % 2
-        ? []
-        : [{ x: roadX + 0.5 - half, z: roadZ + 0.5 - half, tint: VENT_TINTS[(i + j) % VENT_TINTS.length] }]))
+    // Two edges of each road; always clear of interactive building footprints.
+    const vents = ROAD_INDEXES.flatMap((road, i) => [
+      { x: road + 0.5 - half, z: half - 2.4 - (i % 3) * 4.7, tint: i % 2 ? PALETTE.pink : PALETTE.cyan },
+      { x: -half + 2.4 + (i % 3) * 4.7, z: road + 0.5 - half, tint: i % 2 ? PALETTE.cyan : PALETTE.yellow },
+    ])
     const plane = new THREE.PlaneGeometry(1, 1)
     const geometry = new THREE.InstancedBufferGeometry()
     geometry.index = plane.index?.clone() ?? null
