@@ -1,0 +1,43 @@
+/* An industrial terminal overlooking the neon refinery. Opaque panels keep text crisp. */
+:root { --voxel-light: #95bccd; --voxel-shadow: #030916; --voxel-edge: #3e5a70; color-scheme: dark; }
+.gg-city-page { background: var(--gg-void); }
+.gg-top-nav { background: #0b1624; border-bottom: 1px solid #3e5a70; box-shadow: 0 5px 18px #03091699; }
+.gg-nav-word { color: var(--gg-ink); text-shadow: 2px 0 #42e8ed30; }
+.gg-top-nav .gg-hud-label { color: var(--gg-mute); }
+.gg-top-nav .gg-hud-value { color: var(--gg-ink); }
+.gg-hud-real { background: #0b1624; border-color: #3e5a70; }
+.gg-top-nav nav a, .gg-top-nav a[title]:not(.gg-nav-logo) { border-color: #3e5a70; box-shadow: inset 0 1px #e2f5fa12; }
+.gg-top-nav nav a.gg-nav-tab-active { background: #42e8ed; border-color: #77fbff; color: #070f1c; box-shadow: 0 0 14px #42e8ed25; }
+:is(.gg-build-menu, .gg-weather, .gg-sp-shell, .gg-of-shell, .gg-mobile-directory, .gg-cred-panel) {
+  background-color: #111f32; border: 1px solid #3e5a70;
+  box-shadow: inset 0 1px #e2f5fa14, 0 8px 24px #030916a6;
+}
+.gg-build-menu > div:first-child, .gg-sp-shell > div:has(> button[aria-label^='Close']), .gg-mobile-directory header {
+  background: #203047; border-bottom-color: #3e5a70;
+}
+.gg-build-menu ul button, .gg-mobile-build-toggle, .gg-camera-controls button, .gg-directory-toggle, .gg-mobile-directory a {
+  border: 1px solid #3e5a70; background: #17293c; color: #e2f5fa;
+  box-shadow: inset 0 1px #e2f5fa12, 0 3px 8px #03091666;
+}
+.gg-build-menu ul button:hover, .gg-camera-controls button:hover, .gg-directory-toggle:hover { background: #233d51; border-color: #42e8ed; }
+.gg-build-menu ul button[aria-pressed='true'] { background: #163c4a; border-color: #42e8ed; }
+.gg-build-menu > div:last-child { background: #0b1624; }
+.gg-weather { background: #0b1624; }
+.gg-dozer-button { background: #ffcd70 !important; color: #070f1c !important; border: 1px solid #ffe6b4 !important; box-shadow: 0 5px 16px #03091680 !important; }
+.gg-dozer-button[aria-pressed='true'] { background: #ff627b !important; }
+.gg-building-label { background: #111f32 !important; border-color: #42e8ed66 !important; box-shadow: 0 3px 10px #03091699 !important; color: #e2f5fa; }
+.gg-voxel-plot { background: #111f32; border: 1px solid #3e5a70; color: #e2f5fa; box-shadow: inset 0 1px #e2f5fa12, 0 5px 14px #03091688; }
+.gg-voxel-plot small { color: #a3bbc9; }
+.gg-voxel-plot:hover { background: #203047; border-color: #42e8ed; }
+.gg-mobile-nav { background: #0b1624; border-top: 1px solid #3e5a70; }
+.gg-mobile-nav a.is-active { background: #163c4a; color: #42e8ed; box-shadow: inset 0 2px #42e8ed; }
+.gg-mobile-city-hint { color: #a3bbc9; text-shadow: 0 2px 4px #070f1c; }
+.gg-mobile-directory-list > div > button:hover { background: #203047; }
+.gg-city-page :is(button, a):focus-visible { outline: 2px solid #42e8ed; outline-offset: 3px; }
+::selection { background: #42e8ed; color: #070f1c; }
+input, textarea { caret-color: #42e8ed; }
+@media (width < 900px) {
+  .gg-top-nav { background: #0b1624 !important; }
+  .gg-build-menu[data-expanded='true'] { background: #111f32; }
+  .gg-mobile-directory header, .gg-mobile-directory { background-color: #111f32; }
+}

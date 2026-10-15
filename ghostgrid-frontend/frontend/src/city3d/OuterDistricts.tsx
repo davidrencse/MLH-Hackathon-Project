@@ -3,7 +3,7 @@
 import * as THREE from 'three'
 import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 
 // Which outer plots the player has opened (persisted so the city stays expanded on reload).
@@ -14,10 +14,11 @@ export const usePlots = create<{ open: number[]; openPlot: (k: number) => void; 
   reset: () => { localStorage.removeItem(KEY); set({ open: [] }) },
 }))
 const NAMES = ['NEO-KOWLOON', 'SILICON STACKS', 'GPU DOCKS', 'PROMPT ALLEY', 'TOKEN HEIGHTS', 'LATENT DISTRICT', 'EVAL YARDS', 'AGENT ROW']
-const LOCKED = new THREE.MeshLambertMaterial({ color: '#08061a', transparent: true, opacity: 0.85 })
+const LOCKED = new THREE.MeshLambertMaterial({ color: '#283f43' })
 const GRIDLINE = new THREE.MeshBasicMaterial({ color: '#3a2f6b', toneMapped: false })
 import { MAP, ROAD_INDEXES } from './world'
 import { Scenery } from './scenery/Scenery'
+import { PocketNeighborhoods } from './PocketNeighborhood'
 
 const S = MAP.size
 const GAP = 1.2 // canal between districts
@@ -67,15 +68,15 @@ function LockedPlot({ dx, dz, k }: { dx: number; dz: number; k: number }) {
     <group position={[dx, 0, dz]}>
       <mesh geometry={BOX} material={LOCKED} position={[0, -0.15, 0]} scale={[S, 0.3, S]} onClick={(e) => { e.stopPropagation(); openPlot(k) }}
         onPointerOver={() => (document.body.style.cursor = 'pointer')} onPointerOut={() => (document.body.style.cursor = '')} />
-      {[-12, -6, 0, 6, 12].map((o) => (
+      {[-15.75, -11.25, -6.75, -2.25, 2.25, 6.75, 11.25, 15.75].map((o) => (
         <group key={o}>
           <mesh geometry={BOX} material={GRIDLINE} position={[o, 0.01, 0]} scale={[0.05, 0.02, S]} raycast={() => null} />
           <mesh geometry={BOX} material={GRIDLINE} position={[0, 0.01, o]} scale={[S, 0.02, 0.05]} raycast={() => null} />
         </group>
       ))}
-      <Html position={[0, 1, 0]} center zIndexRange={[20, 0]}>
-        <button onClick={() => openPlot(k)} style={{ font: "11px/1.4 'Press Start 2P', monospace", background: '#ffec27', color: '#111', border: '2px solid #111', boxShadow: '4px 4px 0 #111', padding: '10px 14px', cursor: 'pointer', whiteSpace: 'nowrap', textAlign: 'center' }}>
-          ＋ OPEN PLOT<br /><span style={{ fontSize: 8 }}>{NAMES[k]}</span>
+      <Html position={[0, 4, 0]} center zIndexRange={[20, 0]}>
+        <button onClick={() => openPlot(k)} style={{ font: "clamp(6px, 0.76vw, 10px)/1.4 'Press Start 2P', monospace", background: '#ffec27', color: '#111', border: '2px solid #111', boxShadow: '4px 4px 0 #111', padding: 'clamp(5px, 0.7vw, 10px) clamp(6px, 1vw, 14px)', cursor: 'pointer', whiteSpace: 'nowrap', textAlign: 'center' }}>
+          ＋ GROW DISTRICT<br /><span style={{ fontSize: '0.75em' }}>{NAMES[k]}</span>
         </button>
       </Html>
     </group>
@@ -84,7 +85,8 @@ function LockedPlot({ dx, dz, k }: { dx: number; dz: number; k: number }) {
 
 export function OuterDistricts() {
   const open = usePlots((s) => s.open)
-  return <group>{OFFSETS.map(([dx, dz], k) => open.includes(k)
+  const districts = useMemo(() => OFFSETS.flatMap(([x, z], seed) => open.includes(seed) ? [] : [{ x, z, seed }]), [open])
+  return <group><PocketNeighborhoods districts={districts} />{OFFSETS.map(([dx, dz], k) => open.includes(k)
     ? <District key={k} dx={dx} dz={dz} k={k} />
     : <LockedPlot key={k} dx={dx} dz={dz} k={k} />)}</group>
 }

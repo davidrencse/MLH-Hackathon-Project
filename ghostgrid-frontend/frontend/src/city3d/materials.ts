@@ -8,22 +8,22 @@ import type { BuildingStatus } from '../types'
 import { BuildingCtx } from './BuildingCtx'
 
 export const PALETTE = {
-  void: '#0b0820',
-  night: '#1a1040',
-  dusk: '#2a1a5e',
-  haze: '#3d2a7a',
-  concrete: '#231842',
-  asphalt: '#120b2a',
-  steel: '#4a3f7a',
-  ink: '#e8e6ff',
-  pink: '#ff2bd6',
-  cyan: '#00f0ff',
-  green: '#39ff14',
-  yellow: '#ffd400',
-  red: '#ff3355',
-  grey: '#5a5677',
-  orange: '#ff9d4d',
-  blue: '#4d7cff',
+  void: '#070f1c',
+  night: '#111f32',
+  dusk: '#203047',
+  haze: '#3e5a70',
+  concrete: '#233448',
+  asphalt: '#0b1624',
+  steel: '#51677b',
+  ink: '#e2f5fa',
+  pink: '#ff4da6',
+  cyan: '#42e8ed',
+  green: '#b6f36b',
+  yellow: '#ffcd70',
+  red: '#ff627b',
+  grey: '#7d96a9',
+  orange: '#ff995a',
+  blue: '#688dff',
 }
 
 export const STATUS_EMISSIVE: Record<BuildingStatus | 'offline', string> = {
@@ -132,7 +132,7 @@ export function getGlyphTexture() {
 
 // Small canvas texture with pixel text (signs). Cached by text+color.
 const signCache = new Map<string, THREE.CanvasTexture>()
-export function signTexture(text: string, color: string, bg = '#0b0820') {
+export function signTexture(text: string, color: string, bg = '#10272f') {
   const k = `${text}|${color}|${bg}`
   if (signCache.has(k)) return signCache.get(k)!
   const c = document.createElement('canvas')

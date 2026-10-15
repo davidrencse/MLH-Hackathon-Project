@@ -47,8 +47,8 @@ export function Effects() {
   return (
     <EffectsBoundary>
       <EffectComposer enabled={visible} multisampling={0} stencilBuffer={false} frameBufferType={frameBufferType}>
-        <Bloom mipmapBlur luminanceThreshold={0.75} luminanceSmoothing={0.1} intensity={1.1} radius={0.6} levels={5} />
-        <Vignette offset={0.32} darkness={0.5} />
+        <Bloom mipmapBlur luminanceThreshold={0.75} luminanceSmoothing={0.1} intensity={0.65} radius={0.45} levels={3} />
+        <Vignette offset={0.32} darkness={0.28} />
       </EffectComposer>
     </EffectsBoundary>
   )

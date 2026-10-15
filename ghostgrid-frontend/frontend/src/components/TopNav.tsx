@@ -9,14 +9,6 @@ import { useResources } from '../store/resources'
 import type { Resource, ResourceLevel } from '../store/resources'
 import './TopNav.css'
 
-// 8x8 ghost. P = pink body, W = ink eye, C = cyan pupil. Drawn as box-shadow pixels (3px each).
-const GHOST_MAP = ['..PPPP..', '.PPPPPP.', 'PPPPPPPP', 'PWWPPWWP', 'PWCPPWCP', 'PPPPPPPP', 'PPPPPPPP', 'PP.PP.PP']
-const GHOST_COLOR: Record<string, string> = { P: 'var(--gg-pink)', W: 'var(--gg-ink)', C: 'var(--gg-cyan)' }
-const PX = 3
-const GHOST_SHADOW = GHOST_MAP.flatMap((row, y) =>
-  [...row].flatMap((ch, x) => (GHOST_COLOR[ch] ? [`${x * PX}px ${y * PX}px 0 0 ${GHOST_COLOR[ch]}`] : [])),
-).join(', ')
-
 // ---- Resource icons: 8x8 maps, 2px pixels, one DOM node each (box-shadow), built once ----
 // X = resource color (currentColor, so blink/level colors apply), o = void cut-out, W = ink highlight.
 type ResKey = Resource['key']
@@ -146,9 +138,12 @@ function tabClass({ isActive }: { isActive: boolean }) {
 function Logo() {
   return (
     <Link to="/" aria-label="Ghost Grid home" className={`gg-nav-logo flex items-center gap-3 ${focusRing}`}>
-      <span className="gg-nav-ghost" aria-hidden>
-        <span style={{ boxShadow: GHOST_SHADOW }} />
-      </span>
+      <svg className="gg-voxel-mark" viewBox="0 0 32 36" width="32" height="36" aria-hidden>
+        <path d="M16 1 31 9 16 17 1 9Z" fill="#e4ebdd" />
+        <path d="M1 9 16 17 16 35 1 27Z" fill="#6faaa5" />
+        <path d="M16 17 31 9 31 27 16 35Z" fill="#3e7477" />
+        <path d="M6 13 10 15 10 20 6 18ZM20 16 24 14 24 19 20 21Z" fill="#10272f" />
+      </svg>
       <span className="gg-nav-word font-pixel text-[16px] leading-none text-gg-cyan max-[1250px]:hidden">GHOST GRID</span>
     </Link>
   )
@@ -203,7 +198,7 @@ const Divider = ({ className = '' }: { className?: string }) => (
 export function TopNav() {
   return (
     <>
-    <header className="gg-top-nav fixed inset-x-0 top-0 z-40 h-16 border-b-2 border-gg-haze" style={{ background: 'rgba(11,8,32,0.82)' }}>
+    <header className="gg-top-nav fixed inset-x-0 top-0 z-40 h-16 border-b-2 border-gg-haze" style={{ background: 'var(--gg-void)' }}>
       <div className="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4">
         <div className="justify-self-start">
           <Logo />

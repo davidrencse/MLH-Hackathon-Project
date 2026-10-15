@@ -5,6 +5,7 @@
 // Placement is a greedy packer over an occupancy grid that already contains the roads, the
 // agent/lease LOTS (never covered: the player clicks those) and the street furniture.
 import { CURB, LAMPS, LAMP_REACH, PROPS, PUDDLES } from '../ground/layout'
+import { GATE_FOOTPRINTS } from '../megastructure'
 import { LOTS, MAP, ROAD_INDEXES } from '../world'
 
 const HALF = MAP.size / 2
@@ -14,7 +15,8 @@ const LOT_CLEAR = 0.45 // lot footprint + selection frame + a walkable gap
 const ROAD_CLEAR = 0.18 // keep the curb edge free
 const PROP_CLEAR = 0.4 // lamps, vending machines, benches, puddles
 const RIM_CLEAR = 0.5 // stay inside the platform's neon rim
-const ALLEY = 0.25 // gap between two filler buildings
+const ALLEY = 0.45 // gap between two filler buildings
+const GATE_CLEAR = 0.4 // the gate piers overhang the road they stand on
 
 export type RoofKind = 'tank' | 'ac' | 'antenna' | 'stair' | 'none'
 
@@ -48,8 +50,8 @@ export interface SceneryBuilding {
 
 // Dark wall variants. Lambert shading does the top/side separation, so these only need to
 // differ enough to break up the skyline.
-export const WALLS = ['#1a1040', '#150e36', '#20164a', '#120b2a', '#241a52']
-export const NEONS = ['#ff2bd6', '#00f0ff', '#39ff14', '#ffd400', '#ff9d4d', '#4d7cff']
+export const WALLS = ['#30475e', '#26394e', '#435367', '#29475b', '#51435c']
+export const NEONS = ['#42e8ed', '#ff4da6', '#b6f36b', '#ffcd70', '#688dff', '#ff995a']
 
 function rng(seed: number) {
   let s = seed >>> 0 || 1
@@ -87,6 +89,9 @@ function buildGrid() {
   // agent + lease lots
   for (const l of LOTS)
     markRect(grid, l.tx - HALF - LOT_CLEAR, l.tz - HALF - LOT_CLEAR, l.tx + l.w - HALF + LOT_CLEAR, l.tz + l.d - HALF + LOT_CLEAR)
+  // gate-tower piers: they stand on road intersections but their plinths overhang the curb
+  for (const f of GATE_FOOTPRINTS)
+    markRect(grid, f.x - f.w / 2 - GATE_CLEAR, f.z - f.d / 2 - GATE_CLEAR, f.x + f.w / 2 + GATE_CLEAR, f.z + f.d / 2 + GATE_CLEAR)
   // street furniture
   for (const l of LAMPS) {
     markRect(grid, l.x - PROP_CLEAR, l.z - PROP_CLEAR, l.x + PROP_CLEAR, l.z + PROP_CLEAR)
@@ -170,7 +175,7 @@ export function layoutScenery(): SceneryBuilding[] {
         const cx = x + w / 2
         const cz = z + d / 2
         const limit = heightLimit(cx, cz)
-        const h = Math.max(0.9, limit * (0.5 + r() * 0.5))
+        const h = Math.max(0.9, limit * (0.3 + r() * 0.32))
         const base: Omit<SceneryBuilding, 'tiers'> = {
           x: cx,
           z: cz,

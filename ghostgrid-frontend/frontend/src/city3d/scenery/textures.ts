@@ -44,6 +44,14 @@ export function makeFacadeTextures() {
   ge.fillRect(0, 0, SIZE, SIZE)
 
   const r = rng(7)
+  // Fine panel seams and weathering under the windows; roofs retain a blank texel.
+  for (let y = 1; y < SIZE; y++) for (let x = 1; x < SIZE; x++) {
+    g.fillStyle = `rgba(10,24,40,${r() * 0.15})`
+    g.fillRect(x, y, 1, 1)
+  }
+  g.fillStyle = 'rgba(6,16,28,0.22)'
+  for (let x = 8; x < SIZE; x += 8) g.fillRect(x, 1, 1, SIZE - 1)
+
   const lit = [PALETTE.ink, PALETTE.ink, PALETTE.ink, PALETTE.yellow, PALETTE.cyan, PALETTE.pink, PALETTE.orange]
   for (let cy = 0; cy < CELLS; cy++)
     for (let cx = 0; cx < CELLS; cx++) {

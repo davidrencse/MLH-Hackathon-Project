@@ -1,7 +1,7 @@
 // Tiny 8-bit citizens that wander the roads. Grab one (press + drag), fling it, and it yells "OUCH!" on landing.
 import { Html } from '@react-three/drei'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { ROADS } from './ground/layout'
 
@@ -151,7 +151,12 @@ function Citizen({ seed }: { seed: number }) {
 
 function Ouch() {
   const [show, setShow] = useState(true)
-  useMemo(() => setTimeout(() => setShow(false), 1100), [])
+  // An effect, not useMemo: render must stay side-effect free, and the timer has to be
+  // cleared when the citizen is grabbed again before the bubble expires.
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(false), 1100)
+    return () => clearTimeout(timer)
+  }, [])
   if (!show) return null
   return (
     <Html position={[0, 0.8, 0]} center style={{ pointerEvents: 'none' }}>

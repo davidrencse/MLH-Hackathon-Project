@@ -5,16 +5,18 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useGrid } from '../store/grid'
 import type { Building } from '../types'
-import { Atmosphere } from './Atmosphere'
+import { GasAtmosphere } from './GasAtmosphere'
 import { CameraRig } from './CameraRig'
 import { CityBuildings } from './CityBuildings'
 import { Drones } from './Drones'
 import { Zeppelins } from './Zeppelins'
+import { Transit } from './Transit'
+import { Megastructures } from './Megastructures'
 import { Citizens } from './Citizens'
 import { Effects } from './Effects'
 import { Ground } from './Ground'
 import { Scenery } from './scenery/Scenery'
-import { OuterDistricts } from './OuterDistricts'
+import { PlotLabels, VoxelDistricts } from './VoxelDistricts'
 import { BuildingLabels, LabelProjector } from './Labels'
 import { PALETTE } from './materials'
 import { BUILDING_HEIGHT, CAMERA, lotCenter, PIXEL_SIZE } from './world'
@@ -43,7 +45,7 @@ function AlertLight() {
       return
     }
     const [x, , z] = lotCenter(target.lot)
-    light.position.set(x, BUILDING_HEIGHT[target.type] * 1.8 + 1.2, z)
+    light.position.set(x, BUILDING_HEIGHT[target.type] + 1.2, z)
     light.color.set(target.status === 'error' ? PALETTE.red : PALETTE.yellow)
     light.intensity = Math.floor(clock.elapsedTime / 0.3) % 2 ? 45 : 8
   })
@@ -53,8 +55,8 @@ function AlertLight() {
 function Lights() {
   return (
     <>
-      <hemisphereLight args={['#6a56c8', '#140c34', 1.6]} />
-      <directionalLight position={[-9, 16, 7]} intensity={1.5} color="#a9b8ff" />
+      <hemisphereLight args={['#90c6ed', '#20334d', 1.9]} />
+      <directionalLight position={[-9, 16, 7]} intensity={1.65} color="#acd5ee" />
       <AlertLight />
     </>
   )
@@ -72,9 +74,9 @@ export function CityCanvas() {
       <Canvas
         orthographic
         frameloop={visible ? 'always' : 'never'}
-        dpr={Math.min(2, window.devicePixelRatio || 1) / PIXEL_SIZE}
+        dpr={Math.min(window.innerWidth < 700 ? 1 : 1.25, window.devicePixelRatio || 1) / PIXEL_SIZE}
         camera={{ position: CAMERA.position, zoom: CAMERA.zoom, near: CAMERA.near, far: CAMERA.far }}
-        gl={{ antialias: true, powerPreference: 'high-performance', stencil: false }}
+        gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
         onCreated={({ gl }) => {
           gl.domElement.style.imageRendering = 'pixelated'
         }}
@@ -84,21 +86,24 @@ export function CityCanvas() {
         }}
       >
         <color attach="background" args={[PALETTE.void]} />
-        <fog attach="fog" args={['#170d3d', 30, 64]} />
+        <fog attach="fog" args={['#10293b', 64, 160]} />
         <Lights />
-        <Atmosphere />
+        <GasAtmosphere />
         <Ground />
         <Scenery />
-        <OuterDistricts />
+        <VoxelDistricts />
         <CityBuildings />
         <Drones />
         <Zeppelins />
+        <Transit />
+        <Megastructures />
         <Citizens />
         <CameraRig />
         <LabelProjector />
         <Effects />
       </Canvas>
       <BuildingLabels />
+      <PlotLabels />
     </div>
   )
 }

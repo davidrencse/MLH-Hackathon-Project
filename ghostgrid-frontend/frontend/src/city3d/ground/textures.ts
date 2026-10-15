@@ -35,7 +35,7 @@ function rgba(hex: string, a: number) {
 }
 
 // Texels per tile (= per world unit) of the ground texture. Canvas pixel (px, pz) ↔ tile (px/T, pz/T).
-export const GROUND_TPU = 8
+export const GROUND_TPU = 16
 
 // One texture for the whole map: asphalt roads with neon lane dashes + crosswalks, concrete
 // sidewalks with a slab pattern and lighter curbs, lamp light pools (emissive only).
@@ -77,6 +77,24 @@ export function makeGroundTextures() {
       if (edge(tx, tz - 1)) g.fillRect(px, pz, T, 1)
       if (edge(tx, tz + 1)) g.fillRect(px, pz + T - 1, T, 1)
     }
+
+  // Oil-slick reflections and patched asphalt stay tied to the street texture.
+  for (let tz = 0; tz < MAP.size; tz++) for (let tx = 0; tx < MAP.size; tx++) {
+    if (!road(tx, tz)) continue
+    const x = tx * T, z = tz * T
+    g.fillStyle = 'rgba(100,145,165,0.15)'
+    g.fillRect(x + 2, z + 1, 2, T - 2)
+    if (r() > 0.55) {
+      const tint = r() > 0.5 ? PALETTE.cyan : PALETTE.pink
+      g.fillStyle = rgba(tint, 0.16)
+      ge.fillStyle = rgba(tint, 0.13)
+      const width = 3 + Math.floor(r() * 5)
+      g.fillRect(x + 1, z + 5, width, 1)
+      ge.fillRect(x + 1, z + 5, width, 1)
+    }
+    g.fillStyle = 'rgba(0,0,0,0.35)'
+    g.fillRect(x + 11, z + 3, 1, 6)
+  }
 
   // lane dashes (column roads pink, row roads cyan) + zebra crosswalks next to every intersection
   const paint = (along: 'x' | 'z', tx: number, tz: number) => {

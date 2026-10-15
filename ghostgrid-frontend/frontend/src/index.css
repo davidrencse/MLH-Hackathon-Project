@@ -4,6 +4,8 @@
 @import "@fontsource/press-start-2p";
 @import "@fontsource/vt323";
 @import "./mobile.css";
+@import "./voxel.css";
+@import "./cyberpunk.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -12,18 +14,18 @@
     --font-sans: 'VT323', monospace;
     --font-mono: 'VT323', monospace;
     --font-pixel: 'Press Start 2P', monospace;
-    --color-gg-void: #0b0820;
-    --color-gg-night: #1a1040;
-    --color-gg-dusk: #2a1a5e;
-    --color-gg-haze: #3d2a7a;
-    --color-gg-ink: #e8e6ff;
-    --color-gg-mute: #8f8ab8;
-    --color-gg-pink: #ff2bd6;
-    --color-gg-cyan: #00f0ff;
-    --color-gg-green: #39ff14;
-    --color-gg-yellow: #ffd400;
-    --color-gg-red: #ff3355;
-    --color-gg-grey: #5a5677;
+    --color-gg-void: #070f1c;
+    --color-gg-night: #111f32;
+    --color-gg-dusk: #203047;
+    --color-gg-haze: #3e5a70;
+    --color-gg-ink: #e2f5fa;
+    --color-gg-mute: #a3bbc9;
+    --color-gg-pink: #ff4da6;
+    --color-gg-cyan: #42e8ed;
+    --color-gg-green: #b6f36b;
+    --color-gg-yellow: #ffcd70;
+    --color-gg-red: #ff627b;
+    --color-gg-grey: #7d96a9;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -66,52 +68,52 @@
 
 :root {
     /* Ghost Grid tokens (see DESIGN.md) */
-    --gg-void: #0b0820;
-    --gg-night: #1a1040;
-    --gg-dusk: #2a1a5e;
-    --gg-haze: #3d2a7a;
-    --gg-ink: #e8e6ff;
-    --gg-mute: #8f8ab8;
-    --gg-pink: #ff2bd6;
-    --gg-cyan: #00f0ff;
-    --gg-green: #39ff14;
-    --gg-yellow: #ffd400;
-    --gg-red: #ff3355;
-    --gg-grey: #5a5677;
+    --gg-void: #070f1c;
+    --gg-night: #111f32;
+    --gg-dusk: #203047;
+    --gg-haze: #3e5a70;
+    --gg-ink: #e2f5fa;
+    --gg-mute: #a3bbc9;
+    --gg-pink: #ff4da6;
+    --gg-cyan: #42e8ed;
+    --gg-green: #b6f36b;
+    --gg-yellow: #ffcd70;
+    --gg-red: #ff627b;
+    --gg-grey: #7d96a9;
 
     /* shadcn tokens mapped to the Ghost Grid palette. Always dark. */
-    --background: #0b0820;
-    --foreground: #e8e6ff;
-    --card: #1a1040;
-    --card-foreground: #e8e6ff;
-    --popover: #1a1040;
-    --popover-foreground: #e8e6ff;
-    --primary: #00f0ff;
-    --primary-foreground: #0b0820;
-    --secondary: #2a1a5e;
-    --secondary-foreground: #e8e6ff;
-    --muted: #1a1040;
-    --muted-foreground: #8f8ab8;
-    --accent: #2a1a5e;
-    --accent-foreground: #e8e6ff;
-    --destructive: #ff3355;
-    --border: #3d2a7a;
-    --input: #3d2a7a;
-    --ring: #00f0ff;
-    --chart-1: #00f0ff;
-    --chart-2: #ff2bd6;
-    --chart-3: #39ff14;
-    --chart-4: #ffd400;
-    --chart-5: #ff3355;
+    --background: #070f1c;
+    --foreground: #e2f5fa;
+    --card: #111f32;
+    --card-foreground: #e2f5fa;
+    --popover: #111f32;
+    --popover-foreground: #e2f5fa;
+    --primary: #42e8ed;
+    --primary-foreground: #070f1c;
+    --secondary: #203047;
+    --secondary-foreground: #e2f5fa;
+    --muted: #111f32;
+    --muted-foreground: #a3bbc9;
+    --accent: #203047;
+    --accent-foreground: #e2f5fa;
+    --destructive: #ff627b;
+    --border: #3e5a70;
+    --input: #3e5a70;
+    --ring: #42e8ed;
+    --chart-1: #42e8ed;
+    --chart-2: #ff4da6;
+    --chart-3: #b6f36b;
+    --chart-4: #ffcd70;
+    --chart-5: #ff627b;
     --radius: 0rem;
     --sidebar: #120b30;
-    --sidebar-foreground: #e8e6ff;
-    --sidebar-primary: #00f0ff;
-    --sidebar-primary-foreground: #0b0820;
-    --sidebar-accent: #2a1a5e;
-    --sidebar-accent-foreground: #e8e6ff;
-    --sidebar-border: #3d2a7a;
-    --sidebar-ring: #00f0ff;
+    --sidebar-foreground: #e2f5fa;
+    --sidebar-primary: #42e8ed;
+    --sidebar-primary-foreground: #070f1c;
+    --sidebar-accent: #203047;
+    --sidebar-accent-foreground: #e2f5fa;
+    --sidebar-border: #3e5a70;
+    --sidebar-ring: #42e8ed;
 }
 
 

@@ -69,29 +69,32 @@ export function lotCenter(lotId: number): [number, number, number] {
   return [l.tx + l.w / 2 - half, 0, l.tz + l.d / 2 - half]
 }
 
-// Footprint size (world units) a building may use on its lot (leave a 0.2 margin for sidewalks).
+// Footprint size (world units) a building may use on its lot. The margin is per side, so two
+// lots that share a tile edge still end up with twice this much air between their towers —
+// at this height they read as separate buildings only if the gap is wide enough to see down.
+export const LOT_MARGIN = 0.3
 export function lotFootprint(lotId: number): { w: number; d: number } {
   const l = LOTS[lotId]
-  return { w: l.w - 0.4, d: l.d - 0.4 }
+  return { w: l.w - LOT_MARGIN * 2, d: l.d - LOT_MARGIN * 2 }
 }
 
 // Roof height (world units) of each building type, without antennas. Drones land at the roof.
 export const BUILDING_HEIGHT: Record<BuildingType, number> = {
-  router: 7,
-  codex: 5,
-  cursor: 3.8,
-  claude: 4.5,
-  deepseek: 3.5,
-  groq: 3,
-  security: 2.2,
-  bot: 2.6,
-  library: 4,
+  router: 19,
+  codex: 17,
+  cursor: 13,
+  claude: 15.5,
+  deepseek: 12.5,
+  groq: 11,
+  security: 8,
+  bot: 9.5,
+  library: 14,
 }
 
 // Where drones take off / land for a building (just above its roof).
 export function dockPoint(b: Pick<Building, 'lot' | 'type'>): [number, number, number] {
   const [x, , z] = lotCenter(b.lot)
-  return [x, BUILDING_HEIGHT[b.type] * 1.8 + 0.6, z]
+  return [x, BUILDING_HEIGHT[b.type] + 1.5, z]
 }
 
 // Camera: orthographic, 2:1 dimetric ("pixel isometric") — elevation 30°, azimuth 45°.

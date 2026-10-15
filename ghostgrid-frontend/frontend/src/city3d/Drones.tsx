@@ -13,10 +13,14 @@ import { dockPoint } from './world'
 
 const FLIGHT_DRONES = 4 // pool: active 'drone' / 'drone-cargo' flights
 const PACKETS = 4 // pool: active 'packet' flights
-const PATROLS = [
-  { r: 8.8, y: 7.6, speed: 0.22, phase: 0 }, // wide ring around the city, above the towers
-  { r: 3.8, y: 4.4, speed: -0.45, phase: 2 }, // tight ring around the router, low
-]
+// Tiny residents cruise in several lanes; reuse the existing instanced rig.
+const PATROLS = Array.from({ length: 20 }, (_, i) => ({
+  r: 5 + (i % 5) * 4.8,
+  y: i % 5 < 2 ? 17.5 + (i % 3) * 0.8 : 8 + (i % 4) * 1.2,
+  speed: (i % 2 ? -1 : 1) * (0.055 + (i % 4) * 0.018),
+  phase: i * 2.39996,
+}))
+
 const MAX_DRONES = FLIGHT_DRONES + 1 + PATROLS.length // + parked drone
 const GHOSTS = 3 // trailing ghost cubes per packet
 const GHOST_LAG = 0.045 // progress lag between ghosts

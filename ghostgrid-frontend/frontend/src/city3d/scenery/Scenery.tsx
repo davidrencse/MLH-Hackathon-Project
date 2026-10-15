@@ -243,7 +243,6 @@ function NeonBoxes({ parts, signRange }: { parts: Part[]; signRange: [number, nu
   return <instancedMesh ref={ref} args={[UNIT_BOX, mat, parts.length]} raycast={() => null} />
 }
 
-import { CyberSkyline } from './CyberSkyline'
 
 export function Scenery() {
   const buildings = useMemo(layoutScenery, [])
@@ -258,7 +257,7 @@ export function Scenery() {
         map: tex.map,
         emissiveMap: tex.emissiveMap,
         emissive: new THREE.Color('#ffffff'),
-        emissiveIntensity: 1.15,
+        emissiveIntensity: 0.45,
         vertexColors: true,
       }),
       shadowMat: new THREE.MeshBasicMaterial({ color: '#05030f', transparent: true, opacity: 0.5, depthWrite: false }),
@@ -278,7 +277,7 @@ export function Scenery() {
   // stepped window flicker (DESIGN.md: idle 2.4s loop, steps(4))
   useFrame(({ clock }) => {
     const k = Math.floor((clock.elapsedTime % 2.4) / 0.6)
-    r.facadeMat.emissiveIntensity = k === 2 ? 0.95 : 1.15
+    r.facadeMat.emissiveIntensity = k === 2 ? 0.35 : 0.45
   })
 
   return (
@@ -287,7 +286,6 @@ export function Scenery() {
       <mesh geometry={r.shadows} material={r.shadowMat} position={[0, 0.02, 0]} renderOrder={1} raycast={() => null} />
       <Boxes parts={lit} material={r.litMat} />
       <NeonBoxes parts={glow} signRange={signRange} />
-      <CyberSkyline buildings={buildings} />
     </group>
   )
 }

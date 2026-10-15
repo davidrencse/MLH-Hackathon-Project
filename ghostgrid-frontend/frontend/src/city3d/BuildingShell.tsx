@@ -10,14 +10,13 @@ import { useGrid } from '../store/grid'
 import { useIsOffline } from '../store/keys'
 import type { Building } from '../types'
 import { BuildingCtx } from './BuildingCtx'
-import { removeLabelAnchor, setLabelAnchor } from './Labels'
+import { removeLabelAnchor, setLabelAnchor, setLabelEmphasis } from './Labels'
 import { neonMat, PALETTE, signTexture, STATUS_EMISSIVE, UNIT_BOX } from './materials'
 import { BUILDING_HEIGHT, lotCenter, lotFootprint } from './world'
-import { Megastructure } from './Megastructure'
 import { useDozer } from './dozer'
 
-// Megastructure upgrade: vertical scale for every building. Set to 1 (and drop <Megastructure/>) to undo.
-export const MEGA = 1.8
+// Architecture uses actual world dimensions; labels, beacons, and docks share those heights.
+export const MEGA = 1
 
 const BEACON_MATS = Object.fromEntries(Object.entries(STATUS_EMISSIVE).map(([k, c]) => [k, neonMat(c, 3)]))
 const DARK_MAT = new THREE.MeshBasicMaterial({ color: '#1a1040' })
@@ -75,6 +74,7 @@ export function BuildingShell({ building, children }: { building: Building; chil
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
     const status = statusRef.current
+    setLabelEmphasis(building.id, hoveredRef.current || selectedRef.current)
     if (inner.current) {
       // error shake: ±0.05 world units, steps(3)
       inner.current.position.x = status === 'error' ? ((Math.floor(t * 18) % 3) - 1) * 0.05 : 0
@@ -117,8 +117,8 @@ export function BuildingShell({ building, children }: { building: Building; chil
     document.body.style.cursor = ''
   }
 
-  const fw = footprint.w + 0.3
-  const fd = footprint.d + 0.3
+  const fw = footprint.w + 0.1
+  const fd = footprint.d + 0.1
   const frameMat = selected ? FRAME_MAT : HOVER_MAT
   const showFrame = selected || hovered
 
@@ -128,7 +128,6 @@ export function BuildingShell({ building, children }: { building: Building; chil
         <group scale={[1, MEGA, 1]}>
           <BuildingCtx.Provider value={ctx}>{children}</BuildingCtx.Provider>
         </group>
-        <Megastructure w={footprint.w} d={footprint.d} h={height} seed={building.lot} />
       </group>
 
       {/* fake shadow: footprint + a streak away from the light, length ∝ height */}

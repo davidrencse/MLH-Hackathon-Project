@@ -1,3 +1,4 @@
+import { Shovel } from 'lucide-react'
 import { useEffect } from 'react'
 import { useDozer } from '../city3d/dozer'
 import { usePlots } from '../city3d/OuterDistricts'
@@ -27,7 +28,7 @@ export function DozerButton() {
         background: on ? '#ff004d' : '#ffec27', color: '#111',
       }}
     >
-      🚜 {on ? 'DOZER ON · ESC' : 'BULLDOZE'}
+      <Shovel size={16} aria-hidden /> {on ? 'EXIT DOZER' : 'BULLDOZE'}
     </button>
     </>
   )

@@ -4,7 +4,8 @@
 import { OrbitControls } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ComponentRef } from 'react'
-import type * as THREE from 'three'
+import { placeCamera, resetCameraOrbit } from './cameraMotion'
+import { CAMERA } from './world'
 
 type Controls = ComponentRef<typeof OrbitControls>
 
@@ -25,10 +26,10 @@ const ORIGIN: [number, number, number] = [0, 0, 0]
 // Points that bound the city: platform slab, corner towers with antennas, router spire.
 // The set is symmetric under 90° turns, so one fit works for every Q / E view.
 // Default view is this much closer than "fit whole city" so more detail is visible. 1 = old view.
-const CITY_SCALE = 2.2
-const FIT_POINTS: [number, number, number][] = [[0, 9.5, 0]]
+const CITY_SCALE = 1.15
+const FIT_POINTS: [number, number, number][] = [[0, 22, 0]]
 for (const sx of [-1, 1])
-  for (const sz of [-1, 1]) FIT_POINTS.push([sx * 12.3, 0, sz * 12.3], [sx * 12.3, -1.2, sz * 12.3], [sx * 5.5, 6.7, sz * 5.5])
+  for (const sz of [-1, 1]) FIT_POINTS.push([sx * 20, 0, sz * 20], [sx * 20, -1.2, sz * 20], [sx * 5.5, 19, sz * 5.5])
 
 // Zoom that fits the city into the area between the HUD bars, plus the screen offset (CSS px, +y up)
 // of the origin that centres the city box in that area.
@@ -65,11 +66,6 @@ const snapIso = (az: number) => HOME_AZ + Math.round((az - HOME_AZ) / QUARTER) *
 const shortestDelta = (from: number, to: number) => Math.atan2(Math.sin(to - from), Math.cos(to - from))
 const easeInOutCubic = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2)
 const nowS = () => performance.now() / 1000
-
-function placeCamera(cam: THREE.Camera, az: number, polar: number) {
-  cam.position.setFromSphericalCoords(cam.position.length(), polar, az)
-  cam.lookAt(0, 0, 0)
-}
 
 interface Tween {
   t0: number
@@ -109,7 +105,7 @@ export function CameraRig() {
   useLayoutEffect(() => {
     if (!size.width || !size.height) return
     const prev = fitRef.current
-    const z = fitted.current ? camera.zoom * (fit.zoom / prev.zoom) : fit.zoom * (size.width < 900 ? 1.45 : CITY_SCALE)
+    const z = fitted.current ? camera.zoom * (fit.zoom / prev.zoom) : fit.zoom * (size.width < 900 ? 1.75 : CITY_SCALE)
     camera.zoom = Math.min(fit.zoom * 14, Math.max(fit.zoom * 0.18, z))
     camera.setViewOffset(size.width, size.height, -fit.ox, fit.oy, size.width, size.height)
     camera.updateProjectionMatrix()
@@ -167,9 +163,14 @@ export function CameraRig() {
   const reset = useCallback(() => {
     const c = controls.current
     if (!c) return
+    // Flush pending pan/rotation before recentering, so inertia cannot undo reset.
+    c.enableDamping = false
+    c.update()
+    resetCameraOrbit(camera, c.target, Math.hypot(...CAMERA.position))
+    c.update()
     const az = c.getAzimuthalAngle()
-    startTween(az + shortestDelta(az, HOME_AZ), HOME_POLAR, fitRef.current.zoom * (size.width < 900 ? 1.45 : CITY_SCALE))
-  }, [startTween, size.width])
+    startTween(az + shortestDelta(az, HOME_AZ), HOME_POLAR, fitRef.current.zoom * (size.width < 900 ? 1.75 : CITY_SCALE))
+  }, [camera, startTween, size.width])
 
   // Shared camera actions give touch users the same controls as the keyboard.
   useEffect(() => {
@@ -177,7 +178,7 @@ export function CameraRig() {
       const action = (event as CustomEvent<string>).detail
       if (action === 'left') turn(1)
       else if (action === 'right') turn(-1)
-      else if (action === 'reset') { controls.current?.target.set(0, 0, 0); reset() }
+      else if (action === 'reset') reset()
       else if (action === 'in' || action === 'out') {
         const c = controls.current
         if (!c) return
@@ -279,7 +280,7 @@ export function CameraRig() {
     if (tw) {
       const k = Math.min(1, (now - tw.t0) / tw.dur)
       const e = easeInOutCubic(k)
-      placeCamera(camera, tw.az0 + (tw.az1 - tw.az0) * e, tw.p0 + (tw.p1 - tw.p0) * e)
+      placeCamera(camera, c.target, tw.az0 + (tw.az1 - tw.az0) * e, tw.p0 + (tw.p1 - tw.p0) * e)
       if (tw.z1 !== tw.z0) {
         camera.zoom = tw.z0 + (tw.z1 - tw.z0) * e
         camera.updateProjectionMatrix()
@@ -301,7 +302,7 @@ export function CameraRig() {
     const f = Math.min(1, t / SWAY_FADE_IN)
     const env = f * f * (3 - 2 * f)
     const target = s.base + SWAY * Math.sin((t / SWAY_PERIOD) * Math.PI * 2)
-    placeCamera(camera, s.from + (target - s.from) * env, c.getPolarAngle())
+    placeCamera(camera, c.target, s.from + (target - s.from) * env, c.getPolarAngle())
   })
 
   return (
