@@ -1,13 +1,11 @@
-import ssh2 from 'ssh2'
 import { createServer } from 'node:http'
 import { createGateway } from './proxy.mjs'
-
-const { HTTPAgent } = ssh2
+import { OracleAgent } from './ssh-agent.mjs'
 
 for (const name of ['ORACLE_SSH_HOST', 'ORACLE_SSH_USER', 'ORACLE_HOST_SHA256']) {
   if (!process.env[name]) throw new Error(`Missing ${name}`)
 }
-const agent = process.env.ORACLE_SSH_KEY ? new HTTPAgent({
+const agent = process.env.ORACLE_SSH_KEY ? new OracleAgent({
   host: process.env.ORACLE_SSH_HOST,
   port: 22,
   username: process.env.ORACLE_SSH_USER,
@@ -17,9 +15,7 @@ const agent = process.env.ORACLE_SSH_KEY ? new HTTPAgent({
   readyTimeout: 15_000,
   keepaliveInterval: 15_000,
   keepaliveCountMax: 3,
-// Each new HTTP socket authenticates an SSH connection. Bound simultaneous
-// handshakes below sshd's default MaxStartups so a cold asset burst cannot fail.
-}, { keepAlive: true, maxSockets: 8, maxFreeSockets: 2 }) : null
+}) : null
 
 // Blueprints create the service first; its restricted key is set through Render's
 // API afterward. Serve a bounded setup response until that secret is configured.

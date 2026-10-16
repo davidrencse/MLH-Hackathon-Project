@@ -2,9 +2,15 @@ import http from 'node:http'
 
 // The destination is fixed by the operator. Browser URLs can only select a path.
 export function createGateway({ agent, port = 8080 }) {
+  const eventStream = (req) => req.headers.accept?.includes('text/event-stream') || req.url.split('?')[0].endsWith('/stream')
   const options = (req) => ({
     hostname: '127.0.0.1', port, agent, method: req.method, path: req.url,
-    headers: { ...req.headers, 'x-forwarded-proto': 'https' },
+    headers: {
+      ...req.headers, 'x-forwarded-proto': 'https',
+      // Edge proxies may add gzip negotiation even when the browser did not.
+      // Upstream compression buffers small SSE frames before they reach us.
+      ...(eventStream(req) ? { 'accept-encoding': 'identity' } : {}),
+    },
   })
   const server = http.createServer((req, res) => {
     if (req.url === '/healthz') {
@@ -29,7 +35,8 @@ export function createGateway({ agent, port = 8080 }) {
       reply.pipe(res)
       reply.on('error', () => res.destroy())
     })
-    upstream.on('error', () => {
+    upstream.on('error', (error) => {
+      console.warn('Oracle upstream request failed:', error.code ?? error.message)
       if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain', 'retry-after': '5' })
       res.end('The application is reconnecting. Please retry shortly.')
     })
