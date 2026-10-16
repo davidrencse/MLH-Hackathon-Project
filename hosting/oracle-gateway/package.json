@@ -1,0 +1,8 @@
+{
+  "name": "ghostgrid-oracle-gateway",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": { "start": "node server.mjs", "test": "node --test proxy.test.mjs" },
+  "dependencies": { "ssh2": "1.17.0" }
+}
