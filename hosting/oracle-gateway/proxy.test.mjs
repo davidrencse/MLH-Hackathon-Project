@@ -37,13 +37,17 @@ test('forwards SSE immediately while the upstream response remains open', async 
   const f = await fixture(t, (_req, res) => {
     res.writeHead(200, { 'content-type': 'text/event-stream' })
     res.write('event: ready\ndata: first\n\n')
+    const timer = setTimeout(() => res.write('event: update\ndata: second\n\n'), 50)
+    t.after(() => clearTimeout(timer))
   })
   const abort = new AbortController()
   t.after(() => abort.abort())
-  const reply = await fetch(f.url + '/gg/events/stream', { signal: abort.signal })
+  const reply = await fetch(f.url + '/gg/events/stream', { signal: AbortSignal.any([abort.signal, AbortSignal.timeout(5000)]) })
   assert.equal(reply.headers.get('content-type'), 'text/event-stream')
   const reader = reply.body.getReader()
-  assert.match(new TextDecoder().decode((await reader.read()).value), /data: first/)
+  let text = ''
+  while (!text.includes('data: second')) text += new TextDecoder().decode((await reader.read()).value)
+  assert.match(text, /data: first/)
   await reader.cancel()
 })
 

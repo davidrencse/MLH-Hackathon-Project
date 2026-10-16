@@ -17,7 +17,9 @@ const agent = process.env.ORACLE_SSH_KEY ? new HTTPAgent({
   readyTimeout: 15_000,
   keepaliveInterval: 15_000,
   keepaliveCountMax: 3,
-}, { keepAlive: true, maxSockets: 48, maxFreeSockets: 4 }) : null
+// Each new HTTP socket authenticates an SSH connection. Bound simultaneous
+// handshakes below sshd's default MaxStartups so a cold asset burst cannot fail.
+}, { keepAlive: true, maxSockets: 8, maxFreeSockets: 2 }) : null
 
 // Blueprints create the service first; its restricted key is set through Render's
 // API afterward. Serve a bounded setup response until that secret is configured.

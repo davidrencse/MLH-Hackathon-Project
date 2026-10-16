@@ -13,7 +13,19 @@ export function createGateway({ agent, port = 8080 }) {
       return
     }
     const upstream = http.request(options(req), (reply) => {
-      res.writeHead(reply.statusCode, reply.headers)
+      const streaming = reply.headers['content-type']?.startsWith('text/event-stream')
+      const headers = { ...reply.headers }
+      if (streaming) {
+        headers['cache-control'] = 'no-cache, no-transform'
+        headers['x-accel-buffering'] = 'no'
+        delete headers['content-length']
+      }
+      res.writeHead(reply.statusCode, headers)
+      if (streaming) {
+        res.flushHeaders()
+        // An SSE comment primes buffering proxies without inventing an application event.
+        res.write(`:${' '.repeat(2048)}\n\n`)
+      }
       reply.pipe(res)
       reply.on('error', () => res.destroy())
     })
